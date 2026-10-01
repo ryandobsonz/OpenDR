@@ -8,7 +8,7 @@ resolutions. **What it is, how it works and what differs from the original:
 
 | | |
 |---|---|
-| Repo | `C:\Users\ryand\Git\OpenDR`, `main`, pushed to `github.com/ryandobsonz/OpenDR` (upstream `drogoganor/OpenDR`) |
+| Repo | `C:\Users\ryand\Git\OpenDR`, `master`, pushed to `github.com/ryandobsonz/OpenDR` (upstream `drogoganor/OpenDR`) |
 | Game data | `DrData/` (gitignored, never commit it): the Dark Reign 1.8.2 install, copied from Ghost's `/mnt/GhostMedia/WindowsGames/dkreign`. `DrData/manuals/` holds the original manuals; the AIP manual (`Artificial Intelligence Personalities/aipmanual.pdf`) is the spec for the triggers and AI |
 | Game content | `%APPDATA%\OpenRA\Content\dr`, installed by `import-campaign.ps1` |
 | Converted missions | `%APPDATA%\OpenRA\maps\dr\campaign\<m01f…>` — rebuilt by every import |
@@ -27,13 +27,21 @@ pwsh -File tools/campaign/run-game.ps1 -Mission m01f -Seconds 40 -Test "..."   #
 pwsh -File tools/campaign/smoke.ps1                        # every mission 40 s: crashes, triggers, a screenshot
 pwsh -File tools/campaign/wintest.ps1                      # every mission: destroy the enemy, report the winner
 python tools/campaign/check-missions.py                    # static: unsupported commands, missing ids
+pwsh -File launcher/build.ps1                              # DarkReign.exe and engine/bin/DarkReignGame.exe
 ```
+
+The user plays through `DarkReign.exe` (Play starts `DarkReignGame.exe`);
+the scripts start `engine/bin/OpenRA.exe` directly. After `make.cmd all`
+refetches or rebuilds the engine, run `launcher/build.ps1` again for the game
+host.
 
 `smoke.ps1` and `wintest.ps1` take about 20 minutes; run them in the
 background. Their output goes to `tools/campaign/out/`.
 
-- **Close OpenRA before building**: a running game locks the mod DLL and the
-  build fails to copy it. `build-import.ps1` closes it first.
+- **Close the game before building**: a running game locks the mod DLL and
+  the build fails to copy it. `build-import.ps1` closes test games
+  (`OpenRA.exe`) itself, but stops if the user's game (`DarkReignGame.exe`)
+  is running: ask them to close it.
 - **The laptop is usually locked during long runs**, so desktop captures are
   black. The game screenshots itself instead: `-Ticks` or a `shot` step.
 - **Don't leave a shell sitting in a map folder** while importing: Windows
@@ -42,8 +50,11 @@ background. Their output goes to `tools/campaign/out/`.
   PowerShell 5.1.
 - **The player's game shares everything with the tests**: settings, logs,
   screenshots. `run-game.ps1` restores `settings.yaml` after each run (the
-  engine saves the test's windowed 1600×900 into it), but it and
-  `build-import.ps1` still close any running OpenRA, the user's game included.
+  engine saves the test's windowed 1600×900 into it), and its log and
+  screenshot clean-up empties folders the user's game also writes to.
+- **The user often has another session working on this repo**: check
+  `git status` and running processes before building, stage only your own
+  files, and say before anything puts a window on their screen.
 
 ## Scripted tests
 
@@ -134,7 +145,7 @@ killing teams the player must protect, as alliances change at cycle 0.
 
 ## Committing
 
-Commit to `main` and push. Never commit `DrData/` or anything converted from
+Commit to `master` and push. Never commit `DrData/` or anything converted from
 the game. End messages with:
 
 ```

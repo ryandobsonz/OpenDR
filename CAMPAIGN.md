@@ -82,11 +82,12 @@ repository, or everything beside it in a package.
 
 OpenRA draws at the screen's own resolution and aspect ratio, ultrawide
 included, and scales the battlefield so its visible height stays in a band
-set by **Settings → Display → Battlefield Zoom**: Close shows 480 to 600
-game pixels top to bottom, about the original's 640×480 view; Medium 600 to
-900; Far 900 to 1300. The mouse wheel zooms within the band. At 4K, also set
-**Interface size** (the game's UI Scale) to 200%, or the sidebar is small. The art is the 1997 art
-scaled up: sharper and larger, not more detailed.
+set by **Battlefield zoom** (in the launcher, or the game's Settings →
+Display): Close shows 480 to 600 game pixels top to bottom, about the
+original's 640×480 view; Medium 600 to 900; Far 900 to 1300. The mouse wheel
+zooms within the band. At 4K, also set **Interface size** (the game's UI
+Scale) to 200%, or the sidebar is small. The art is the 1997 art scaled up:
+sharper and larger, not more detailed.
 
 ## How it works
 

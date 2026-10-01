@@ -1,7 +1,12 @@
 # Builds the mod (unless -NoBuild) and converts campaign missions, all or those named, into the user map folder.
-# Closes OpenRA first: a running game holds the mod DLL and the build cannot replace it.
+# Closes test games (OpenRA.exe) first: a running game holds the mod DLL and the build cannot replace it.
+# The player's game (DarkReignGame.exe, started by the launcher) is left alone: the build stops instead.
 #   pwsh -File tools/campaign/build-import.ps1 [-NoBuild] [M01F M06F ...]
 $NoBuild = $args -contains "-NoBuild"; $Missions = @($args | Where-Object { $_ -ne "-NoBuild" })
+if (-not $NoBuild -and (Get-Process DarkReignGame -ErrorAction SilentlyContinue)) {
+    "Dark Reign is running (the player's game holds the mod DLL). Close it, then build again."
+    exit 1
+}
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $env:PATH = "C:\Program Files\dotnet;$env:PATH"
 $env:MOD_SEARCH_PATHS = "$root\mods"
