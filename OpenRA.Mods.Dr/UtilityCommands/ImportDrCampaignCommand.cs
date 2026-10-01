@@ -46,6 +46,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			var fixedDir = Resolve(darkDir, "scenario", "fixed") ?? throw new DirectoryNotFoundException($"No scenario/FIXED under {darkDir}");
 			var aipDir = Resolve(darkDir, "aip");
 			var strings = LoadStrings(darkDir);
+			var techLevels = LoadTechLevels(darkDir);
 
 			var missions = args.Length > 3
 				? args.Skip(3).Select(m => Resolve(fixedDir, m) ?? throw new DirectoryNotFoundException(m))
@@ -56,7 +57,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			{
 				try
 				{
-					Convert(modData, missionDir, aipDir, strings, outDir);
+					Convert(modData, missionDir, aipDir, strings, techLevels, outDir);
 				}
 				catch (Exception e)
 				{
@@ -65,7 +66,8 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			}
 		}
 
-		static void Convert(ModData modData, string missionDir, string aipDir, Dictionary<string, string> strings, string outDir)
+		static void Convert(ModData modData, string missionDir, string aipDir, Dictionary<string, string> strings,
+			Dictionary<string, int> sharedTechLevels, string outDir)
 		{
 			var name = Path.GetFileName(missionDir).ToLowerInvariant();
 			var scnPath = Resolve(missionDir, name + ".scn") ?? throw new FileNotFoundException(name + ".scn");
@@ -108,6 +110,11 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 				var cell = DrScenario.TileToCell(p.X, p.Y);
 				if (p.X < 0 || p.Y < 0 || !map.Tiles.Contains(cell))
 					continue;
+
+				// Height lifts cells near the top edge out of the visible map, where the engine cannot hold an
+				// actor; move such actors down until they are seen.
+				while (!map.Contains(cell) && cell.Y < map.MapSize.Height - 1)
+					cell += new CVec(0, 1);
 
 				if (p.IsBuilding && (p.Type.Equals("impww", StringComparison.OrdinalIgnoreCase) || p.Type.Equals("impmn", StringComparison.OrdinalIgnoreCase)))
 				{
@@ -157,6 +164,18 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 
 				actors.Add(new MiniYamlNode(actorName, reference.Save()));
 			}
+
+			// An upgraded building on the map brings its upgrades, which OpenDR keeps as separate actors.
+			var upgrades = new HashSet<(int Team, string Upgrade)>();
+			foreach (var p in scenario.Placements.Where(p => p.IsBuilding))
+				if (Upgrades.TryGetValue(p.Type, out var granted))
+					foreach (var u in granted)
+						if (upgrades.Add((p.Team, u)))
+							actors.Add(new MiniYamlNode($"up{p.Team}{u}", new ActorReference(u)
+							{
+								new LocationInit(DrScenario.TileToCell(p.X, p.Y)),
+								new OwnerInit(TeamName(p.Team))
+							}.Save()));
 
 			map.ActorDefinitions = actors;
 			map.RuleDefinitions = new MiniYaml("dr|rules/campaign-maprules.yaml, dr|rules/campaign-tooltips.yaml, dr|rules/campaign-dr.yaml, rules.yaml");
@@ -229,7 +248,11 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			}
 
 			File.WriteAllText(Path.Combine(target, "messages.txt"), messages.ToString());
-			File.WriteAllText(Path.Combine(target, "rules.yaml"), RulesYaml(missionDir, name));
+			var techLevels = new Dictionary<string, int>(sharedTechLevels, StringComparer.OrdinalIgnoreCase);
+			foreach (var (k, v) in LoadTechLevels(missionDir))
+				techLevels[k] = v;
+
+			File.WriteAllText(Path.Combine(target, "rules.yaml"), RulesYaml(missionDir, name) + TechLevelRules(modData, scenario.TechLevel, techLevels));
 
 			Console.WriteLine($"{name}: {map.Title}, {actors.Count} actors" + (warnings.Count > 0 ? "; skipped " + string.Join(", ", warnings) : ""));
 		}
@@ -321,6 +344,112 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 		static string TitleCase(string s)
 		{
 			return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(s.ToLowerInvariant()).Replace(" On ", " on ").Replace(" Of ", " of ");
+		}
+
+		/// <summary>The upgrade actors an original building type implies.</summary>
+		static readonly Dictionary<string, string[]> Upgrades = new(StringComparer.OrdinalIgnoreCase)
+		{
+			{ "fh2", new[] { "upgrade.hq1.human" } },
+			{ "ih2", new[] { "upgrade.hq1.imperium" } },
+			{ "fh3", new[] { "upgrade.hq1.human", "upgrade.hq2" } },
+			{ "ih3", new[] { "upgrade.hq1.imperium", "upgrade.hq2" } },
+			{ "fu2", new[] { "upgrade.barracks1" } },
+			{ "iu2", new[] { "upgrade.barracks1" } },
+			{ "fc2", new[] { "upgrade.assemblyplant1" } },
+			{ "ic2", new[] { "upgrade.assemblyplant1" } },
+			{ "ft2", new[] { "upgrade.phasing" } },
+		};
+
+		/// <summary>
+		/// Each unit and building's tech level, from the game's tables (UNITS.TXT and BUILD.TXT, in deftxt or a
+		/// mission's own folder); a scenario's SetTechLevel makes anything above it unavailable. The expansion's
+		/// tables (deftxtEx) raise the original units to 40 for its own campaigns, so they are not read here.
+		/// </summary>
+		static Dictionary<string, int> LoadTechLevels(string dir)
+		{
+			var levels = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+			var folders = new[] { dir, Resolve(dir, "deftxt") }.Where(f => f != null);
+			foreach (var folder in folders)
+			{
+				foreach (var file in new[] { "units.txt", "build.txt" })
+				{
+					var path = Resolve(folder, file);
+					if (path == null)
+						continue;
+
+					using (var stream = File.OpenRead(path))
+					{
+						foreach (var node in DrScript.Parse(stream))
+						{
+							if (!node.Is("DefineUnitType") && !node.Is("DefineBuildingType"))
+								continue;
+
+							var level = FindTechLevel(node);
+							if (node.Arg(0) != null)
+								levels[node.Arg(0)] = level ?? 0;
+						}
+					}
+				}
+			}
+
+			return levels;
+		}
+
+		static int? FindTechLevel(DrScriptNode node)
+		{
+			foreach (var c in node.Children)
+			{
+				if (c.Is("SetTechLevel"))
+					return c.IntArg(0);
+
+				var inner = FindTechLevel(c);
+				if (inner != null)
+					return inner;
+			}
+
+			return null;
+		}
+
+		/// <summary>Disables what the scenario's tech level puts out of reach: an actor stays if any original type it stands for is allowed.</summary>
+		static string TechLevelRules(ModData modData, int scenarioLevel, Dictionary<string, int> levels)
+		{
+			var lowest = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+			void Consider(string actor, string drType)
+			{
+				if (!levels.TryGetValue(drType, out var level))
+					return;
+
+				lowest[actor] = lowest.TryGetValue(actor, out var l) ? Math.Min(l, level) : level;
+			}
+
+			foreach (var (dr, actor) in ImportDrMapCommand.UnitNames)
+				Consider(actor, dr);
+
+			foreach (var (dr, actor) in ImportDrMapCommand.BuildingNames)
+				Consider(actor + ".Constructing", dr);
+
+			// fh3 implies both HQ upgrades but introduces only the second.
+			foreach (var (dr, upgrades) in Upgrades)
+				Consider(upgrades[^1], dr);
+
+			// Rules merge by exact name, so an override must use the mod's own casing.
+			var casing = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			foreach (var file in modData.Manifest.Rules)
+				using (var stream = modData.DefaultFileSystem.Open(file))
+					foreach (var node in MiniYaml.FromStream(stream, file))
+						casing.TryAdd(node.Key, node.Key);
+
+			var sb = new StringBuilder();
+			foreach (var (actor, level) in lowest.OrderBy(kv => kv.Key))
+			{
+				if (level <= scenarioLevel || !casing.TryGetValue(actor, out var key)
+					|| !modData.DefaultRules.Actors.TryGetValue(actor.ToLowerInvariant(), out var info) || !info.HasTraitInfo<BuildableInfo>())
+					continue;
+
+				sb.Append('\n').Append(key).Append(":\n\tBuildable:\n\t\tPrerequisites: ~disabled\n");
+			}
+
+			return sb.ToString();
 		}
 
 		/// <summary>The mission's rules: its briefing, and the scenario runtime.</summary>

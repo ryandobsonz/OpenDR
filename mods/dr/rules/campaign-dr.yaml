@@ -17,3 +17,8 @@ Player:
 	ModularBot@DrCampaign:
 		Name: bot-dr-campaign.name
 		Type: dr-campaign
+	GrantConditionOnBotOwner@DrCampaign:
+		Condition: enable-dr-campaign-ai
+		Bots: dr-campaign
+	DrAipBotModule:
+		RequiresCondition: enable-dr-campaign-ai

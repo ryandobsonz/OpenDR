@@ -84,8 +84,10 @@ namespace OpenRA.Mods.Dr.Traits
 
 		public int TeamOf(Player p) => teams.FirstOrDefault(kv => kv.Value == p).Key;
 
-		/// <summary>Raised when a team's FSM switches AIP, for the team's strategic AI.</summary>
-		public event Action<int, string> AipChanged = (_, _) => { };
+		readonly Dictionary<int, string> aips = new();
+
+		/// <summary>The AIP file a team's FSM last switched to, for the team's strategic AI; null until it does.</summary>
+		public string CurrentAip(int team) => aips.GetValueOrDefault(team);
 
 		void IWorldLoaded.WorldLoaded(World w, WorldRenderer wr)
 		{
@@ -109,9 +111,10 @@ namespace OpenRA.Mods.Dr.Traits
 				wr.Viewport.Center(w.Map.CenterOfCell(DrScenario.TileToCell(first.X, first.Y)));
 		}
 
-		void IDrScenarioContext.Trace(string message)
+		public void Trace(string message)
 		{
-			Log.Write("drscenario", $"{Cycle,7} {message}");
+			if (started)
+				Log.Write("drscenario", $"{Cycle,7} {message}");
 		}
 
 		void Start()
@@ -563,7 +566,7 @@ namespace OpenRA.Mods.Dr.Traits
 					break;
 
 				case "setaipfile":
-					AipChanged(team, n.Arg(0)?.ToLowerInvariant());
+					aips[team] = n.Arg(0)?.ToLowerInvariant();
 					break;
 
 				case "triggermessage":
