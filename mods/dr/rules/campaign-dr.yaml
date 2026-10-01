@@ -44,3 +44,7 @@ Infiltrator:
 	Infiltrates:
 		EnterBehaviour: Exit
 	DrCarriesPlans:
+
+# Damage reports, for the original's harass-a-region condition.
+^ExistsInWorld:
+	DrReportsDamage:

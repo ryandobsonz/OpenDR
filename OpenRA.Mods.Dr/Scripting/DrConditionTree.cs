@@ -23,6 +23,9 @@ namespace OpenRA.Mods.Dr.Scripting
 		bool Evaluate(DrCriterion criterion, int team);
 		void Act(DrScriptNode action, int team);
 		void Trace(string message);
+
+		/// <summary>Damage the team did to anything in the region, in the cycles after 'from' up to 'to'.</summary>
+		int RegionDamage(int team, int region, long from, long to);
 	}
 
 	/// <summary>
@@ -254,33 +257,62 @@ namespace OpenRA.Mods.Dr.Scripting
 	}
 
 	/// <summary>
-	/// Hold or harass a region for a number of 32-cycle periods. Holding need not be continuous; harassing
-	/// must be, unless flag 1 (accumulative) is set.
+	/// Hold a region for a number of 32-cycle periods (not necessarily in a row), or harass it: do damage there
+	/// for a number of periods, or (flag 2) a total amount, without a quiet period unless flag 1 (accumulative).
 	/// </summary>
 	class PeriodCriterion : DrCriterion
 	{
 		public const int Period = 32;
 		long lastPeriod = -1;
+		long lastChecked;
+		bool damagedThisPeriod;
 		int periods;
+		int damage;
 
 		public PeriodCriterion(DrScriptNode node)
 			: base(node) { }
 
-		public int Periods => periods;
-
 		public override bool Evaluate(IDrScenarioContext ctx, int team, long stateEnteredAt)
 		{
+			var limiter = Node.IntArg(1);
 			var period = ctx.Cycle / Period;
-			if (period != lastPeriod)
+			if (Name == "critholdregion")
 			{
-				lastPeriod = period;
-				if (ctx.Evaluate(this, team))
-					periods++;
-				else if (Name == "critharassregion" && (Node.IntArg(2) & 1) == 0)
-					periods = 0;
+				if (period != lastPeriod)
+				{
+					lastPeriod = period;
+					if (ctx.Evaluate(this, team))
+						periods++;
+				}
+
+				return periods >= limiter;
 			}
 
-			return periods >= Node.IntArg(1);
+			var flags = Node.IntArg(2);
+			var accumulative = (flags & 1) != 0;
+			var done = ctx.RegionDamage(team, Node.IntArg(0), lastChecked, ctx.Cycle);
+			lastChecked = ctx.Cycle;
+			if (done > 0)
+			{
+				damage += done;
+				damagedThisPeriod = true;
+			}
+
+			if (period != lastPeriod)
+			{
+				if (lastPeriod >= 0)
+				{
+					if (damagedThisPeriod)
+						periods++;
+					else if (!accumulative)
+						periods = damage = 0;
+				}
+
+				lastPeriod = period;
+				damagedThisPeriod = false;
+			}
+
+			return (flags & 2) != 0 ? damage >= limiter : periods >= limiter;
 		}
 	}
 

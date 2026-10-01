@@ -88,6 +88,28 @@ namespace OpenRA.Mods.Dr.Traits
 		/// <summary>The AIP file a team's FSM last switched to, for the team's strategic AI; null until it does.</summary>
 		public string CurrentAip(int team) => aips.GetValueOrDefault(team);
 
+		readonly List<(long Cycle, Player Attacker, WPos Position, int Amount)> damageLog = new();
+
+		/// <summary>Called by DrReportsDamage, for CritHarassRegion.</summary>
+		public void ReportDamage(Actor self, AttackInfo e)
+		{
+			if (!started || e.Attacker?.Owner == null || e.Damage.Value <= 0)
+				return;
+
+			damageLog.Add((Cycle, e.Attacker.Owner, self.CenterPosition, e.Damage.Value));
+			if (damageLog.Count > 4096)
+				damageLog.RemoveAll(d => d.Cycle < Cycle - 1024);
+		}
+
+		int IDrScenarioContext.RegionDamage(int team, int region, long from, long to)
+		{
+			if (!teams.TryGetValue(team, out var p))
+				return 0;
+
+			var box = RegionBox(region);
+			return damageLog.Where(d => d.Attacker == p && d.Cycle > from && d.Cycle <= to && box.Contains(d.Position)).Sum(d => d.Amount);
+		}
+
 		readonly Dictionary<Player, HashSet<string>> stolenPlans = new();
 		readonly Dictionary<string, string[]> planSources = new();
 
@@ -456,10 +478,6 @@ namespace OpenRA.Mods.Dr.Traits
 					return player != null && inRegion.Any(a => player.IsAlliedWith(a.Owner))
 						&& !inRegion.Any(a => player.RelationshipWith(a.Owner) == PlayerRelationship.Enemy);
 				}
-
-				case "critharassregion":
-					// Approximated: this team's units are fighting in the region.
-					return player != null && UnitsInRegion(n.IntArg(0)).Any(a => a.Owner == player && !a.IsIdle);
 
 				case "critmoveunitstoregion":
 				{

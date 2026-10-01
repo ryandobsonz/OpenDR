@@ -70,8 +70,6 @@ changes the rate.
   taelon as separate resources (collected resources count as credits;
   `CritCollectWater` and `CritCollectMineral` use credits earned). No
   original campaign mission needs them to be won.
-- **Harassing a region** (`CritHarassRegion`, one use) counts the team's units
-  fighting in the region, not damage done.
 - **Units' tactical settings** (`SetTactAI`: pursuit, damage tolerance,
   independence) are not read: every campaign use sets pursuit medium or
   high, which OpenRA's default stance already is.
