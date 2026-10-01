@@ -61,6 +61,7 @@ namespace OpenRA.Mods.Dr.Traits
 		int buildCountdown;
 		int strategyCountdown;
 		readonly Dictionary<Actor, Goal> assignments = new();
+		readonly HashSet<CPos> unreachable = new();
 
 		public DrAipBotModule(Actor self, DrAipBotModuleInfo info)
 			: base(info)
@@ -493,7 +494,7 @@ namespace OpenRA.Mods.Dr.Traits
 					max = Math.Max(max, maxExplore);
 				}
 
-				if (max > 0)
+				if (max > 0 && !unreachable.Contains(goal.Cell))
 					needs[goal] = (Math.Max(1, min), Math.Max(min, max));
 			}
 
@@ -547,22 +548,44 @@ namespace OpenRA.Mods.Dr.Traits
 				if (goal.Assigned < needs[goal].Min)
 					allocation.Remove(a);
 
-			// Send each new or idle group on its way.
+			// Send each new or idle group on its way, to the nearest cell of the goal it can reach.
+			var pathFinder = world.WorldActor.Trait<IPathFinder>();
 			foreach (var group in allocation.GroupBy(kv => kv.Value))
 			{
+				var goal = group.Key;
 				var moving = group.Select(kv => kv.Key)
-					.Where(a => !assignments.TryGetValue(a, out var old) || old.Cell != group.Key.Cell
-						|| (a.IsIdle && (a.Location - group.Key.Cell).LengthSquared > Info.GridSize * Info.GridSize / 4))
+					.Where(a => !assignments.TryGetValue(a, out var old) || old.Cell != goal.Cell
+						|| (a.IsIdle && (a.Location - goal.Cell).LengthSquared > (Info.GridSize / 2 + 2) * (Info.GridSize / 2 + 2)))
 					.ToArray();
 
 				foreach (var a in group.Select(kv => kv.Key))
-					assignments[a] = group.Key;
+					assignments[a] = goal;
 
-				if (moving.Length > 0)
-					scenario.Trace($"team {team} sends {moving.Length} to {group.Key.Cell} (threat {group.Key.Threat}, enemy buildings {group.Key.EnemyBuildings}, scripted {group.Key.Scripted})");
+				if (moving.Length == 0)
+					continue;
 
-				if (moving.Length > 0)
-					bot.QueueOrder(new Order("AttackMove", null, Target.FromCell(world, group.Key.Cell), false, groupedActors: moving));
+				var target = goal.Cell;
+				var leader = moving.FirstOrDefault(a => a.TraitOrDefault<Mobile>() != null);
+				if (leader != null)
+				{
+					var locomotor = leader.Trait<Mobile>().Locomotor;
+					var reachable = map.FindTilesInCircle(goal.Cell, Info.GridSize / 2 + 1)
+						.Where(c => pathFinder.PathExistsForLocomotor(locomotor, leader.Location, c))
+						.Select(c => (CPos?)c).FirstOrDefault();
+					if (reachable == null)
+					{
+						// Nothing there can be walked to: stop considering it, and free the squad.
+						unreachable.Add(goal.Cell);
+						foreach (var a in group.Select(kv => kv.Key))
+							assignments.Remove(a);
+						continue;
+					}
+
+					target = reachable.Value;
+				}
+
+				scenario.Trace($"team {team} sends {moving.Length} to {target} (threat {goal.Threat}, enemy buildings {goal.EnemyBuildings}, scripted {goal.Scripted})");
+				bot.QueueOrder(new Order("AttackMove", null, Target.FromCell(world, target), false, groupedActors: moving));
 			}
 		}
 	}

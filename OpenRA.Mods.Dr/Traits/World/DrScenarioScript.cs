@@ -50,14 +50,13 @@ namespace OpenRA.Mods.Dr.Traits
 		DrScenario scenario;
 		readonly Dictionary<int, Player> teams = new();
 		readonly Dictionary<int, Actor> actorsById = new();
-		readonly Dictionary<Actor, int> idsByActor = new();
 		readonly Dictionary<int, int> startUnits = new();
 		readonly Dictionary<int, int> startBuildings = new();
 		readonly Dictionary<(int Team, string Type), int> built = new();
 		readonly List<DrConditionTree> trees = new();
 		readonly HashSet<Actor> specialForces = new();
 		readonly Dictionary<Actor, (DrPatrol Patrol, int Next, int Step)> patrols = new();
-		readonly Dictionary<string, string> messages = new(StringComparer.OrdinalIgnoreCase);
+		readonly Dictionary<string, (string Text, string Sound)> messages = new(StringComparer.OrdinalIgnoreCase);
 		Dictionary<int, string> briefing = new();
 		readonly List<int> objectives = new();
 
@@ -141,7 +140,6 @@ namespace OpenRA.Mods.Dr.Traits
 				if (kv.Key.Length > 1 && kv.Key[0] == 'u' && int.TryParse(kv.Key.AsSpan(1), out var id))
 				{
 					actorsById[id] = kv.Value;
-					idsByActor[kv.Value] = id;
 				}
 			}
 
@@ -187,9 +185,9 @@ namespace OpenRA.Mods.Dr.Traits
 				string line;
 				while ((line = reader.ReadLine()) != null)
 				{
-					var tab = line.IndexOf('\t');
-					if (tab > 0)
-						messages[line[..tab]] = line[(tab + 1)..];
+					var fields = line.Split('\t');
+					if (fields.Length >= 2 && fields[0].Length > 0)
+						messages[fields[0]] = (fields[1], fields.Length > 2 ? fields[2] : "");
 				}
 			}
 		}
@@ -572,8 +570,14 @@ namespace OpenRA.Mods.Dr.Traits
 				case "triggermessage":
 				{
 					var key = n.Arg(0);
-					if (key != null && messages.TryGetValue(key, out var text))
-						TextNotificationsManager.AddMissionLine("Mission", text, Color.White);
+					if (key == null || !messages.TryGetValue(key, out var message))
+						break;
+
+					if (message.Text.Length > 0)
+						TextNotificationsManager.AddMissionLine("Mission", message.Text, Color.White);
+
+					if (message.Sound.Length > 0)
+						Game.Sound.Play(SoundType.UI, message.Sound);
 					break;
 				}
 

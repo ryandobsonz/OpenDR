@@ -179,6 +179,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 
 			map.ActorDefinitions = actors;
 			map.RuleDefinitions = new MiniYaml("dr|rules/campaign-maprules.yaml, dr|rules/campaign-tooltips.yaml, dr|rules/campaign-dr.yaml, rules.yaml");
+			map.FluentMessageDefinitions = new MiniYaml("map.ftl");
 
 			var target = Path.Combine(outDir, name);
 			if (Directory.Exists(target))
@@ -237,14 +238,22 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 				}
 			}
 
-			// Messages the triggers show, keyed as in the original string table.
+			// Messages the triggers show or speak: text from the string table, sound from GAMEMSG.TXT, the
+			// mission's own over the shared ones. Lines are key, text, sound, tab-separated.
+			var darkDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(missionDir)));
+			var sounds = LoadMessageSounds(Resolve(darkDir, "local"));
+			foreach (var (k, v) in LoadMessageSounds(missionDir))
+				sounds[k] = v;
+
 			var messages = new StringBuilder();
 			foreach (var key in messageKeys)
 			{
-				if (strings.TryGetValue(key, out var text))
-					messages.Append(key).Append('\t').Append(text).Append('\n');
-				else
+				var text = strings.GetValueOrDefault(key, "");
+				var sound = sounds.GetValueOrDefault(key, "");
+				if (text.Length == 0 && sound.Length == 0)
 					warnings.Add("message " + key);
+				else
+					messages.Append(key).Append('\t').Append(text).Append('\t').Append(sound).Append('\n');
 			}
 
 			File.WriteAllText(Path.Combine(target, "messages.txt"), messages.ToString());
@@ -252,7 +261,8 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			foreach (var (k, v) in LoadTechLevels(missionDir))
 				techLevels[k] = v;
 
-			File.WriteAllText(Path.Combine(target, "rules.yaml"), RulesYaml(missionDir, name) + TechLevelRules(modData, scenario.TechLevel, techLevels));
+			File.WriteAllText(Path.Combine(target, "rules.yaml"), RulesYaml() + TechLevelRules(modData, scenario.TechLevel, techLevels));
+			File.WriteAllText(Path.Combine(target, "map.ftl"), BriefingFluent(missionDir, name));
 
 			Console.WriteLine($"{name}: {map.Title}, {actors.Count} actors" + (warnings.Count > 0 ? "; skipped " + string.Join(", ", warnings) : ""));
 		}
@@ -452,24 +462,32 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			return sb.ToString();
 		}
 
-		/// <summary>The mission's rules: its briefing, and the scenario runtime.</summary>
-		static string RulesYaml(string missionDir, string name)
+		/// <summary>The mission's rules: its briefing, held in map.ftl, and the scenario runtime.</summary>
+		static string RulesYaml()
 		{
-			var briefing = "";
+			return "World:\n\tMissionData:\n\t\tBriefing: briefing\n\tDrScenarioScript:\n";
+		}
+
+		/// <summary>The briefing's setting and orders as a Fluent message, which keeps their line breaks.</summary>
+		static string BriefingFluent(string missionDir, string name)
+		{
 			var brf = Resolve(missionDir, name + ".brf");
-			if (brf != null)
+			var sections = brf != null ? BriefingSections(File.ReadAllText(brf, Encoding.Latin1)) : new Dictionary<int, string>();
+			var text = string.Join("\\n\\n", new[] { sections.GetValueOrDefault(0), sections.GetValueOrDefault(1) }.Where(t => !string.IsNullOrEmpty(t)));
+			if (text.Length == 0)
+				text = name.ToUpperInvariant();
+
+			var sb = new StringBuilder("briefing =\n");
+			foreach (var line in text.Split("\\n"))
 			{
-				var sections = BriefingSections(File.ReadAllText(brf, Encoding.Latin1));
-				briefing = string.Join("\\n\\n", new[] { sections.GetValueOrDefault(0), sections.GetValueOrDefault(1) }.Where(t => !string.IsNullOrEmpty(t)));
+				// Braces open Fluent placeables; '[', '*' and '.' start special lines.
+				var escaped = line.Trim().Replace("{", "{\"{\"}").Replace("}", "{\"}\"}");
+				if (escaped.Length > 0 && "[*.".Contains(escaped[0]))
+					escaped = "{\"\"}" + escaped;
+				sb.Append("    ").Append(escaped.Length > 0 ? escaped : "{\"\"}").Append('\n');
 			}
 
-			// MiniYaml takes '#' as a comment.
-			briefing = briefing.Replace("#", "\\#");
-
-			return "World:\n" +
-				"\tMissionData:\n" +
-				$"\t\tBriefing: {briefing}\n" +
-				"\tDrScenarioScript:\n";
+			return sb.ToString();
 		}
 
 		/// <summary>
@@ -488,6 +506,28 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			}
 
 			return sections;
+		}
+
+		/// <summary>The sound each message key plays, from GAMEMSG.TXT's CreateMsg("KEY") { SetSound("file.wav") }.</summary>
+		static Dictionary<string, string> LoadMessageSounds(string dir)
+		{
+			var sounds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			if (dir == null)
+				return sounds;
+
+			foreach (var file in new[] { "gamemsg.txt", "gamemsex.txt" })
+			{
+				var path = Resolve(dir, file);
+				if (path == null)
+					continue;
+
+				using (var stream = File.OpenRead(path))
+					foreach (var node in DrScript.Parse(stream).Where(n => n.Is("CreateMsg")))
+						if (node.Arg(0) != null && node.Children.FirstOrDefault(c => c.Is("SetSound"))?.Arg(0) is string sound)
+							sounds[node.Arg(0)] = sound.ToLowerInvariant();
+			}
+
+			return sounds;
 		}
 
 		static Dictionary<string, string> LoadStrings(string darkDir)

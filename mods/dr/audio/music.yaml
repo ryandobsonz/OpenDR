@@ -9,3 +9,35 @@ track8: Taelon Dawn
 acid: Victory
 	Extension: wav
 	Hidden: true
+
+# The original CD soundtrack (track 1 is the disc's data), copied in by import-campaign.ps1.
+Track02: Dark Reign Score 1
+	Extension: ogg
+Track03: Dark Reign Score 2
+	Extension: ogg
+Track04: Dark Reign Score 3
+	Extension: ogg
+Track05: Dark Reign Score 4
+	Extension: ogg
+Track06: Dark Reign Score 5
+	Extension: ogg
+Track07: Dark Reign Score 6
+	Extension: ogg
+Track08: Dark Reign Score 7
+	Extension: ogg
+Track09: Dark Reign Score 8
+	Extension: ogg
+Track10: Dark Reign Score 9
+	Extension: ogg
+Track11: Dark Reign Score 10
+	Extension: ogg
+Track12: Dark Reign Score 11
+	Extension: ogg
+Track13: Dark Reign Score 12
+	Extension: ogg
+Track14: Dark Reign Score 13
+	Extension: ogg
+Track15: Dark Reign Score 14
+	Extension: ogg
+Track16: Dark Reign Score 15
+	Extension: ogg

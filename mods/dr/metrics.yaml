@@ -8,5 +8,8 @@ Metrics:
 	#ButtonFont: Bold
 	FactionSuffix-imperium: imperium
 	FactionSuffix-fguard: fguard
+	# Sides without their own sidebar art, as the player of the campaign finale.
+	FactionSuffix-togran: imperium
+	FactionSuffix-terrorist: fguard
 	IncompatibleProtectedGameColor: B22222
 	IncompatibleVersionColor: D3D3D3

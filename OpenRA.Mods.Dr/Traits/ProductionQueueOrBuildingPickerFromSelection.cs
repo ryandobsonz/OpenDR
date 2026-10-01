@@ -58,6 +58,10 @@ namespace OpenRA.Mods.Dr.Traits
 			if (world.LocalPlayer == null)
 				return;
 
+			// The player's sidebar is gone once the game ends and the observer view takes over.
+			if (buildingCancelWidget.Value == null || buildSelectWidget.Value == null || productionParentWidget.Value == null)
+				return;
+
 			buildingCancelWidget.Value.Visible = false;
 
 			// Check for builder unit

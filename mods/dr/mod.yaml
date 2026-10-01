@@ -281,7 +281,7 @@ DefaultOrderGenerator: UnitOrderGenerator
 
 SupportsMapsFrom: dr
 
-SoundFormats: Aud, Wav
+SoundFormats: Aud, Wav, Ogg
 
 SpriteFormats: DrSpr, DrTil, DrCrs, ShpTD, TmpRA, TmpTD, ShpTS, PngSheet
 

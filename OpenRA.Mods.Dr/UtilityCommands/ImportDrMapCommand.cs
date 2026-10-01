@@ -261,7 +261,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			{ "tih1", "HQ.cyborg" },
 			{ "tfh1", "HQ.togran" },
 			{ "tm", "TogranMonolith" },
-			{ "fpd", "FGPlanetaryDefense" }, // Orbital Defense Matrix
+			{ "fpd", "FGPlanetaryDefense2" }, // Orbital Defense Matrix; FGPlanetaryDefense is in the unloaded retail rules
 			{ "timpre", "Repair.cyborg" },
 		};
 
