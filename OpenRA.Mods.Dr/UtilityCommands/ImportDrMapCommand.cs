@@ -259,6 +259,9 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			{ "tfgca", "CameraTower" },
 			{ "tfs", "AntiAirTurret.human" },
 			{ "tih1", "HQ.cyborg" },
+			{ "tfh1", "HQ.togran" },
+			{ "tm", "TogranMonolith" },
+			{ "fpd", "FGPlanetaryDefense" }, // Orbital Defense Matrix
 			{ "timpre", "Repair.cyborg" },
 		};
 

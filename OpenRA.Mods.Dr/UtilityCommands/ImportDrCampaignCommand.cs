@@ -106,7 +106,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			foreach (var p in scenario.Placements)
 			{
 				var cell = DrScenario.TileToCell(p.X, p.Y);
-				if (p.X < 0 || p.Y < 0 || !map.Contains(cell))
+				if (p.X < 0 || p.Y < 0 || !map.Tiles.Contains(cell))
 					continue;
 
 				if (p.IsBuilding && (p.Type.Equals("impww", StringComparison.OrdinalIgnoreCase) || p.Type.Equals("impmn", StringComparison.OrdinalIgnoreCase)))
@@ -114,7 +114,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 					// Water wells and taelon mines are resources here, not buildings.
 					var type = p.Type.Equals("impww", StringComparison.OrdinalIgnoreCase) ? 1 : 2;
 					var resourceCell = DrScenario.TileToCell(p.X + 1, p.Y + 1);
-					if (map.Contains(resourceCell))
+					if (map.Tiles.Contains(resourceCell))
 						map.Resources[resourceCell] = new ResourceTile((byte)type, 255);
 					continue;
 				}
