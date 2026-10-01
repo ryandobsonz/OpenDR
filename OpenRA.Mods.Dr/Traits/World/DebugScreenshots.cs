@@ -24,7 +24,7 @@ namespace OpenRA.Mods.Dr.Traits
 	[TraitLocation(SystemActors.World)]
 	[Desc("Testing aid for converted campaign missions, idle unless the OPENDR_TEST environment variable is set:",
 		"semicolon-separated 'tick:command args' steps. Commands: shot; cash TEAM AMOUNT; killunits TEAM;",
-		"killall TEAM; kill NAME; killtype TEAM ACTOR; steal INFILTRATOR TARGET; spawn TEAM ACTOR X,Y [NAME]; order NAME ORDER TARGETNAME; explore TEAM; camera X,Y.",
+		"killall TEAM; kill NAME; killtype TEAM ACTOR; steal INFILTRATOR TARGET; select NAME; spawn TEAM ACTOR X,Y [NAME]; order NAME ORDER TARGETNAME; explore TEAM; camera X,Y.",
 		"Names are the map's actor names (u<id> for original units) or those given to spawn. OPENDR_SCREENSHOT_TICKS=t1,t2 adds shots.")]
 	public class DebugScreenshotsInfo : TraitInfo<DebugScreenshots> { }
 
@@ -139,6 +139,10 @@ namespace OpenRA.Mods.Dr.Traits
 
 				case "kill":
 					Named(w, c[1]).Kill(w.WorldActor);
+					break;
+
+				case "select":
+					w.Selection.Combine(w, new[] { Named(w, c[1]) }, false, false);
 					break;
 
 				case "killtype":

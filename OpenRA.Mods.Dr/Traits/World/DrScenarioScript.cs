@@ -198,6 +198,8 @@ namespace OpenRA.Mods.Dr.Traits
 
 			LoadMessages(map);
 			LoadBriefing(map);
+			if (Game.ModData.MapCache[map.Uid].TryGetMessage("briefing", out var shown))
+				Trace("briefing: " + shown[..Math.Min(shown.Length, 60)].Replace('\n', ' '));
 			AddObjectives();
 			LoadTrees(map);
 
