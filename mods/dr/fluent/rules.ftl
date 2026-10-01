@@ -696,6 +696,20 @@ notification-reinforcements-have-arrived = Reinforcements have arrived.
 bot-normal-ai =
     .name = Normal AI
 
+## campaign-dr.yaml
+
+bot-dr-campaign =
+    .name = Original Campaign AI
+
+dropdown-difficulty =
+    .label = Difficulty
+    .description = Picks the original mission's easy, medium or hard enemy AI.
+
+options-difficulty =
+    .easy = Easy
+    .normal = Normal
+    .hard = Hard
+
 temporal-rift-power =
     .name = Temporal Rift
     .description = Opens a temporal rift at the target location.

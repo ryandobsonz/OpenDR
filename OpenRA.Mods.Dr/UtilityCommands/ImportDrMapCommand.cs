@@ -35,7 +35,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 		int numMultiStarts = 0;
 		protected bool skipActors = true;
 
-		static readonly string[] KnownUnknownThings = new string[]
+		internal static readonly string[] KnownUnknownThings = new string[]
 		{
 			"smcrater", // Not sure if these are ever deliberately placed on a map
 			"medcrater",
@@ -55,7 +55,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			"animtree6"
 		};
 
-		static readonly string[] KnownUnknownBuildings = new string[]
+		internal static readonly string[] KnownUnknownBuildings = new string[]
 		{
 			"fh1_decoy",
 			"ih1_decoy",
@@ -73,9 +73,9 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			"impmn",
 		};
 
-		static readonly string[] KnownUnknownUnits = Array.Empty<string>();
+		internal static readonly string[] KnownUnknownUnits = Array.Empty<string>();
 
-		static readonly Dictionary<string, string> ThingNames = new()
+		internal static readonly Dictionary<string, string> ThingNames = new()
 		{
 			{ "tree1", "aotre000" },
 			{ "tree2", "aotre001" },
@@ -116,7 +116,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			{ "watercrater", "eowcocr0" },
 		};
 
-		static readonly Dictionary<string, string> UnitNames = new()
+		internal static readonly Dictionary<string, string> UnitNames = new()
 		{
 			{ "FGConstructionCrew", "ConstructionRig" },
 			{ "FGGroundTransporter", "Freighter" },
@@ -189,7 +189,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			{ "TConstructionCrew", "ConstructionRig" }
 		};
 
-		static readonly Dictionary<string, string> BuildingNames = new()
+		internal static readonly Dictionary<string, string> BuildingNames = new()
 		{
 			{ "fgpp", "Power" },
 			{ "imppp", "Power" },
@@ -340,44 +340,9 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 				if (!ModData.DefaultTerrainInfo.TryGetValue(tilesetName, out var terrainInfo))
 					throw new InvalidDataException($"Unknown tileset {tilesetName}");
 
-				var mapSize = new Size(width + 2, height + 2);
-				Map = new Map(ModData, terrainInfo, mapSize)
-				{
-					Title = Path.GetFileNameWithoutExtension(filename),
-					Author = "OpenDR",
-					RequiresMod = ModData.Manifest.Id
-				};
-
-				SetBounds(Map, width + 2, height + 2);
-
-				var unknownTileTypeHash = new HashSet<int>();
-
-				for (var y = 0; y < height; y++)
-				{
-					for (var x = 0; x < width; x++)
-					{
-						var byte1 = stream.ReadUInt8(); // Tile type 0-63, with art variations repeated 1-4
-						var byte2 = stream.ReadUInt8(); // Which art variation to use. 0 = 1-4, 1 = 5-8
-						var byte3 = stream.ReadUInt8(); // Base elevation, defaults to 2.
-						var byte4 = stream.ReadUInt8(); // Unknown, defaults to 36. Seems to be elevation related.
-						var byte5 = stream.ReadUInt8(); // Unknown, defaults to 73. Seems to be elevation related.
-						var byte6 = stream.ReadUInt8(); // Unknown, defaults to 146. Seems to be elevation related.
-
-						var subindex = (byte)(byte1 / 64);
-						var variation = (byte)(subindex * (byte2 + 1));
-						var tileType = byte1 % 16;
-
-						tileType--;
-						if (tileType < 0)
-						{
-							tileType = 15;
-						}
-
-						var tilePos = new CPos(x + 1, y + 1);
-						Map.Tiles[tilePos] = new TerrainTile((ushort)tileType, variation);
-						Map.Height[tilePos] = byte3;
-					}
-				}
+				Map = LoadTerrain(ModData, stream, terrainInfo, width, height);
+				Map.Title = Path.GetFileNameWithoutExtension(filename);
+				Map.Author = "OpenDR";
 
 				// What's after the tiles? Water/Taelon?
 				stream.ReadInt32(); // Always one
@@ -395,6 +360,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 					byteList.Add(byte1);
 				}
 
+				var actors = new List<MiniYamlNode>();
 				using (var scn = File.OpenRead(scnFilename))
 				{
 					var scnFile = new ScnFile(scn);
@@ -419,8 +385,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 								new OwnerInit("Neutral")
 							};
 
-							// TODO: Broken in playtest-20241116
-							// Map.ActorDefinitions.Add(new MiniYamlNode("Actor" + i++, ar.Save()));
+							actors.Add(new MiniYamlNode("Actor" + actors.Count, ar.Save()));
 						}
 					}
 
@@ -449,8 +414,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 								new OwnerInit("Neutral")
 							};
 
-							// TODO: Broken in playtest-20241116
-							// Map.ActorDefinitions.Add(new MiniYamlNode("Actor" + i++, ar.Save()));
+							actors.Add(new MiniYamlNode("Actor" + actors.Count, ar.Save()));
 						}
 					}
 
@@ -491,8 +455,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 									new OwnerInit(MapPlayers.Players.Values.First(p => p.Team == playerIndex).Name)
 								};
 
-								// TODO: Broken in playtest-20241116
-								// Map.ActorDefinitions.Add(new MiniYamlNode("Actor" + i++, ar.Save()));
+								actors.Add(new MiniYamlNode("Actor" + actors.Count, ar.Save()));
 							}
 						}
 
@@ -531,8 +494,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 									new OwnerInit(ownerName)
 								};
 
-								// TODO: Broken in playtest-20241116
-								// Map.ActorDefinitions.Add(new MiniYamlNode("Actor" + i++, ar.Save()));
+								actors.Add(new MiniYamlNode("Actor" + actors.Count, ar.Save()));
 							}
 						}
 					}
@@ -566,12 +528,52 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 				}
 
 				Map.PlayerDefinitions = MapPlayers.ToMiniYaml();
+				Map.ActorDefinitions = actors;
 			}
 
 			var dest = Path.Combine("..\\..\\mods\\dr\\maps", Path.GetFileNameWithoutExtension(mapFilename).ToLowerInvariant() + ".oramap");
 
 			Map.Save(ZipFileLoader.Create(dest));
 			Console.WriteLine(dest + " saved.");
+		}
+
+		/// <summary>Reads a .map file's tiles, from just after its width and height, into a new map.</summary>
+		internal static Map LoadTerrain(ModData modData, Stream stream, ITerrainInfo terrainInfo, int width, int height)
+		{
+			var map = new Map(modData, terrainInfo, new Size(width + 2, height + 2))
+			{
+				RequiresMod = modData.Manifest.Id
+			};
+
+			SetBounds(map, width + 2, height + 2);
+
+			for (var y = 0; y < height; y++)
+			{
+				for (var x = 0; x < width; x++)
+				{
+					var byte1 = stream.ReadUInt8(); // Tile type 0-63, with art variations repeated 1-4
+					var byte2 = stream.ReadUInt8(); // Which art variation to use. 0 = 1-4, 1 = 5-8
+					var byte3 = stream.ReadUInt8(); // Base elevation, defaults to 2.
+					stream.ReadUInt8(); // Unknown, defaults to 36. Seems to be elevation related.
+					stream.ReadUInt8(); // Unknown, defaults to 73. Seems to be elevation related.
+					stream.ReadUInt8(); // Unknown, defaults to 146. Seems to be elevation related.
+
+					// Eight variations: byte1's top bits pick one of four within byte2's bank. A few maps hold
+					// stray bank values above 1, which the original game wrapped.
+					var variation = (byte)((byte2 & 1) * 4 + byte1 / 64);
+					var tileType = byte1 % 16;
+
+					tileType--;
+					if (tileType < 0)
+						tileType = 15;
+
+					var tilePos = new CPos(x + 1, y + 1);
+					map.Tiles[tilePos] = new TerrainTile((ushort)tileType, variation);
+					map.Height[tilePos] = byte3;
+				}
+			}
+
+			return map;
 		}
 
 		static void SetBounds(Map map, int width, int height)

@@ -51,6 +51,7 @@ FileSystem: ContentInstallerFileSystem
 MapFolders:
 	dr|maps: System
 	~^SupportDir|maps/dr/playtest-20260222: User
+	~^SupportDir|maps/dr/campaign: System
 
 Rules:
 	dr|rules/palettes.yaml

@@ -1,0 +1,19 @@
+# Campaign missions converted from the original game by --import-dr-campaign.
+# Their scenario, trigger and AI files run through DrScenarioScript.
+
+World:
+	ScriptLobbyDropdown@difficulty:
+		ID: difficulty
+		Label: dropdown-difficulty.label
+		Description: dropdown-difficulty.description
+		Values:
+			easy: options-difficulty.easy
+			normal: options-difficulty.normal
+			hard: options-difficulty.hard
+		Default: normal
+	DebugScreenshots:
+
+Player:
+	ModularBot@DrCampaign:
+		Name: bot-dr-campaign.name
+		Type: dr-campaign
