@@ -77,14 +77,7 @@ changes the rate.
   convert but lack most of their units and buildings.
 - **No campaign menu**: missions are chosen from the mission browser.
 
-## Testing aids
+## Working on it
 
-- Every trigger transition and action is logged to `drscenario.log` in the
-  OpenRA log folder, with the game cycle.
-- `OPENDR_TEST` (an environment variable) scripts a test run of a campaign
-  map: `100:cash 0 6000;110:killunits 1;120:spawn 0 trainingfacility.fguard 18,48;145:shot`
-  meets mission 1's goals and screenshots the victory. Commands are listed
-  on `DebugScreenshots`; screenshots go to the OpenRA screenshot folder and
-  work with the screen locked.
-- `Launch.Map=<uid>` on the game's command line starts a mission directly;
-  `OpenRA.Utility dr --map-hash <map folder>` gives the uid.
+Building, the test scripts and the scripted win tests for every mission:
+[CLAUDE.md](CLAUDE.md).

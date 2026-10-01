@@ -1,0 +1,117 @@
+# Working on the Dark Reign campaign port
+
+This fork of OpenDR plays the original Dark Reign campaign at modern
+resolutions. **What it is, how it works and what differs from the original:
+[CAMPAIGN.md](CAMPAIGN.md).** This file is how to keep working on it.
+
+## Where things are
+
+| | |
+|---|---|
+| Repo | `C:\Users\ryand\Git\OpenDR`, `main`, pushed to `github.com/ryandobsonz/OpenDR` (upstream `drogoganor/OpenDR`) |
+| Game data | `DrData/` (gitignored, never commit it): the Dark Reign 1.8.2 install, copied from Ghost's `/mnt/GhostMedia/WindowsGames/dkreign`. `DrData/manuals/` holds the original manuals; the AIP manual (`Artificial Intelligence Personalities/aipmanual.pdf`) is the spec for the triggers and AI |
+| Game content | `%APPDATA%\OpenRA\Content\dr`, installed by `import-campaign.ps1` |
+| Converted missions | `%APPDATA%\OpenRA\maps\dr\campaign\<m01f…>` — rebuilt by every import |
+| Logs, screenshots | `%APPDATA%\OpenRA\Logs` (`drscenario.log` traces every trigger), `%APPDATA%\OpenRA\Screenshots` |
+| Engine | `engine/`, OpenRA `playtest-20260222`, fetched by `make.cmd all`; .NET 8 SDK in `C:\Program Files\dotnet` |
+
+It is a standalone game on the user's PC, not part of Ghost or WinGE.
+
+## The loop
+
+```
+pwsh -File tools/campaign/build-import.ps1 M01F            # build, convert M01F (no names: all 25)
+pwsh -File tools/campaign/run-game.ps1 -Mission m01f -Seconds 40 -Test "..."   # play it, print the trace
+pwsh -File tools/campaign/smoke.ps1                        # every mission 40 s: crashes, triggers, a screenshot
+pwsh -File tools/campaign/wintest.ps1                      # every mission: destroy the enemy, report the winner
+python tools/campaign/check-missions.py                    # static: unsupported commands, missing ids
+```
+
+`smoke.ps1` and `wintest.ps1` take about 20 minutes; run them in the
+background. Their output goes to `tools/campaign/out/`.
+
+- **Close OpenRA before building**: a running game locks the mod DLL and the
+  build fails to copy it. `build-import.ps1` closes it first.
+- **The laptop is usually locked during long runs**, so desktop captures are
+  black. The game screenshots itself instead: `-Ticks` or a `shot` step.
+- **Don't leave a shell sitting in a map folder** while importing: Windows
+  then refuses to delete it and that mission silently fails.
+- Run the scripts with `pwsh`; the PowerShell tool may be Windows
+  PowerShell 5.1.
+
+## Scripted tests
+
+`-Test` sets `OPENDR_TEST`: semicolon-separated `tick:command` steps, run by
+`Traits/World/DebugScreenshots.cs`. Commands: `shot`, `cash TEAM N`,
+`killunits TEAM`, `killall TEAM`, `kill NAME`, `killtype TEAM ACTOR`,
+`spawn TEAM ACTOR X,Y [NAME]`, `teleport NAME X,Y`, `steal INFILTRATOR TARGET`,
+`select NAME`, `explore TEAM`, `camera X,Y`. Names are map actor names (`u<id>`,
+the original unit id) or those given to `spawn`. `order` exists, but its
+orders never reached units; use `teleport` and `steal` instead.
+
+Every mission's win condition has been met this way. Where destroying the
+enemy is not enough, these are the recipes (cells are map cells, the
+original's tile + 1):
+
+| Mission | Win condition | Test |
+|---|---|---|
+| M01F | Destroy listed units, 8000 credits, training facility and assembly plant | `100:cash 0 6000;110:killunits 1;120:spawn 0 trainingfacility.fguard 18,48;130:spawn 0 assemblyplant.human 22,43` |
+| M01I | The same for the Imperium | `100:killall 1;110:spawn 0 trainingfacility.cyborg 12,12;120:spawn 0 assemblyplant.cyborg 16,6` |
+| M02I | Five plasma turrets and no enemy buildings | five `spawn 0 plasmaturret` from `10,28` to `22,28`, then `100:killall 1` |
+| M03F | Free every prison (a unit in each region), raze team 1 | `50:killunits 1`, `teleport u69644` through 18,71 13,13 70,7 56,76 76,77 76,88 56,89, `spawn 0 raider 65,82`, `680:killall 1` |
+| M05F | 30000 credits | `100:cash 0 30000` |
+| M06F | Steal the hover transporter plans, then destroy the assembly plant | `10:killtype 1 plasmaturret;20:spawn 0 hq.human 58,58 home;25:spawn 0 infiltrator 56,62 spy;40:steal spy u2316;300:kill u2316` |
+| M09F | Karoch (u47470) to the transport | `100:teleport u47470 109,112` |
+| M09I | Karoch (u24570) to the transport | `100:teleport u24570 109,112` |
+| M13T | Destroy teams 1 and 2, then a unit at Togra's workshop | `100:killall 1;101:killall 2;200:spawn 0 raider 112,99` |
+
+The rest (M02F, M03I, M04, M05I, M06I, M07, M08, M10–M12) win when
+`wintest.ps1` destroys their enemies. Its "losses" in M03F and M09 come from
+killing teams the player must protect, as alliances change at cycle 0.
+
+## Lessons that cost time
+
+- **`Map.Contains` tests projected cells**: terrain height lifts cells near
+  the top edge out of it. The importer checks the plain map size, then nudges
+  actors down until they are visible; an actor with no visible footprint
+  crashes the engine.
+- **Map rules merge by exact actor name**: an override must use the mod's
+  own casing (`Power.Constructing`, not `power.constructing`), or the game
+  fails on duplicate actors. The importer reads the casing from the mod's
+  rules files.
+- **Tech levels come from `deftxt` only**: the expansion's `deftxtEx` tables
+  raise every original unit to level 40.
+- **OpenDR doesn't load `structures-retail.yaml`**, so anything defined only
+  there (`FGPlanetaryDefense`) is unusable; the finale uses
+  `FGPlanetaryDefense2`.
+- **A missing unit or building counts as destroyed** in `CritDestroy*`. If
+  the importer skips an actor that an end tree names, a mission can be lost
+  or won at cycle 0. `check-missions.py` lists such ids; those it lists now
+  are absent from the original scenarios too.
+- **The mission browser finds maps by folder name**, and only in a `System`
+  map folder: `~^SupportDir|maps/dr/campaign: System` in `mod.yaml`.
+- **The 1.8.2 copy is not what OpenDR's content installer expects**; it looks
+  for GOG or the CD. `import-campaign.ps1` copies the files itself, the
+  "Auran extra content" OpenDR would otherwise download included.
+
+## Open work, roughly by value
+
+- **A human playthrough.** Nothing has been played by hand; the user's play
+  is the real test. Expect AI tuning (`DrAipBotModule`) to follow.
+- **Stolen designs buildable.** Plans are recorded (`DrPlanStealing.cs`) but
+  grant nothing: OpenRA prerequisites have no "or", so it needs a generated
+  copy of each stealable actor with its own prerequisite.
+- **The expansion campaigns** (`sh*`, `fgx*`) convert but lack most units.
+  They would need tech tables from `deftxtEx` and the Shadowhand and Xenite
+  units added to OpenDR.
+- **A campaign menu** in place of the mission browser, and the SMK cutscenes
+  (OpenRA cannot play Smacker).
+
+## Committing
+
+Commit to `main` and push. Never commit `DrData/` or anything converted from
+the game. End messages with:
+
+```
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+```
