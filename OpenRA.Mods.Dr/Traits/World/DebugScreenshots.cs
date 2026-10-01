@@ -18,17 +18,18 @@ using OpenRA.Mods.Common.Traits;
 using OpenRA.Mods.Dr.UtilityCommands;
 using OpenRA.Primitives;
 using OpenRA.Traits;
+using OpenRA.Widgets;
 
 namespace OpenRA.Mods.Dr.Traits
 {
 	[TraitLocation(SystemActors.World)]
 	[Desc("Testing aid for converted campaign missions, idle unless the OPENDR_TEST environment variable is set:",
-		"semicolon-separated 'tick:command args' steps. Commands: shot; cash TEAM AMOUNT; killunits TEAM;",
+		"semicolon-separated 'tick:command args' steps. Commands: shot; leave; cash TEAM AMOUNT; killunits TEAM;",
 		"killall TEAM; kill NAME; killtype TEAM ACTOR; steal INFILTRATOR TARGET; select NAME; teleport NAME X,Y; spawn TEAM ACTOR X,Y [NAME]; order NAME ORDER TARGETNAME; explore TEAM; camera X,Y.",
 		"Names are the map's actor names (u<id> for original units) or those given to spawn. OPENDR_SCREENSHOT_TICKS=t1,t2 adds shots.")]
 	public class DebugScreenshotsInfo : TraitInfo<DebugScreenshots> { }
 
-	public class DebugScreenshots : ITick, IWorldLoaded
+	public class DebugScreenshots : ITick, IWorldLoaded, IGameOver
 	{
 		readonly List<(long Tick, string[] Command)> steps = new();
 		readonly Dictionary<string, Actor> spawned = new();
@@ -50,6 +51,23 @@ namespace OpenRA.Mods.Dr.Traits
 		}
 
 		void IWorldLoaded.WorldLoaded(World w, WorldRenderer wr) { worldRenderer = wr; }
+
+		/// <summary>The game pauses when it ends; the steps still to come then run a second apart.</summary>
+		void IGameOver.GameOver(World world)
+		{
+			var delay = 2000;
+			foreach (var (_, command) in steps.Where(s => s.Tick > tick).OrderBy(s => s.Tick))
+			{
+				var c = command;
+				Game.RunAfterDelay(delay, () =>
+				{
+					if (Game.IsCurrentWorld(world))
+						Run(world, c);
+				});
+
+				delay += 1000;
+			}
+		}
 
 		void ITick.Tick(Actor self)
 		{
@@ -90,6 +108,16 @@ namespace OpenRA.Mods.Dr.Traits
 			{
 				case "shot":
 					Game.TakeScreenshot();
+					break;
+
+				case "leave":
+					// As the in-game menu's Leave does: back to the menus.
+					Game.RunAfterTick(() =>
+					{
+						Game.Disconnect();
+						Ui.ResetAll();
+						Game.LoadShellMap();
+					});
 					break;
 
 				case "cash":

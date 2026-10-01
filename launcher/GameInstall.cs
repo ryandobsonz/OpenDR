@@ -59,6 +59,9 @@ namespace DarkReign.Launcher
 
 		public bool HasEngine => File.Exists(GameExe);
 		public static bool HasGameData => File.Exists(Path.Combine(ContentDir, "SPRITES.FTG"));
+
+		// The original menus' art, which imports before the shell existed did not copy.
+		public static bool HasShellArt => File.Exists(Path.Combine(ContentDir, "shell", "shell.rld"));
 		public static int CampaignMissions => Directory.Exists(CampaignDir) ? Directory.EnumerateDirectories(CampaignDir).Count() : 0;
 
 		// Why the game cannot start yet, or null when it can.

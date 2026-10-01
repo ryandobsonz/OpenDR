@@ -397,6 +397,14 @@ namespace OpenRA.Mods.Dr.Traits
 
 			var mo = player.PlayerActor.TraitOrDefault<MissionObjectives>();
 			var won = winner == 0 || (winner > 0 && Alliance(0, winner) == 2 && Alliance(winner, 0) == 2);
+
+			// For the shell's mission ring.
+			if (!world.IsReplay)
+			{
+				var scn = world.Map.Package.Contents.First(f => f.EndsWith(".scn", StringComparison.OrdinalIgnoreCase));
+				DrCampaign.RecordResult(Path.GetFileNameWithoutExtension(scn).ToLowerInvariant(), won);
+			}
+
 			if (won)
 			{
 				foreach (var key in new[] { 2, 3 })

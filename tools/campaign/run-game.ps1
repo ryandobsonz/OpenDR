@@ -1,7 +1,8 @@
-param([string]$Mission = "", [string]$Map = "", [int]$Seconds = 40, [string]$Ticks = "", [string]$Test = "", [switch]$Keep)
+param([string]$Mission = "", [string]$Map = "", [int]$Seconds = 40, [string]$Ticks = "", [string]$Test = "", [string]$Shell = "", [switch]$Keep)
 # Launches OpenDR straight into a campaign map, waits, then closes it and prints exceptions, the debug log,
 # screenshots and drscenario.log. Screenshots come from the game itself, so they work with the screen locked.
 #   pwsh -File tools/campaign/run-game.ps1 -Mission m01f -Seconds 40 [-Ticks "100,500"] [-Test "100:cash 0 6000;145:shot"] [-Keep]
+# Without a mission it opens the menus; -Shell "main;cube:3;story:3;briefingf:3" screenshots those shell screens.
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $env:PATH = "C:\Program Files\dotnet;$env:PATH"
 $env:MOD_SEARCH_PATHS = "$root\mods"
@@ -18,8 +19,12 @@ $shots = "$env:APPDATA\OpenRA\Screenshots"
 if (Test-Path $shots) { Remove-Item "$shots\*" -Recurse -Force -ErrorAction SilentlyContinue }
 $env:OPENDR_SCREENSHOT_TICKS = $Ticks
 $env:OPENDR_TEST = $Test
+# Test wins stay out of the player's campaign progress (dr-campaign.yaml).
+$env:OPENDR_SCRIPTED = "1"
+$env:OPENDR_SHELL = $Shell
 $launchArgs = @("Game.Mod=dr", "Engine.EngineDir=..", "Engine.ModSearchPaths=$root\mods",
-    "Graphics.Mode=Windowed", "Graphics.WindowedSize=1600,900", "Launch.Map=$Map")
+    "Graphics.Mode=Windowed", "Graphics.WindowedSize=1600,900")
+if ($Map) { $launchArgs += "Launch.Map=$Map" }
 # The engine saves its command-line settings into settings.yaml as it loads, which would leave the
 # player's own game windowed at 1600x900; put their file back once the test game has loaded.
 $settings = "$env:APPDATA\OpenRA\settings.yaml"

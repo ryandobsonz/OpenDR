@@ -170,6 +170,7 @@ ChromeLayout:
 	common|chrome/gamesave-browser.yaml
 	#common|chrome/load-game-browser.yaml
 	dr|chrome/gamesave-loading.yaml
+	dr|chrome/shell.yaml
 	common|chrome/dropdowns.yaml
 	common|chrome/musicplayer.yaml
 	common|chrome/tooltips.yaml

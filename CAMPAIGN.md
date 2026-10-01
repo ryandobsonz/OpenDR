@@ -19,8 +19,10 @@ own copy. The converted maps go to your OpenRA map folder
    the game content OpenDR reads, the snow tileset and the CD soundtrack
    included, and converts every mission. Run it by hand with mission names
    after it (`M01F M01I`) to convert only those.
-3. **Play**: the campaigns are under **Missions**, Freedom Guard and
-   Imperium, each ending in mission 13, The Togran.
+3. **Play** opens the original game's menus: **Single Player → Start New
+   Game** leads to the mission ring, where each mission is played from
+   either side, ending in mission 13, The Togran. See
+   [The original menus](#the-original-menus).
 
 Run the import again after changing the importer: the maps are rebuilt from
 the game files each time.
@@ -78,6 +80,49 @@ repository, or everything beside it in a package.
   game if it is running, instead of a second launcher. Engine relaunches are
   exempt.
 
+## The original menus
+
+The game opens on Dark Reign's own menus, the "shell", drawn from the
+game's `dark/shell/shell.rld` (the import copies it with `shell.rli`, its
+index) at their original 640×480, scaled to fit the screen at 4:3 with
+black either side. Each image is first enlarged by a whole factor (up to 3)
+pixel for pixel, then filtered to the screen's size: sharp, without the
+uneven pixels of a plain stretch. Text is set in the shell's own bitmap
+fonts. Without the shell files (an import from before them) the game opens
+OpenRA's menu, and the launcher offers to install again.
+
+| Screen | What it does |
+|---|---|
+| Main menu | Single Player; Multi Player, Instant Action (a skirmish), Construction Kit (the map editor), Credits and Replays open OpenRA's panels over the shell's art; Settings in the left corner, as the original's Darker sat there; Quit asks with the original's dialog. Replay Intro waits for video |
+| Single Player | Continue Campaign, Start New Game (which asks before clearing progress), Load Game, Play Custom Mission (the mission browser) |
+| The cube: missions | The mission ring around the Encryption Key, read as a clock: mission N at N o'clock, the gate at the top is 12, the key itself 13. A disc lights its side's emblem once that side has won it; locked missions are dark. Click to select, again (or the arrow above) to open. Basic and Advanced Training on either side; the left arrow turns to Options, the bottom arrow leaves |
+| Mission background | The briefing's setting (its `\0`); the Freedom Guard or Imperium emblem at the top picks the side |
+| Briefing | The orders (`\1`), Freedom Guard's or Imperium's screen; **Launch** starts the mission in the engine |
+| Debrief | After a win: the historical outcome (`\2`) and Togra's word (`\3`); on to the next mission |
+| Training | The two Basic or Advanced missions (`t1`–`t4`), each to its briefing |
+| Options | Mission progression; Load Game and Settings (OpenRA's panels); OpenRA Menu, OpenRA's own main menu; Quit to Main Menu or to Windows |
+
+As in the original, missions open in order: the first always, each next once
+the one before is won from either side, the Togran's once all twelve are.
+Progress is kept in `%APPDATA%\OpenRA\dr-campaign.yaml` (the missions won,
+by map name); the mission's own script records a win, so missions played
+from the mission browser count too. Escape goes back a screen.
+
+`shell.rli` lists the library's images (`ILR.`, 32-byte entries: name,
+type, offset, packed and unpacked size). Each is LZ packed: a flag byte per
+eight items, a set bit a literal byte, a clear one a 16-bit reference of 12
+bits of distance back and 4 of length less 3. Unpacked, an image is a `TLF.`
+container of a `3BGR` palette chunk and a `LXIP` chunk of width, height and
+8-bit pixels; colour 0 is transparent. A font is a strip of glyphs, one per
+character code, between full-height columns of the colour in its top left
+corner. The button positions are the game's own (`dark/shell/shellCFG.h`);
+the rest are where each lit overlay matches its screen.
+
+Code: `FileFormats/DrShellLibrary.cs` (the files), `Graphics/DrShellArt.cs`
+(textures and fonts), `Widgets/DrShell*Widget.cs` (the 640×480 screen and
+its buttons, text and ring), `Widgets/Logic/DrShellLogic.cs` (the screens),
+`DrCampaign.cs` (progress), `mods/dr/chrome/shell.yaml` (the layout).
+
 ## Playing on a large screen
 
 OpenRA draws at the screen's own resolution and aspect ratio, ultrawide
@@ -97,6 +142,7 @@ sharper and larger, not more detailed.
 | Formats | `FileFormats/DrScript.cs`, `DrScenario.cs`, `AipFile.cs` | The scenario script syntax shared by `.scn`, `.fsm` and `.end`; the AI personality format |
 | Triggers | `Traits/World/DrScenarioScript.cs`, `Scripting/DrConditionTree.cs` | The FSM and end-condition trees, special forces, patrols, messages and their voices, the win or loss with the briefing's historical outcome |
 | Enemy AI | `Traits/BotModules/DrAipBotModule.cs` | Each AI team builds through its AIP's accounts and sends troops by its priorities |
+| Menus | `Widgets/Logic/DrShellLogic.cs` | The original menus and mission ring, from the game's shell art; see [The original menus](#the-original-menus) |
 
 The behaviour follows the game's own AIP manual (the *AIP and Scenario End
 Conditions Guide*), shipped with the game. Its one undocumented criterion,
@@ -132,7 +178,11 @@ changes the rate.
   high, which OpenRA's default stance already is.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
-- **No campaign menu**: missions are chosen from the mission browser.
+- **The menus are still**: OpenRA cannot play Smacker video, so the cube
+  does not turn between faces (`CUBE*.SMK`), the Encryption Key does not
+  fill in as missions are won (`M_RING*.SMK`), and the intro and cutscenes
+  are missing. The menus are silent, the credits are OpenRA's, and the
+  cube's archive face and the debrief's statistics are not there yet.
 
 ## Working on it
 

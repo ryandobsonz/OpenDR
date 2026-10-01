@@ -174,3 +174,43 @@ button-production-types-economy-tooltip = Economy
 button-production-types-infantry-tooltip = Infantry
 button-production-types-vehicle-tooltip = Vehicles
 button-production-types-upgrade-tooltip = Upgrades
+
+## shell.yaml
+button-dr-shell-single-player = SINGLE PLAYER
+button-dr-shell-multi-player = MULTI PLAYER
+button-dr-shell-instant-action = INSTANT ACTION
+button-dr-shell-construction-kit = CONSTRUCTION KIT
+button-dr-shell-replay-intro = REPLAY INTRO
+button-dr-shell-credits = CREDITS
+button-dr-shell-quit = QUIT
+button-dr-shell-settings = SETTINGS
+button-dr-shell-replays = REPLAYS
+button-dr-shell-continue = CONTINUE CAMPAIGN
+button-dr-shell-start-new-game = START NEW GAME
+button-dr-shell-load-game = LOAD GAME
+button-dr-shell-custom-mission = PLAY CUSTOM MISSION
+button-dr-shell-previous-menu = PREVIOUS MENU
+button-dr-shell-basic-training =
+    BASIC
+    TRAINING
+button-dr-shell-advanced-training =
+    ADVANCED
+    TRAINING
+button-dr-shell-back = BACK
+button-dr-shell-engine-menu = OPENRA MENU
+button-dr-shell-quit-to-main-menu = QUIT TO MAIN MENU
+button-dr-shell-quit-to-windows = QUIT TO WINDOWS
+label-dr-shell-combat-engineering = COMBAT ENGINEERING
+label-dr-shell-resource-management = RESOURCE MANAGEMENT
+label-dr-shell-path-management = PATH MANAGEMENT
+label-dr-shell-unit-ai-controls = UNIT AI CONTROLS
+label-dr-shell-mission-progression = MISSION PROGRESSION
+label-dr-shell-mission-successful = MISSION SUCCESSFUL
+label-dr-shell-freedom-guard = Freedom Guard
+label-dr-shell-imperium = Imperium
+label-dr-shell-won = Won
+
+dialog-dr-new-campaign =
+    .title = Start a New Game
+    .prompt = Starting a new game clears the missions you have won.
+    .confirm = Start Over

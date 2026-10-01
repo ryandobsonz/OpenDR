@@ -146,7 +146,7 @@ World:
 		PanelName: SKIRMISH_STATS
 	RadarPings:
 	LoadWidgetAtGameStart:
-	#	ShellmapRoot: MAINMENU_PRERELEASE_NOTIFICATION
+		ShellmapRoot: DR_SHELL
 	DrResourceLayer:
 		ResourceValueMultiplier: 1000
 		ResourceTypes:

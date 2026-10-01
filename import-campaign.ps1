@@ -29,6 +29,8 @@ if (-not $dark) { throw "No 'dark' folder in $GameDir" }
 $content = Join-Path ([Environment]::GetFolderPath("ApplicationData")) "OpenRA\Content\dr"
 $files = [ordered]@{
     "SPRITES.FTG" = "graphics/SPRITES.FTG"; "SOUNDS.FTG" = "sndfx/SOUNDS.FTG"; "shell/SOUNDS.FTG" = "shell/SOUNDS.FTG"
+    # The original menus' art and fonts, which the shell (DrShellLogic) draws.
+    "shell/shell.rld" = "shell/shell.rld"; "shell/shell.rli" = "shell/shell.rli"
     "mouse.crs" = "graphics/INTFACE/MOUSE.CRS"; "spriteEx.ftg" = "graphics/spriteEx.ftg"; "soundsEx.ftg" = "sndfx/soundsEx.ftg"
     "BARREN/BARREN.TIL" = "graphics/BARREN/BARREN.TIL"; "BARREN/BARREN.PAL" = "graphics/BARREN/BARREN.PAL"; "BARREN/SPRITES.FTG" = "graphics/BARREN/SPRITES.FTG"
     "JUNGLE/JUNGLE.TIL" = "graphics/JUNGLE/JUNGLE.TIL"; "JUNGLE/JUNGLE.PAL" = "graphics/JUNGLE/JUNGLE.PAL"; "JUNGLE/SPRITES.FTG" = "graphics/JUNGLE/SPRITES.FTG"

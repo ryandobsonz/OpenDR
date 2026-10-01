@@ -1,0 +1,232 @@
+# The original game's menus (DrShellLogic), drawn from its shell art at 640x480 and scaled to the window.
+# Areas are left, top, width, height in that 640x480 screen; most come from the game's shellCFG.h or
+# from where each lit overlay sits on its screen.
+
+DrShell@DR_SHELL:
+	Logic: DrShellLogic
+	Width: WINDOW_WIDTH
+	Height: WINDOW_HEIGHT
+	Children:
+		Container@MAIN:
+			Children:
+				DrShellButton@SINGLE_PLAYER:
+					Area: 240,86,160,30
+					Text: button-dr-shell-single-player
+				DrShellButton@MULTI_PLAYER:
+					Area: 240,136,160,30
+					Text: button-dr-shell-multi-player
+				DrShellButton@INSTANT_ACTION:
+					Area: 240,188,160,30
+					Text: button-dr-shell-instant-action
+				DrShellButton@CONSTRUCTION_KIT:
+					Area: 240,238,160,30
+					Text: button-dr-shell-construction-kit
+				DrShellButton@REPLAY_INTRO:
+					Area: 240,291,160,30
+					Text: button-dr-shell-replay-intro
+				DrShellButton@CREDITS:
+					Area: 240,342,160,30
+					Text: button-dr-shell-credits
+				DrShellButton@QUIT:
+					Area: 240,411,160,30
+					Text: button-dr-shell-quit
+				DrShellButton@SETTINGS:
+					Area: 44,411,160,30
+					Text: button-dr-shell-settings
+				DrShellButton@REPLAYS:
+					Area: 434,411,160,30
+					Text: button-dr-shell-replays
+		Container@QUIT_PROMPT:
+			Children:
+				DrShellImage@PANEL:
+					Area: 125,139,390,202
+					Image: p_quit
+					Opaque: true
+				DrShellButton@YES:
+					Area: 192,264,120,42
+				DrShellButton@NO:
+					Area: 317,264,110,42
+		Container@SINGLE:
+			Children:
+				DrShellButton@CONTINUE:
+					Area: 240,136,160,30
+					Text: button-dr-shell-continue
+				DrShellButton@START_NEW_GAME:
+					Area: 240,188,160,30
+					Text: button-dr-shell-start-new-game
+				DrShellButton@LOAD_GAME:
+					Area: 240,238,160,30
+					Text: button-dr-shell-load-game
+				DrShellButton@CUSTOM_MISSION:
+					Area: 240,288,160,30
+					Text: button-dr-shell-custom-mission
+				DrShellButton@PREVIOUS_MENU:
+					Area: 240,412,160,30
+					Text: button-dr-shell-previous-menu
+		Container@CUBE:
+			Children:
+				DrShellLabel@MISSION_TITLE:
+					Area: 160,58,320,40
+				DrShellButton@BASIC_TRAINING:
+					Area: 22,77,114,50
+					Text: button-dr-shell-basic-training
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+					Image: m_basic
+					ImageOffset: -22,-7
+				DrShellButton@ADVANCED_TRAINING:
+					Area: 502,77,114,50
+					Text: button-dr-shell-advanced-training
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+					Image: m_adv
+					ImageOffset: -18,-7
+				DrShellImage@FG_LOGO:
+					Area: 235,105,42,54
+					Image: m_flogo2
+					Frames: 2
+				DrShellImage@IMP_LOGO:
+					Area: 365,105,42,55
+					Image: m_ilogo2
+					Frames: 2
+				DrShellRing@RING:
+					Area: 220,155,200,215
+				DrShellButton@UP:
+					Area: 290,0,62,36
+					Image: cube_up
+				DrShellButton@LEFT:
+					Area: 0,210,44,56
+					Image: cube_lft
+				DrShellButton@RIGHT:
+					Area: 595,210,44,58
+					Image: cube_rgt
+				DrShellButton@DOWN:
+					Area: 290,445,62,34
+					Image: m_down
+		Container@STORY:
+			Children:
+				DrShellLabel@TITLE:
+					Area: 192,111,252,22
+				DrShellText@TEXT:
+					Area: 112,160,400,240
+				DrShellButton@SCROLL_UP:
+					Area: 522,154,16,14
+				DrShellButton@SCROLL_DOWN:
+					Area: 522,398,16,14
+				DrShellButton@FREEDOM_GUARD:
+					Area: 112,0,50,82
+					Image: s_logofg
+				DrShellButton@IMPERIUM:
+					Area: 482,0,50,82
+					Image: s_logoim
+				DrShellButton@DOWN:
+					Area: 290,445,62,35
+					Image: cube_dn
+		Container@BRIEFING_F:
+			Children:
+				DrShellText@TEXT:
+					Area: 28,28,262,325
+				DrShellButton@LAUNCH:
+					Area: 324,364,162,54
+					Image: bf_lnch
+				DrShellButton@BACK:
+					Area: 18,402,134,50
+					Text: button-dr-shell-back
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+		Container@BRIEFING_I:
+			Children:
+				DrShellText@TEXT:
+					Area: 348,150,262,280
+				DrShellButton@LAUNCH:
+					Area: 138,350,116,78
+					Image: bi_lnch
+				DrShellButton@BACK:
+					Area: 8,408,80,46
+					Text: button-dr-shell-back
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+		Container@TRAINING:
+			Children:
+				DrShellButton@ONE:
+					Area: 105,95,214,50
+					Image: t_one
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+				DrShellButton@TWO:
+					Area: 322,95,214,50
+					Image: t_two
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+				DrShellText@TEXT:
+					Area: 125,165,370,225
+				DrShellButton@SCROLL_UP:
+					Area: 501,158,16,14
+				DrShellButton@SCROLL_DOWN:
+					Area: 501,382,16,14
+				DrShellButton@UP:
+					Area: 290,0,62,36
+					Image: cube_up
+				DrShellButton@DOWN:
+					Area: 290,445,62,35
+					Image: cube_dn
+		Container@OPTIONS:
+			Children:
+				DrShellLabel@TITLE:
+					Area: 378,178,152,20
+					Font: font12
+					Text: label-dr-shell-mission-progression
+				DrShellText@PROGRESS:
+					Area: 82,150,262,185
+				DrShellButton@SCROLL_UP:
+					Area: 353,144,16,14
+				DrShellButton@SCROLL_DOWN:
+					Area: 353,328,16,14
+				DrShellButton@LOAD_GAME:
+					Area: 67,342,152,32
+					Image: o_btn1
+					Text: button-dr-shell-load-game
+				DrShellButton@SETTINGS:
+					Area: 218,342,152,32
+					Image: o_btn2
+					Text: button-dr-shell-settings
+				DrShellButton@ENGINE_MENU:
+					Area: 369,342,152,32
+					Image: o_btn3
+					Text: button-dr-shell-engine-menu
+				DrShellButton@QUIT_TO_MAIN_MENU:
+					Area: 48,382,262,66
+					Image: o_quittm
+					Text: button-dr-shell-quit-to-main-menu
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+				DrShellButton@QUIT_TO_WINDOWS:
+					Area: 286,409,262,66
+					Image: o_quitt95
+					Text: button-dr-shell-quit-to-windows
+					Font: font14n
+					HoverFont: font14o
+					SelectedFont: font14s
+				DrShellButton@RIGHT:
+					Area: 595,210,44,58
+					Image: cube_rgt
+		Container@DEBRIEF:
+			Children:
+				DrShellLabel@TITLE:
+					Area: 195,119,255,20
+				DrShellText@TEXT:
+					Area: 125,168,380,125
+				DrShellButton@SCROLL_UP:
+					Area: 510,163,16,14
+				DrShellButton@SCROLL_DOWN:
+					Area: 510,284,16,14
+				DrShellButton@CONTINUE:
+					Area: 290,0,62,36
+					Image: cube_up

@@ -24,7 +24,10 @@ GETTING STARTED
    copies the graphics, sounds and music and converts the campaign missions,
    in about a minute.
 
-3. Choose PLAY. The campaigns are under Missions.
+3. Choose PLAY. The game opens on Dark Reign's own menus: Single Player,
+   then Start New Game, leads to the mission ring. Each mission can be
+   played from either side, and winning one opens the next. If the game
+   was installed before these menus existed, install from the game again.
 
 
 SETTINGS

@@ -13,6 +13,7 @@ resolutions. **What it is, how it works and what differs from the original:
 | Game content | `%APPDATA%\OpenRA\Content\dr`, installed by `import-campaign.ps1` |
 | Converted missions | `%APPDATA%\OpenRA\maps\dr\campaign\<m01f…>` — rebuilt by every import |
 | Logs, screenshots | `%APPDATA%\OpenRA\Logs` (`drscenario.log` traces every trigger), `%APPDATA%\OpenRA\Screenshots` |
+| Campaign progress | `%APPDATA%\OpenRA\dr-campaign.yaml`: the missions won, which the menus' mission ring reads |
 | Engine | `engine/`, OpenRA `playtest-20260222`, fetched by `make.cmd all`; .NET 8 SDK in `C:\Program Files\dotnet` |
 | Launcher | `launcher/` (WPF); `pwsh -File launcher/build.ps1` builds `DarkReign.exe` in the root and the game host `engine/bin/DarkReignGame.exe` (both gitignored). How it works: [CAMPAIGN.md](CAMPAIGN.md#the-launcher) |
 | Package | `pwsh -File packaging/windows/package.ps1 [-Version x]`: `build/Dark Reign/` and a zip, self-contained, built from a copy of the sources in `build/src` (gitignored). About 5 minutes |
@@ -64,7 +65,27 @@ background. Their output goes to `tools/campaign/out/`.
 `spawn TEAM ACTOR X,Y [NAME]`, `teleport NAME X,Y`, `steal INFILTRATOR TARGET`,
 `select NAME`, `explore TEAM`, `camera X,Y`. Names are map actor names (`u<id>`,
 the original unit id) or those given to `spawn`. `order` exists, but its
-orders never reached units; use `teleport` and `steal` instead.
+orders never reached units; use `teleport` and `steal` instead. `leave`
+returns to the menus, as the in-game Leave does. The game pauses when it
+ends, so steps still to come then run a second apart in real time.
+
+The menus have their own script. Without `-Mission`, `run-game.ps1 -Shell`
+sets `OPENDR_SHELL`: steps 40 ticks apart, each screenshotted 30 ticks in.
+A step is a screen (`main`, `quit`, `single`, `cube`, `story`, `briefingf`,
+`briefingi`, `training`, `options`, `debrief`), optionally with a mission
+and side (`story:3`, `briefingi:7:i`; locks are ignored), or
+`click:X:Y`, a click at a point of the 640×480 screen through the real input
+path. The script outlives a mission, so it can play through one:
+
+```
+-Shell "click:320:101;click:320:203;click:364:193;click:137:41;click:405:391;click:321:18"
+-Test "100:cash 0 6000;110:killunits 1;120:spawn 0 trainingfacility.fguard 18,48;130:spawn 0 assemblyplant.human 22,43;500:leave"
+```
+
+Single Player, Start New Game, mission 1, Freedom Guard, Launch; M01F is won
+and left; the debrief's Continue returns to the ring with mission 2 open.
+`run-game.ps1` sets `OPENDR_SCRIPTED`, which keeps test wins out of the
+player's `dr-campaign.yaml`.
 
 Every mission's win condition has been met this way. Where destroying the
 enemy is not enough, these are the recipes (cells are map cells, the
@@ -122,8 +143,16 @@ killing teams the player must protect, as alliances change at cycle 0.
   global properties flow to project references. `launcher/build.ps1` passes
   `BuildProjectReferences=false`.
 - **Backslashes in shell heredocs get mangled** by the Bash tool (`\b` in
-  `engine\bin` became a backspace twice). Edit Windows paths with the Edit
-  or Write tools, and scan for control characters after scripted edits.
+  `engine\bin` became a backspace twice, the briefing codes `\0`–`\3` NULs).
+  Edit Windows paths with the Edit or Write tools, and scan for control
+  characters after scripted edits.
+- **Textures must be powers of two** in size, or the engine throws on
+  upload. The shell's art takes the top left of a larger sheet, and its
+  enlargement stops at 3× so a screen fits 2048².
+- **A game's end pauses the world** (`World.EndGame`): world traits stop
+  ticking, which is why `DebugScreenshots` runs late steps in real time.
+- **Training briefings have no `\0`**: their description is the text before
+  `\1`.
 
 ## Open work, roughly by value
 
@@ -135,9 +164,17 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **The expansion campaigns** (`sh*`, `fgx*`) convert but lack most units.
   They would need tech tables from `deftxtEx` and the Shadowhand and Xenite
   units added to OpenDR.
-- **A campaign menu** in place of the mission browser, and the SMK cutscenes
-  (OpenRA cannot play Smacker). The goal is a remaster: the original menus,
-  even at their own resolution stretched, with the game on the new engine.
+- **The menus' video.** The original menus are in
+  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)) but still: a Smacker
+  decoder in the mod would give the cube's turns (`CUBE*.SMK`, `CUBE_IN`
+  from the bridge), the Encryption Key filling in (`M_RING00`–`13`,
+  `M_TOGRAN`, 144×144 at the ring's centre), the briefing screens'
+  animations (`BRIEF_F`/`BRIEF_I`) and the intro and cutscenes in
+  `dark/movies`. Then the shell's sounds (`shell/SOUNDS.FTG`, copied but not
+  mounted), the original credits (`shell/CREDITS.TXT`, `~T` titles and `~N`
+  names), the archive face (`archive`, text in `shell/ARCHIVE.TXT`) and the
+  debrief's statistics grid. The goal is a remaster: the original menus with
+  the game on the new engine.
 - **Distribution polish**: the package is a zip. An installer (Start menu,
   uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
   warns on first run). The GOG install lookup has never met a real GOG
