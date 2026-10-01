@@ -10,14 +10,37 @@ own copy. The converted maps go to your OpenRA map folder
 
 ## Setting it up
 
-1. Build OpenDR: `make.cmd all` (needs the .NET 8 SDK).
+1. Build OpenDR: `make.cmd all` (needs the .NET 8 SDK), then the launcher:
+   `pwsh -File launcher/build.ps1`, which puts `DarkReign.exe` in the root.
 2. With a full copy of the game (the 1.8.2 community patch, or GOG), run
    `pwsh -File import-campaign.ps1 -GameDir "<the folder holding dark>"`.
    It installs the game content OpenDR reads, the snow tileset and the CD
    soundtrack included, and converts every mission. Name missions after it (`M01F M01I`) to convert
    only those.
-3. Launch OpenDR; the campaigns are under **Missions**: Freedom Guard and
+3. Start `DarkReign.exe`; the campaigns are under **Missions**: Freedom Guard and
    Imperium, each ending in mission 13, The Togran.
+
+## The launcher
+
+`DarkReign.exe` (`launcher/`, WPF, .NET 8 Desktop Runtime) is the front door:
+Play, and the display settings, over the 1.8.2 patch launcher's art when the
+import has copied it. Its settings are the game's own, in OpenRA's
+`settings.yaml`, so it and the in-game Display menu always agree:
+
+| Setting | Choices |
+|---|---|
+| Display mode | Fullscreen (exclusive, any of the monitor's modes), Borderless (the desktop resolution; the default), Windowed |
+| Monitor | Each monitor by name, numbered as the engine numbers them |
+| Resolution | The monitor's modes for fullscreen; common window sizes that fit it for windowed |
+| Interface size | 100–200%, limited to what leaves the game its minimum 1024×720 layout |
+| Battlefield zoom, VSync | As in the game |
+
+It starts the game with `OPENRA_DISPLAY_SCALE=1`, so sizes are real pixels and
+Interface size alone enlarges the interface; without it the engine also
+multiplies by the Windows display scale. Borderless stores a fullscreen size
+of 0,0: the engine sizes its drawing surface from that setting, and any other
+value leaves it smaller than the screen. If the game exits with an error, the
+launcher comes back with a button to the logs.
 
 Run the import again after changing the importer: the maps are rebuilt from
 the game files each time.
@@ -29,7 +52,7 @@ included, and scales the battlefield so its visible height stays in a band
 set by **Settings → Display → Battlefield Zoom**: Close shows 480 to 600
 game pixels top to bottom, about the original's 640×480 view; Medium 600 to
 900; Far 900 to 1300. The mouse wheel zooms within the band. At 4K, also set
-**UI Scale** to 2 or more, or the sidebar is small. The art is the 1997 art
+**Interface size** (the game's UI Scale) to 200%, or the sidebar is small. The art is the 1997 art
 scaled up: sharper and larger, not more detailed.
 
 ## How it works

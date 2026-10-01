@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Dark Reign launcher: DarkReign.exe at the repository root, built by launcher/build.ps1.
+       It is separate from OpenRA.Mods.Dr.sln so that the mod's build never touches it. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>DarkReign</AssemblyName>
+    <RootNamespace>DarkReign.Launcher</RootNamespace>
+    <ApplicationIcon>..\packaging\dark-reign\out\icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Product>Dark Reign</Product>
+    <AssemblyTitle>Dark Reign</AssemblyTitle>
+    <Description>Dark Reign: The Future of War</Description>
+    <Version>0.1.0</Version>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\packaging\dark-reign\out\icon.ico" Link="Assets\icon.ico" />
+    <Resource Include="..\packaging\dark-reign\out\icon_256x256.png" Link="Assets\emblem.png" />
+  </ItemGroup>
+
+</Project>

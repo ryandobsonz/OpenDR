@@ -20,9 +20,17 @@ $env:OPENDR_SCREENSHOT_TICKS = $Ticks
 $env:OPENDR_TEST = $Test
 $launchArgs = @("Game.Mod=dr", "Engine.EngineDir=..", "Engine.ModSearchPaths=$root\mods",
     "Graphics.Mode=Windowed", "Graphics.WindowedSize=1600,900", "Launch.Map=$Map")
+# The engine saves its command-line settings into settings.yaml as it loads, which would leave the
+# player's own game windowed at 1600x900; put their file back once the test game has loaded.
+$settings = "$env:APPDATA\OpenRA\settings.yaml"
+$saved = if (Test-Path $settings) { [IO.File]::ReadAllBytes($settings) } else { $null }
 $p = Start-Process -FilePath bin\OpenRA.exe -ArgumentList $launchArgs -PassThru
-Start-Sleep -Seconds $Seconds
-if (-not $Keep) { $p | Stop-Process -Force -ErrorAction SilentlyContinue }
+try {
+    Start-Sleep -Seconds $Seconds
+    if (-not $Keep) { $p | Stop-Process -Force -ErrorAction SilentlyContinue; $p.WaitForExit(5000) | Out-Null }
+} finally {
+    if ($saved) { [IO.File]::WriteAllBytes($settings, $saved) } else { Remove-Item $settings -ErrorAction SilentlyContinue }
+}
 Get-ChildItem $log -Filter "exception*" -ErrorAction SilentlyContinue | ForEach-Object { "--- $($_.Name)"; Get-Content $_.FullName | Select-Object -First 25 }
 foreach ($f in "debug.log", "server.log") {
     $c = Get-Content "$log\$f" -ErrorAction SilentlyContinue | Where-Object { $_ -notmatch "Taking screenshot|Initial m|Accepted connection|has joined|is Ready" }

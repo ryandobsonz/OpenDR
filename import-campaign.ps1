@@ -54,6 +54,16 @@ if ($legal) { Copy-Item -LiteralPath $legal.FullName (Join-Path $content "legal.
 elseif (-not (Test-Path (Join-Path $content "legal.txt"))) { Set-Content (Join-Path $content "legal.txt") "Dark Reign extra content" }
 if ($missing) { Write-Warning ("Not found in the game, so not installed: " + ($missing -join ", ")) }
 
+# The 1.8.2 patch launcher's art, which DarkReign.exe shows; without it, it draws its own.
+$art = Find-Path $GameDir "launcher/ldata"
+if ($art) {
+    New-Item -ItemType Directory -Force (Join-Path $content "launcher") | Out-Null
+    foreach ($image in "bg-dkreign.png", "logo-dkreign.png") {
+        $source = Find-Path $art $image
+        if ($source) { Copy-Item -LiteralPath $source (Join-Path $content "launcher\$image") -Force }
+    }
+}
+
 # The CD soundtrack, as the 1.8.2 patch and GOG keep it beside the game.
 $music = Find-Path $GameDir "music"
 if ($music) {

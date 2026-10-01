@@ -14,6 +14,7 @@ resolutions. **What it is, how it works and what differs from the original:
 | Converted missions | `%APPDATA%\OpenRA\maps\dr\campaign\<m01f…>` — rebuilt by every import |
 | Logs, screenshots | `%APPDATA%\OpenRA\Logs` (`drscenario.log` traces every trigger), `%APPDATA%\OpenRA\Screenshots` |
 | Engine | `engine/`, OpenRA `playtest-20260222`, fetched by `make.cmd all`; .NET 8 SDK in `C:\Program Files\dotnet` |
+| Launcher | `launcher/` (WPF); `pwsh -File launcher/build.ps1` publishes `DarkReign.exe` to the root (gitignored). How it works: [CAMPAIGN.md](CAMPAIGN.md#the-launcher) |
 
 It is a standalone game on the user's PC, not part of Ghost or WinGE.
 
@@ -38,6 +39,10 @@ background. Their output goes to `tools/campaign/out/`.
   then refuses to delete it and that mission silently fails.
 - Run the scripts with `pwsh`; the PowerShell tool may be Windows
   PowerShell 5.1.
+- **The player's game shares everything with the tests**: settings, logs,
+  screenshots. `run-game.ps1` restores `settings.yaml` after each run (the
+  engine saves the test's windowed 1600×900 into it), but it and
+  `build-import.ps1` still close any running OpenRA, the user's game included.
 
 ## Scripted tests
 
@@ -105,7 +110,11 @@ killing teams the player must protect, as alliances change at cycle 0.
   They would need tech tables from `deftxtEx` and the Shadowhand and Xenite
   units added to OpenDR.
 - **A campaign menu** in place of the mission browser, and the SMK cutscenes
-  (OpenRA cannot play Smacker).
+  (OpenRA cannot play Smacker). The goal is a remaster: the original menus,
+  even at their own resolution stretched, with the game on the new engine.
+- **The launcher, further**: install the game data from a chosen Dark Reign
+  folder (what `import-campaign.ps1` does), the game window titled and
+  iconed as Dark Reign rather than OpenRA, and a self-contained package.
 
 ## Committing
 

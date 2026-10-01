@@ -1,0 +1,168 @@
+<Window x:Class="DarkReign.Launcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dark Reign" Width="1040" Height="650"
+        ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Night}" FontFamily="{StaticResource Body}" Foreground="{StaticResource Text}"
+        Icon="pack://application:,,,/DarkReign;component/Assets/icon.ico"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        KeyDown="OnKeyDown">
+
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="34" ResizeBorderThickness="0" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+
+  <Border BorderBrush="{StaticResource Line}" BorderThickness="1">
+    <Grid ClipToBounds="True">
+
+      <!-- Backdrop: the original launcher's council chamber when the game data has it, otherwise a night sky. -->
+      <Rectangle>
+        <Rectangle.Fill>
+          <RadialGradientBrush Center="0.5,0.8" GradientOrigin="0.5,0.8" RadiusX="0.9" RadiusY="0.9">
+            <GradientStop Offset="0" Color="#FF1B2B57" />
+            <GradientStop Offset="0.55" Color="#FF0B1330" />
+            <GradientStop Offset="1" Color="#FF060A14" />
+          </RadialGradientBrush>
+        </Rectangle.Fill>
+      </Rectangle>
+      <Image x:Name="Backdrop" Stretch="UniformToFill" VerticalAlignment="Bottom" />
+      <Rectangle IsHitTestVisible="False">
+        <Rectangle.Fill>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#CC060A14" />
+            <GradientStop Offset="0.38" Color="#33060A14" />
+            <GradientStop Offset="0.62" Color="#22060A14" />
+            <GradientStop Offset="1" Color="#F2060A14" />
+          </LinearGradientBrush>
+        </Rectangle.Fill>
+      </Rectangle>
+
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="34" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Caption -->
+        <Grid Grid.Row="0">
+          <StackPanel Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
+            <Image Source="pack://application:,,,/DarkReign;component/Assets/emblem.png" Width="16" Height="16" />
+            <TextBlock Text="DARK REIGN" Margin="8,1,0,0" FontFamily="{StaticResource Display}" FontSize="12"
+                       Foreground="{StaticResource Muted}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" ToolTip="Minimise"
+                    WindowChrome.IsHitTestVisibleInChrome="True" Click="OnMinimise" />
+            <Button Style="{StaticResource CloseCaptionButton}" Content="&#xE8BB;" ToolTip="Close"
+                    WindowChrome.IsHitTestVisibleInChrome="True" Click="OnExit" />
+          </StackPanel>
+        </Grid>
+
+        <!-- Home -->
+        <Grid x:Name="Home" Grid.Row="1">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <Image x:Name="Logo" MaxWidth="640" Margin="0,4,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" />
+          <StackPanel x:Name="TextLogo" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,36,0,0">
+            <Image Source="pack://application:,,,/DarkReign;component/Assets/emblem.png" Width="96" Height="96" />
+            <TextBlock Text="DARK REIGN" FontFamily="{StaticResource Display}" FontSize="64" Margin="0,8,0,0"
+                       HorizontalAlignment="Center">
+              <TextBlock.Effect>
+                <DropShadowEffect Color="#FF6C8CFF" BlurRadius="28" ShadowDepth="0" Opacity="0.8" />
+              </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock Text="THE FUTURE OF WAR" FontFamily="{StaticResource Display}" FontSize="16"
+                       Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+          </StackPanel>
+
+          <StackPanel Grid.Row="1" Margin="0,0,0,26">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+              <Button Style="{StaticResource CommandButton}" Content="SETTINGS" MinWidth="150" Click="OnSettings" />
+              <Button x:Name="PlayButton" Style="{StaticResource PlayButton}" Content="PLAY" MinWidth="220" Margin="16,0" Click="OnPlay" />
+              <Button Style="{StaticResource CommandButton}" Content="EXIT" MinWidth="150" Click="OnExit" />
+            </StackPanel>
+            <StackPanel x:Name="StatusRow" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0" Visibility="Collapsed">
+              <TextBlock x:Name="StatusText" Foreground="{StaticResource Warn}" FontSize="13" TextWrapping="Wrap" MaxWidth="720"
+                         VerticalAlignment="Center" TextAlignment="Center" />
+              <Button x:Name="LogsButton" Style="{StaticResource CommandButton}" Content="OPEN LOGS" Height="30" FontSize="12"
+                      Padding="12,0" Margin="14,0,0,0" Visibility="Collapsed" Click="OnOpenLogs" />
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+
+        <!-- Settings -->
+        <Grid x:Name="SettingsPage" Grid.Row="1" Visibility="Collapsed">
+          <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="4"
+                  Width="700" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32,26,32,24">
+            <StackPanel>
+              <TextBlock Text="SETTINGS" FontFamily="{StaticResource Display}" FontSize="22" Foreground="{StaticResource Amber}" />
+              <TextBlock Text="Saved to the game's own settings; the in-game Display menu changes the same values."
+                         Foreground="{StaticResource Muted}" FontSize="12" Margin="0,4,0,18" />
+
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="150" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Style="{StaticResource Caption}" Text="DISPLAY MODE" VerticalAlignment="Top" Margin="0,9,0,0" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,16">
+                  <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="ModeFullscreen" Style="{StaticResource Segment}" GroupName="Mode" Content="Fullscreen" Checked="OnModeChanged" />
+                    <RadioButton x:Name="ModeBorderless" Style="{StaticResource Segment}" GroupName="Mode" Content="Borderless" Checked="OnModeChanged" />
+                    <RadioButton x:Name="ModeWindowed" Style="{StaticResource Segment}" GroupName="Mode" Content="Windowed" Checked="OnModeChanged" />
+                  </StackPanel>
+                  <TextBlock x:Name="ModeHint" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <TextBlock Grid.Row="1" Style="{StaticResource Caption}" Text="MONITOR" Margin="0,0,0,12" />
+                <ComboBox x:Name="MonitorBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,12" SelectionChanged="OnMonitorChanged" />
+
+                <TextBlock Grid.Row="2" Style="{StaticResource Caption}" Text="RESOLUTION" Margin="0,0,0,16" />
+                <ComboBox x:Name="ResolutionBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,16" SelectionChanged="OnResolutionChanged" />
+
+                <TextBlock Grid.Row="3" Style="{StaticResource Caption}" Text="INTERFACE SIZE" Margin="0,0,0,16" />
+                <StackPanel x:Name="ScaleRow" Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,16" />
+
+                <TextBlock Grid.Row="4" Style="{StaticResource Caption}" Text="BATTLEFIELD ZOOM" VerticalAlignment="Top" Margin="0,9,0,0" />
+                <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,0,0,16">
+                  <StackPanel x:Name="ZoomRow" Orientation="Horizontal" />
+                  <TextBlock x:Name="ZoomHint" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <TextBlock Grid.Row="5" Style="{StaticResource Caption}" Text="VSYNC" />
+                <CheckBox x:Name="VSyncBox" Grid.Row="5" Grid.Column="1" Style="{StaticResource Switch}"
+                          Content="Match the monitor's refresh rate" Checked="OnVSyncChanged" Unchecked="OnVSyncChanged" />
+              </Grid>
+
+              <Grid Margin="0,26,0,0">
+                <Button Style="{StaticResource CommandButton}" Content="DEFAULTS" Height="38" FontSize="13" HorizontalAlignment="Left"
+                        Click="OnDefaults" />
+                <Button Style="{StaticResource CommandButton}" Content="DONE" Height="38" FontSize="13" MinWidth="130"
+                        HorizontalAlignment="Right" BorderBrush="{StaticResource Amber}" Click="OnSettingsDone" />
+              </Grid>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- Footer -->
+        <Grid Grid.Row="2" Margin="16,0,16,10">
+          <TextBlock x:Name="Summary" FontSize="12" Foreground="{StaticResource Muted}" />
+          <TextBlock x:Name="VersionText" FontSize="12" Foreground="{StaticResource Faint}" HorizontalAlignment="Right" />
+        </Grid>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>
