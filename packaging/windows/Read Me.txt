@@ -1,0 +1,63 @@
+DARK REIGN: THE FUTURE OF WAR
+=============================
+
+The original Dark Reign campaigns, Freedom Guard and Imperium, on the OpenRA
+engine at modern resolutions: fullscreen, borderless or windowed, ultrawide
+and 4K included.
+
+
+WHAT YOU NEED
+-------------
+
+Your own copy of Dark Reign: the 1.8.2 community patch or the GOG release.
+No game data comes with this; it is copied from your copy when you install.
+Nothing else needs installing.
+
+
+GETTING STARTED
+---------------
+
+1. Run DarkReign.exe.
+
+2. Choose INSTALL FROM GAME and pick your Dark Reign folder: the one that
+   holds the game's "dark" folder. A GOG install is found for you. This
+   copies the graphics, sounds and music and converts the campaign missions,
+   in about a minute.
+
+3. Choose PLAY. The campaigns are under Missions.
+
+
+SETTINGS
+--------
+
+SETTINGS in the launcher chooses:
+
+  Display mode      Fullscreen, Borderless (recommended) or Windowed
+  Monitor           Which screen the game opens on
+  Resolution        The screen's resolutions for fullscreen, or a window size
+  Interface size    How large the sidebar and menus are; raise it on 4K
+  Battlefield zoom  How much of the battlefield is in view. Close is about
+                    the original game's 640 x 480 view
+  VSync             Matches the screen's refresh rate
+
+The game's own Settings > Display menu changes the same values.
+
+
+WHERE THINGS ARE
+----------------
+
+Settings, saved games, logs and the installed game data are kept in
+%APPDATA%\OpenRA. If the game closes unexpectedly, the launcher offers to
+open the logs.
+
+CAMPAIGN.md describes how the missions are converted and what differs from
+the original game.
+
+
+CREDITS
+-------
+
+Dark Reign was made by Auran and published by Activision in 1997.
+This is built on OpenRA (openra.net) and OpenDR by drogoganor
+(github.com/drogoganor/OpenDR), and lives at github.com/ryandobsonz/OpenDR.
+It is free software under the GNU GPL version 3: see COPYING.

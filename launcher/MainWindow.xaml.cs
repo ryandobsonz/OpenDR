@@ -111,10 +111,10 @@ namespace DarkReign.Launcher
 			var engine = "";
 			try
 			{
-				var line = File.ReadLines(Path.Combine(install.Root, "mod.config"))
-					.FirstOrDefault(l => l.StartsWith("ENGINE_VERSION=", StringComparison.Ordinal));
-				if (line != null)
-					engine = "  ·  OpenRA " + line["ENGINE_VERSION=".Length..].Trim('"');
+				// The engine's VERSION file, in engine/ or beside a packaged launcher.
+				var line = File.ReadLines(Path.Combine(install.EngineDir, "VERSION")).FirstOrDefault()?.Trim();
+				if (!string.IsNullOrEmpty(line))
+					engine = "  ·  OpenRA " + line;
 			}
 			catch (Exception)
 			{
@@ -398,11 +398,13 @@ namespace DarkReign.Launcher
 		// Asks for the player's copy of Dark Reign and runs import-campaign.ps1 on it.
 		async void Install()
 		{
+			// Starting in a copy already on this PC, picking it is one click.
+			var found = install.FindInstalledGame();
 			var dialog = new OpenFolderDialog
 			{
 				Title = "Choose your Dark Reign folder (the one that holds the game's 'dark' folder)",
-				InitialDirectory = new[] { Path.Combine(install.Root, "DrData"), @"C:\GOG Games", @"C:\Program Files (x86)\GOG Galaxy\Games" }
-					.FirstOrDefault(Directory.Exists) ?? "",
+				InitialDirectory = found ?? "",
+				FolderName = found ?? "",
 			};
 
 			if (dialog.ShowDialog(this) != true)
@@ -428,6 +430,7 @@ namespace DarkReign.Launcher
 
 			var lines = new List<string>();
 			int code;
+			installing = true;
 			try
 			{
 				code = await install.Import(gameDir, line => Dispatcher.BeginInvoke(() =>
@@ -441,6 +444,10 @@ namespace DarkReign.Launcher
 				lines.Add(ex.Message);
 				code = -1;
 			}
+			finally
+			{
+				installing = false;
+			}
 
 			ProgressSweep.BeginAnimation(Canvas.LeftProperty, null);
 			ShowPage(Home);
@@ -449,6 +456,20 @@ namespace DarkReign.Launcher
 				ShowProblem();
 			else
 				ShowProblem($"The install did not finish: {lines.LastOrDefault() ?? $"exit code {code}"}", "TRY AGAIN", Install);
+		}
+
+		bool installing;
+
+		// Closing mid-install would leave the import running unseen, and the data half copied.
+		protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+		{
+			if (installing)
+			{
+				e.Cancel = true;
+				InstallLine.Text = "Still installing: the launcher can close once this has finished.";
+			}
+
+			base.OnClosing(e);
 		}
 
 		void ShowPage(FrameworkElement page)

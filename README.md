@@ -13,8 +13,9 @@ release. No game data comes with this.
 
 1. Unzip the package anywhere and run **DarkReign.exe**.
 2. Choose **Install from game** and pick your Dark Reign folder (the one
-   holding the game's `dark` folder). It copies the graphics, sounds and
-   music and converts the campaign, in about a minute.
+   holding the game's `dark` folder; a GOG install is found for you). It
+   copies the graphics, sounds and music and converts the campaign, in about
+   a minute.
 3. **Play**. The campaigns are under **Missions**.
 
 **Settings** in the launcher choose fullscreen, borderless or windowed, the

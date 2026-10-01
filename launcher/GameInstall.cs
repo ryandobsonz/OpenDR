@@ -120,6 +120,37 @@ namespace DarkReign.Launcher
 			return null;
 		}
 
+		// A copy of Dark Reign already on this PC, to start the folder picker in: GOG's install
+		// (its registry entries), the usual GOG folders, or DrData beside a development checkout.
+		public string FindInstalledGame()
+		{
+			var candidates = new List<string>();
+			try
+			{
+				using var games = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\GOG.com\Games")
+					?? Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\GOG.com\Games");
+				foreach (var id in games?.GetSubKeyNames() ?? [])
+				{
+					using var game = games.OpenSubKey(id);
+					if (game?.GetValue("gameName") is string name && name.Contains("Dark Reign", StringComparison.OrdinalIgnoreCase)
+						&& game.GetValue("path") is string path)
+						candidates.Add(path);
+				}
+			}
+			catch (Exception)
+			{
+				// No registry access: the folders below still apply.
+			}
+
+			var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+			candidates.Add(@"C:\GOG Games\Dark Reign");
+			candidates.Add(Path.Combine(programFilesX86, "GOG Galaxy", "Games", "Dark Reign"));
+			candidates.Add(Path.Combine(programFilesX86, "GOG.com", "Dark Reign"));
+			candidates.Add(Path.Combine(Root, "DrData"));
+
+			return candidates.Where(Directory.Exists).Select(FindGameDir).FirstOrDefault(d => d != null);
+		}
+
 		// Runs import-campaign.ps1: copies the game data and converts the campaign. Each line
 		// of its output goes to the callback; the result is its exit code.
 		public async Task<int> Import(string gameDir, Action<string> output)

@@ -7,8 +7,8 @@ param([string]$Version = "")
 $ErrorActionPreference = "Stop"
 $env:PATH = "C:\Program Files\dotnet;$env:PATH"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-if (-not $Version) { $Version = (git -C $root describe --tags --always --dirty 2>$null) }
-if (-not $Version) { $Version = Get-Date -Format "yyyyMMdd" }
+# The launcher's version, which its window shows, unless one is given.
+if (-not $Version) { $Version = ([xml](Get-Content (Join-Path $root "launcher\DarkReignLauncher.csproj"))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1 }
 
 $build = Join-Path $root "build"
 $src = Join-Path $build "src"
@@ -92,7 +92,7 @@ foreach ($mod in "dr", "dr-content", "common-content") {
     Copy-Tree (Join-Path $root "mods\$mod") (Join-Path $out "mods\$mod") @("Content", "sounds_vol", "generated") @("*.dll", "*.pdb", "*.mdb")
 }
 Copy-Tree (Join-Path $engine "mods\common") (Join-Path $out "mods\common")
-Copy-Item (Join-Path $root "import-campaign.ps1"), (Join-Path $root "CAMPAIGN.md") $out
+Copy-Item (Join-Path $root "import-campaign.ps1"), (Join-Path $root "CAMPAIGN.md"), (Join-Path $PSScriptRoot "Read Me.txt") $out
 Get-ChildItem $out -Filter "*.pdb" -Recurse | Remove-Item -Force
 
 "Checking..."

@@ -128,8 +128,9 @@ killing teams the player must protect, as alliances change at cycle 0.
   (OpenRA cannot play Smacker). The goal is a remaster: the original menus,
   even at their own resolution stretched, with the game on the new engine.
 - **Distribution polish**: the package is a zip. An installer (Start menu,
-  uninstall), a code-signing certificate (unsigned, Windows SmartScreen
-  warns on first run), and finding a GOG install without asking.
+  uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
+  warns on first run). The GOG install lookup has never met a real GOG
+  install.
 
 ## Committing
 

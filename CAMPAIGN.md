@@ -27,7 +27,9 @@ the game files each time.
 
 `pwsh -File packaging/windows/package.ps1` builds what a player downloads:
 `build/Dark Reign/` and a zip of it, self-contained (no .NET install needed),
-the engine, mod, game host and launcher together, without game data. It
+the engine, mod, game host and launcher together, with a player's
+`Read Me.txt` (`packaging/windows/`), without game data. Its version is the
+launcher project's `<Version>` unless `-Version` is given. It
 builds from a copy of the sources in `build/src`, so the working `engine/bin`
 is left alone.
 
@@ -68,6 +70,13 @@ repository, or everything beside it in a package.
   launcher that has already exited for a failed restart.
 - **Failures**: if the game exits with an error, the launcher comes back
   with a button to the logs.
+- **Installing** starts the folder picker in a copy it finds: GOG's registry
+  entries (any game named Dark Reign), the usual GOG folders, or `DrData`
+  beside a checkout. The GOG lookup is untested against a real GOG install.
+  The window will not close mid-install.
+- **One at a time**: opening it again brings forward the launcher, or the
+  game if it is running, instead of a second launcher. Engine relaunches are
+  exempt.
 
 ## Playing on a large screen
 
