@@ -22,3 +22,25 @@ Player:
 		Bots: dr-campaign
 	DrAipBotModule:
 		RequiresCondition: enable-dr-campaign-ai
+
+# Plan stealing: an infiltrator escapes the facility it enters with its plans, and
+# they count as stolen once it is back at its own headquarters.
+^Headquarters:
+	DrPlanSource:
+	Targetable:
+		TargetTypes: Ground, C4, DetonateAttack, Structure, SpyInfiltrate
+
+^TrainingFacility:
+	DrPlanSource:
+	Targetable:
+		TargetTypes: Ground, C4, DetonateAttack, Structure, SpyInfiltrate
+
+^AssemblyPlant:
+	DrPlanSource:
+	Targetable:
+		TargetTypes: Ground, C4, DetonateAttack, Structure, SpyInfiltrate
+
+Infiltrator:
+	Infiltrates:
+		EnterBehaviour: Exit
+	DrCarriesPlans:

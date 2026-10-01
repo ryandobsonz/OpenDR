@@ -249,11 +249,10 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			foreach (var key in messageKeys)
 			{
 				var text = strings.GetValueOrDefault(key, "");
-				var sound = sounds.GetValueOrDefault(key, "");
-				if (text.Length == 0 && sound.Length == 0)
-					warnings.Add("message " + key);
-				else
-					messages.Append(key).Append('\t').Append(text).Append('\t').Append(sound).Append('\n');
+				// Voice keys are named after their files, and missions use ones only another mission's GAMEMSG.TXT
+				// defines; a sound that does not exist plays nothing.
+				var sound = sounds.GetValueOrDefault(key, text.Length == 0 ? key.ToLowerInvariant() + ".wav" : "");
+				messages.Append(key).Append('\t').Append(text).Append('\t').Append(sound).Append('\n');
 			}
 
 			File.WriteAllText(Path.Combine(target, "messages.txt"), messages.ToString());
@@ -263,6 +262,7 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 
 			File.WriteAllText(Path.Combine(target, "rules.yaml"), RulesYaml() + TechLevelRules(modData, scenario.TechLevel, techLevels));
 			File.WriteAllText(Path.Combine(target, "map.ftl"), BriefingFluent(missionDir, name));
+			File.WriteAllText(Path.Combine(target, "plans.txt"), PlanSources(darkDir, missionDir));
 
 			Console.WriteLine($"{name}: {map.Title}, {actors.Count} actors" + (warnings.Count > 0 ? "; skipped " + string.Join(", ", warnings) : ""));
 		}
@@ -403,6 +403,72 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			}
 
 			return levels;
+		}
+
+		/// <summary>
+		/// What an infiltrator steals from each facility: the items the original tables say it makes (an item's
+		/// SetMaker lists the SetType of the buildings and units that make it). Lines are the facility's actor,
+		/// then its plans' actors, tab-separated; buildings by their .constructing form.
+		/// </summary>
+		static string PlanSources(string darkDir, string missionDir)
+		{
+			var items = new Dictionary<string, (bool Building, int Type, int[] Makers)>(StringComparer.OrdinalIgnoreCase);
+			foreach (var folder in new[] { Resolve(darkDir, "deftxt"), missionDir }.Where(f => f != null))
+			{
+				foreach (var file in new[] { "units.txt", "build.txt" })
+				{
+					var path = Resolve(folder, file);
+					if (path == null)
+						continue;
+
+					using (var stream = File.OpenRead(path))
+					{
+						foreach (var node in DrScript.Parse(stream))
+						{
+							if ((!node.Is("DefineUnitType") && !node.Is("DefineBuildingType")) || node.Arg(0) == null)
+								continue;
+
+							var type = FindNode(node, "SetType")?.IntArg(0) ?? 0;
+							var makers = FindNode(node, "SetMaker")?.Args.Select(a => int.TryParse(a, out var v) ? v : 0).Where(v => v > 0).ToArray() ?? Array.Empty<int>();
+							items[node.Arg(0)] = (node.Is("DefineBuildingType"), type, makers);
+						}
+					}
+				}
+			}
+
+			string ActorOf(string drName, bool building)
+			{
+				var table = building ? ImportDrMapCommand.BuildingNames : ImportDrMapCommand.UnitNames;
+				var actor = table.FirstOrDefault(kv => kv.Key.Equals(drName, StringComparison.OrdinalIgnoreCase)).Value?.ToLowerInvariant();
+				return actor == null ? null : building ? actor + ".constructing" : actor;
+			}
+
+			var sb = new StringBuilder();
+			foreach (var facility in ImportDrMapCommand.BuildingNames.GroupBy(kv => kv.Value.ToLowerInvariant()))
+			{
+				var types = facility.Select(kv => items.TryGetValue(kv.Key, out var i) ? i.Type : 0).Where(t => t > 0).ToHashSet();
+				var plans = items.Where(kv => kv.Value.Makers.Any(types.Contains))
+					.Select(kv => ActorOf(kv.Key, kv.Value.Building)).Where(a => a != null).Distinct().OrderBy(a => a).ToList();
+				if (plans.Count > 0)
+					sb.Append(facility.Key).Append('\t').Append(string.Join("\t", plans)).Append('\n');
+			}
+
+			return sb.ToString();
+		}
+
+		static DrScriptNode FindNode(DrScriptNode node, string name)
+		{
+			foreach (var c in node.Children)
+			{
+				if (c.Is(name))
+					return c;
+
+				var inner = FindNode(c, name);
+				if (inner != null)
+					return inner;
+			}
+
+			return null;
 		}
 
 		static int? FindTechLevel(DrScriptNode node)

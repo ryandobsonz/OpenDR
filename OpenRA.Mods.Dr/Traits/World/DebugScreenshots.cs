@@ -24,12 +24,14 @@ namespace OpenRA.Mods.Dr.Traits
 	[TraitLocation(SystemActors.World)]
 	[Desc("Testing aid for converted campaign missions, idle unless the OPENDR_TEST environment variable is set:",
 		"semicolon-separated 'tick:command args' steps. Commands: shot; cash TEAM AMOUNT; killunits TEAM;",
-		"killall TEAM; spawn TEAM ACTOR X,Y; explore TEAM; camera X,Y. OPENDR_SCREENSHOT_TICKS=t1,t2 adds shots.")]
+		"killall TEAM; kill NAME; killtype TEAM ACTOR; steal INFILTRATOR TARGET; spawn TEAM ACTOR X,Y [NAME]; order NAME ORDER TARGETNAME; explore TEAM; camera X,Y.",
+		"Names are the map's actor names (u<id> for original units) or those given to spawn. OPENDR_SCREENSHOT_TICKS=t1,t2 adds shots.")]
 	public class DebugScreenshotsInfo : TraitInfo<DebugScreenshots> { }
 
 	public class DebugScreenshots : ITick, IWorldLoaded
 	{
 		readonly List<(long Tick, string[] Command)> steps = new();
+		readonly Dictionary<string, Actor> spawned = new();
 		WorldRenderer worldRenderer;
 		long tick;
 
@@ -67,6 +69,14 @@ namespace OpenRA.Mods.Dr.Traits
 
 		static Player Team(World w, string team) => w.Players.First(p => p.InternalName == ImportDrCampaignCommand.TeamName(int.Parse(team, CultureInfo.InvariantCulture)));
 
+		Actor Named(World w, string name)
+		{
+			if (spawned.TryGetValue(name, out var a))
+				return a;
+
+			return w.WorldActor.Trait<SpawnMapActors>().Actors[name];
+		}
+
 		static CPos Cell(string xy)
 		{
 			var parts = xy.Split(',');
@@ -100,7 +110,42 @@ namespace OpenRA.Mods.Dr.Traits
 				{
 					var p = Team(w, c[1]);
 					var cell = Cell(c[3]);
-					w.AddFrameEndTask(ww => ww.CreateActor(c[2].ToLowerInvariant(), new TypeDictionary { new LocationInit(cell), new OwnerInit(p) }));
+					w.AddFrameEndTask(ww =>
+					{
+						var a = ww.CreateActor(c[2].ToLowerInvariant(), new TypeDictionary { new LocationInit(cell), new OwnerInit(p) });
+						if (c.Length > 4)
+							spawned[c[4]] = a;
+					});
+					break;
+				}
+
+				case "order":
+				{
+					var actor = Named(w, c[1]);
+					var target = Named(w, c[3]);
+					w.IssueOrder(new Order(c[2], actor, Target.FromActor(target), false));
+					break;
+				}
+
+				case "steal":
+				{
+					// As a completed infiltration would, without the walk in.
+					var infiltrator = Named(w, c[1]);
+					var target = Named(w, c[2]);
+					foreach (var n in target.TraitsImplementing<INotifyInfiltrated>())
+						n.Infiltrated(target, infiltrator, default);
+					break;
+				}
+
+				case "kill":
+					Named(w, c[1]).Kill(w.WorldActor);
+					break;
+
+				case "killtype":
+				{
+					var p = Team(w, c[1]);
+					foreach (var a in w.Actors.Where(a => a.Owner == p && !a.IsDead && a.IsInWorld && a.Info.Name == c[2].ToLowerInvariant()).ToList())
+						a.Kill(w.WorldActor);
 					break;
 				}
 

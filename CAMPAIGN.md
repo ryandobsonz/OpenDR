@@ -51,11 +51,15 @@ changes the rate.
   manual closely; troop allocation follows its formulas, but unit strength is
   cost divided by 10, where the original weighed firepower and hitpoints.
   Expect the enemy to play differently in the details.
-- **Not yet in OpenDR, so missions needing them cannot be finished as
-  designed:** stealing plans with the Infiltrator (`CritStealPlan` is never
-  met), phasing, the water contaminator, and water and taelon as separate
-  resources (collected resources count as credits; `CritCollectWater` and
-  `CritCollectMineral` use credits earned).
+- **Stealing plans** (`Traits/DrPlanStealing.cs`): an Infiltrator that
+  enters an enemy headquarters, training facility or assembly plant leaves
+  with the plans of what that facility makes in the original tables, and
+  they are stolen once it is back beside its own headquarters, which is what
+  mission 6's goals check. The stolen designs do not yet become buildable.
+- **Not yet in OpenDR:** phasing, the water contaminator, and water and
+  taelon as separate resources (collected resources count as credits;
+  `CritCollectWater` and `CritCollectMineral` use credits earned). No
+  original campaign mission needs them to be won.
 - **Harassing a region** (`CritHarassRegion`, one use) counts the team's units
   fighting in the region, not damage done.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)

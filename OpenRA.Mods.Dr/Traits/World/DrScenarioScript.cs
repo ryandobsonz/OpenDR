@@ -88,6 +88,22 @@ namespace OpenRA.Mods.Dr.Traits
 		/// <summary>The AIP file a team's FSM last switched to, for the team's strategic AI; null until it does.</summary>
 		public string CurrentAip(int team) => aips.GetValueOrDefault(team);
 
+		readonly Dictionary<Player, HashSet<string>> stolenPlans = new();
+		readonly Dictionary<string, string[]> planSources = new();
+
+		/// <summary>What an infiltrator steals from a facility, by the original tables; null if they name none.</summary>
+		public string[] PlansFor(string facility) => planSources.GetValueOrDefault(facility);
+
+		/// <summary>An infiltrator brought these actor types' plans home.</summary>
+		public void PlansStolen(Player p, IEnumerable<string> plans)
+		{
+			if (!stolenPlans.TryGetValue(p, out var set))
+				stolenPlans[p] = set = new HashSet<string>();
+
+			set.UnionWith(plans);
+			Trace($"team {TeamOf(p)} stole plans: {string.Join(", ", plans)}");
+		}
+
 		void IWorldLoaded.WorldLoaded(World w, WorldRenderer wr)
 		{
 			// Open on the player's start location, else their first building.
@@ -164,6 +180,21 @@ namespace OpenRA.Mods.Dr.Traits
 			foreach (var kv in scenario.Patrols)
 				if (kv.Value.Points.Count > 0 && actorsById.TryGetValue(kv.Key, out var a) && a.Info.HasTraitInfo<IMoveInfo>())
 					patrols[a] = (kv.Value, 0, 1);
+
+			if (map.Package.Contains("plans.txt"))
+			{
+				using (var s = map.Open("plans.txt"))
+				using (var reader = new StreamReader(s))
+				{
+					string line;
+					while ((line = reader.ReadLine()) != null)
+					{
+						var fields = line.Split('	');
+						if (fields.Length > 1)
+							planSources[fields[0]] = fields[1..];
+					}
+				}
+			}
 
 			LoadMessages(map);
 			LoadBriefing(map);
@@ -516,8 +547,14 @@ namespace OpenRA.Mods.Dr.Traits
 					return player != null && player.PlayerActor.Trait<PlayerResources>().Earned >= n.IntArg(0);
 
 				case "critstealplan":
-					// Needs the Infiltrator's plan stealing, which OpenDR does not have yet.
-					return false;
+				{
+					if (!teams.TryGetValue(n.IntArg(0), out var thief) || !stolenPlans.TryGetValue(thief, out var plans))
+						return false;
+
+					var unit = ActorType(n.Arg(1), false);
+					var building = ActorType(n.Arg(1), true);
+					return (unit != null && plans.Contains(unit)) || (building != null && plans.Contains(building + ".constructing"));
+				}
 
 				default:
 					Log.Write("debug", $"DrScenarioScript: unsupported criterion {n}");
