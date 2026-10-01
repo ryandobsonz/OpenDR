@@ -27,7 +27,7 @@ FileSystem: ContentInstallerFileSystem
 #		~content|JUNGLE/spriteEx.ftg: jungleEx
 #		~content|SNOW/SNOW.TIL
 #		~content|SNOW/SNOW.PAL
-#		~content|SNOW/SPRITES.FTG: snow
+		~content|SNOW/SPRITES.FTG: snow
 #		~content|SNOW/spriteEx.ftg: snowEx
 #		~content|ALIEN/ALIEN.TIL
 #		~content|ALIEN/ALIEN.PAL
@@ -112,7 +112,7 @@ TileSets:
 	dr|tilesets/aust.yaml
 	dr|tilesets/barren.yaml
 	dr|tilesets/jungle.yaml
-	#dr|tilesets/snow.yaml
+	dr|tilesets/snow.yaml
 	dr|tilesets/volcanic.yaml
 
 Cursors:

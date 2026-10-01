@@ -76,7 +76,8 @@ namespace OpenRA.Mods.Dr.UtilityCommands
 			using (var s = File.OpenRead(scnPath))
 				scenario = new DrScenario(s);
 
-			var tileset = scenario.Terrain switch { "SNOW" => "AUST", "ALIEN" => "AURALIEN", var t => t };
+			// The campaign needs the full game, which has the snow art the demo lacks.
+			var tileset = scenario.Terrain switch { "ALIEN" => "AURALIEN", var t => t };
 			if (!modData.DefaultTerrainInfo.TryGetValue(tileset, out var terrainInfo))
 				throw new InvalidDataException($"Unknown tileset {tileset}");
 
