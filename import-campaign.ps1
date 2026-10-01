@@ -25,6 +25,7 @@ function Find-Path([string]$root, [string]$relative) {
 $dark = Find-Path $GameDir "dark"
 if (-not $dark) { throw "No 'dark' folder in $GameDir" }
 
+"Copying the game data..."
 $content = Join-Path ([Environment]::GetFolderPath("ApplicationData")) "OpenRA\Content\dr"
 $files = [ordered]@{
     "SPRITES.FTG" = "graphics/SPRITES.FTG"; "SOUNDS.FTG" = "sndfx/SOUNDS.FTG"; "shell/SOUNDS.FTG" = "shell/SOUNDS.FTG"
@@ -70,12 +71,19 @@ if ($music) {
     Get-ChildItem -LiteralPath $music -Filter "Track*.ogg" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content $_.Name) -Force }
 }
 
+# The repository keeps the engine in engine/bin; a package (packaging/windows/package.ps1) beside this script.
+"Converting the campaign missions..."
 $env:MOD_SEARCH_PATHS = Join-Path $PSScriptRoot "mods"
-$env:ENGINE_DIR = ".."
+$utility = Join-Path $PSScriptRoot "engine\bin\OpenRA.Utility.exe"
+if (Test-Path $utility) { $env:ENGINE_DIR = ".." } else { $utility = Join-Path $PSScriptRoot "OpenRA.Utility.exe" }
 $maps = Join-Path ([Environment]::GetFolderPath("ApplicationData")) "OpenRA\maps\dr\campaign"
-Push-Location (Join-Path $PSScriptRoot "engine")
+Push-Location (Split-Path $utility)
 try {
-    dotnet bin/OpenRA.Utility.dll dr --import-dr-campaign $dark $maps @Missions
+    # Windows PowerShell turns a native command's error output into a terminating error under "Stop".
+    $ErrorActionPreference = "Continue"
+    & $utility dr --import-dr-campaign $dark $maps @Missions
+    $code = $LASTEXITCODE
 } finally {
     Pop-Location
 }
+exit $code

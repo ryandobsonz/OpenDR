@@ -14,7 +14,8 @@ resolutions. **What it is, how it works and what differs from the original:
 | Converted missions | `%APPDATA%\OpenRA\maps\dr\campaign\<m01f…>` — rebuilt by every import |
 | Logs, screenshots | `%APPDATA%\OpenRA\Logs` (`drscenario.log` traces every trigger), `%APPDATA%\OpenRA\Screenshots` |
 | Engine | `engine/`, OpenRA `playtest-20260222`, fetched by `make.cmd all`; .NET 8 SDK in `C:\Program Files\dotnet` |
-| Launcher | `launcher/` (WPF); `pwsh -File launcher/build.ps1` publishes `DarkReign.exe` to the root (gitignored). How it works: [CAMPAIGN.md](CAMPAIGN.md#the-launcher) |
+| Launcher | `launcher/` (WPF); `pwsh -File launcher/build.ps1` builds `DarkReign.exe` in the root and the game host `engine/bin/DarkReignGame.exe` (both gitignored). How it works: [CAMPAIGN.md](CAMPAIGN.md#the-launcher) |
+| Package | `pwsh -File packaging/windows/package.ps1 [-Version x]`: `build/Dark Reign/` and a zip, self-contained, built from a copy of the sources in `build/src` (gitignored). About 5 minutes |
 
 It is a standalone game on the user's PC, not part of Ghost or WinGE.
 
@@ -98,6 +99,20 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **The 1.8.2 copy is not what OpenDR's content installer expects**; it looks
   for GOG or the CD. `import-campaign.ps1` copies the files itself, the
   "Auran extra content" OpenDR would otherwise download included.
+- **The package shares one folder and one runtime** between the launcher
+  (WPF) and the engine, and where both bring a file the higher version must
+  stay: the engine's NuGet `System.Threading.Channels` 9 over the runtime's
+  8, WPF's `WindowsBase` 8 over the runtime's 4.0 stub. Publishing both into
+  one folder gets this wrong, because publish copies by date. `package.ps1`
+  publishes the launcher apart and merges by version, then checks the
+  packaged game host before zipping. The launcher needs a window to check:
+  start `build/Dark Reign/DarkReign.exe` once.
+- **Building the game host with extra properties rebuilds `OpenRA.Game`**:
+  global properties flow to project references. `launcher/build.ps1` passes
+  `BuildProjectReferences=false`.
+- **Backslashes in shell heredocs get mangled** by the Bash tool (`\b` in
+  `engine\bin` became a backspace twice). Edit Windows paths with the Edit
+  or Write tools, and scan for control characters after scripted edits.
 
 ## Open work, roughly by value
 
@@ -112,9 +127,9 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **A campaign menu** in place of the mission browser, and the SMK cutscenes
   (OpenRA cannot play Smacker). The goal is a remaster: the original menus,
   even at their own resolution stretched, with the game on the new engine.
-- **The launcher, further**: install the game data from a chosen Dark Reign
-  folder (what `import-campaign.ps1` does), the game window titled and
-  iconed as Dark Reign rather than OpenRA, and a self-contained package.
+- **Distribution polish**: the package is a zip. An installer (Start menu,
+  uninstall), a code-signing certificate (unsigned, Windows SmartScreen
+  warns on first run), and finding a GOG install without asking.
 
 ## Committing
 

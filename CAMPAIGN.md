@@ -10,40 +10,64 @@ own copy. The converted maps go to your OpenRA map folder
 
 ## Setting it up
 
-1. Build OpenDR: `make.cmd all` (needs the .NET 8 SDK), then the launcher:
-   `pwsh -File launcher/build.ps1`, which puts `DarkReign.exe` in the root.
-2. With a full copy of the game (the 1.8.2 community patch, or GOG), run
-   `pwsh -File import-campaign.ps1 -GameDir "<the folder holding dark>"`.
-   It installs the game content OpenDR reads, the snow tileset and the CD
-   soundtrack included, and converts every mission. Name missions after it (`M01F M01I`) to convert
-   only those.
-3. Start `DarkReign.exe`; the campaigns are under **Missions**: Freedom Guard and
+1. Build OpenDR: `make.cmd all` (needs the .NET 8 SDK), then
+   `pwsh -File launcher/build.ps1`, which puts the launcher, `DarkReign.exe`,
+   in the root and the game host, `DarkReignGame.exe`, in `engine/bin`.
+2. Start `DarkReign.exe`, choose **Install from game** and pick a full copy
+   of the game (the 1.8.2 community patch, or GOG). That runs
+   `import-campaign.ps1 -GameDir "<the folder holding dark>"`, which installs
+   the game content OpenDR reads, the snow tileset and the CD soundtrack
+   included, and converts every mission. Run it by hand with mission names
+   after it (`M01F M01I`) to convert only those.
+3. **Play**: the campaigns are under **Missions**, Freedom Guard and
    Imperium, each ending in mission 13, The Togran.
+
+Run the import again after changing the importer: the maps are rebuilt from
+the game files each time.
+
+`pwsh -File packaging/windows/package.ps1` builds what a player downloads:
+`build/Dark Reign/` and a zip of it, self-contained (no .NET install needed),
+the engine, mod, game host and launcher together, without game data. It
+builds from a copy of the sources in `build/src`, so the working `engine/bin`
+is left alone.
 
 ## The launcher
 
-`DarkReign.exe` (`launcher/`, WPF, .NET 8 Desktop Runtime) is the front door:
-Play, and the display settings, over the 1.8.2 patch launcher's art when the
-import has copied it. Its settings are the game's own, in OpenRA's
+`DarkReign.exe` (`launcher/`, WPF) is the front door: Play, installing the
+game data, and the display settings, over the 1.8.2 patch launcher's art when
+the import has copied it. Its settings are the game's own, in OpenRA's
 `settings.yaml`, so it and the in-game Display menu always agree:
 
 | Setting | Choices |
 |---|---|
 | Display mode | Fullscreen (exclusive, any of the monitor's modes), Borderless (the desktop resolution; the default), Windowed |
-| Monitor | Each monitor by name, numbered as the engine numbers them |
+| Monitor | Each monitor by name, numbered as the engine (SDL) numbers them: the primary first |
 | Resolution | The monitor's modes for fullscreen; common window sizes that fit it for windowed |
 | Interface size | 100–200%, limited to what leaves the game its minimum 1024×720 layout |
 | Battlefield zoom, VSync | As in the game |
+| Game data | Installs it, or again, from a chosen Dark Reign folder |
 
-It starts the game with `OPENRA_DISPLAY_SCALE=1`, so sizes are real pixels and
-Interface size alone enlarges the interface; without it the engine also
-multiplies by the Windows display scale. Borderless stores a fullscreen size
-of 0,0: the engine sizes its drawing surface from that setting, and any other
-value leaves it smaller than the screen. If the game exits with an error, the
-launcher comes back with a button to the logs.
+It finds the engine in either layout: `engine/bin` beside it in the
+repository, or everything beside it in a package.
 
-Run the import again after changing the importer: the maps are rebuilt from
-the game files each time.
+- **The game runs as `DarkReignGame.exe`**: OpenRA's own Windows launcher
+  (`engine/OpenRA.WindowsLauncher`) built with the mod's name and icon, so
+  the taskbar and Task Manager show Dark Reign. Without it the launcher falls
+  back to `OpenRA.exe`. The window title is the mod's `mod-windowtitle`
+  (`mods/dr/fluent/dr.ftl`).
+- **`OPENRA_DISPLAY_SCALE=1`**: sizes are real pixels and Interface size
+  alone enlarges the interface; without it the engine also multiplies by the
+  Windows display scale.
+- **Borderless stores a fullscreen size of 0,0**: the engine sizes its
+  drawing surface from that setting, and any other value leaves it smaller
+  than the screen. The launcher corrects it before every start.
+- **Restarts come back through it**: the engine registers the launcher as
+  its launch path, and when a changed setting needs a restart it runs the
+  launcher with arguments. The launcher then starts the game straight away
+  and stays running, hidden, until the game ends: the engine takes a
+  launcher that has already exited for a failed restart.
+- **Failures**: if the game exits with an error, the launcher comes back
+  with a button to the logs.
 
 ## Playing on a large screen
 

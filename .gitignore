@@ -35,3 +35,6 @@ DrData/
 
 # Output of the campaign test scripts
 tools/campaign/out/
+
+# Packages and their source copies (packaging/windows/package.ps1)
+/build/

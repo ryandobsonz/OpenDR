@@ -7,7 +7,10 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
+using Microsoft.Win32;
 using System.Windows.Media.Imaging;
 
 namespace DarkReign.Launcher
@@ -307,17 +310,33 @@ namespace DarkReign.Launcher
 			Summary.Text = $"{mode}  ·  {size}{monitor}  ·  Interface {settings.UIScale * 100:0}%";
 		}
 
-		void ShowProblem(string message = null, bool showLogs = false)
+		// The line under the buttons: what stops the game starting, or what went wrong, with
+		// the button that deals with it.
+		void ShowProblem(string message = null, string action = null, Action onAction = null)
 		{
-			message ??= install.Problem();
-			if (message == null && !install.HasCampaign)
-				message = "No campaign missions are converted yet; import-campaign.ps1 converts them.";
+			if (message == null)
+			{
+				message = install.Problem();
+				if (install.HasEngine && !GameInstall.HasGameData)
+					(action, onAction) = ("INSTALL FROM GAME…", Install);
+				else if (message == null && GameInstall.CampaignMissions == 0)
+					(message, action, onAction) = ("The campaign missions are not converted yet.", "INSTALL FROM GAME…", Install);
+			}
 
 			StatusText.Text = message ?? "";
 			StatusRow.Visibility = message == null ? Visibility.Collapsed : Visibility.Visible;
-			LogsButton.Visibility = showLogs ? Visibility.Visible : Visibility.Collapsed;
+			ActionButton.Content = action;
+			ActionButton.Visibility = action == null ? Visibility.Collapsed : Visibility.Visible;
+			this.onAction = onAction;
 			PlayButton.IsEnabled = install.Problem() == null;
+			DataStatus.Text = GameInstall.HasGameData
+				? $"Installed  ·  {GameInstall.CampaignMissions} missions converted"
+				: "Not installed";
 		}
+
+		Action onAction;
+
+		void OnAction(object sender, RoutedEventArgs e) => onAction?.Invoke();
 
 		bool SaveSettings()
 		{
@@ -338,15 +357,24 @@ namespace DarkReign.Launcher
 			if (!PlayButton.IsEnabled || !SaveSettings())
 				return;
 
+			await RunGame();
+		}
+
+		// Starts the game and keeps the launcher, hidden, until it ends: closing with it, or coming
+		// back with the logs if it failed. Also how the engine's own relaunches run (App.OnStartup),
+		// so the engine sees a live process and does not take the restart for a failure.
+		public async Task RunGame(IEnumerable<string> extraArgs = null)
+		{
 			PlayButton.IsEnabled = false;
 			Process game;
 			try
 			{
-				game = install.Start();
+				game = install.Start(extraArgs);
 			}
 			catch (Exception ex)
 			{
 				ShowProblem($"Could not start the game: {ex.Message}");
+				Show();
 				return;
 			}
 
@@ -354,16 +382,79 @@ namespace DarkReign.Launcher
 			await game.WaitForExitAsync();
 			if (game.ExitCode == 0)
 			{
-				Close();
+				Application.Current.Shutdown();
 				return;
 			}
 
-			// Come back with the way to the logs, as launch-game.cmd's crash notice does.
 			settings = GraphicsSettings.Load();
 			ShowSettings();
-			ShowProblem($"Dark Reign closed unexpectedly (exit code {game.ExitCode}). The logs say why.", true);
+			ShowProblem($"Dark Reign closed unexpectedly (exit code {game.ExitCode}). The logs say why.", "OPEN LOGS", OpenLogs);
 			Show();
 			Activate();
+		}
+
+		void OnInstall(object sender, RoutedEventArgs e) => Install();
+
+		// Asks for the player's copy of Dark Reign and runs import-campaign.ps1 on it.
+		async void Install()
+		{
+			var dialog = new OpenFolderDialog
+			{
+				Title = "Choose your Dark Reign folder (the one that holds the game's 'dark' folder)",
+				InitialDirectory = new[] { Path.Combine(install.Root, "DrData"), @"C:\GOG Games", @"C:\Program Files (x86)\GOG Galaxy\Games" }
+					.FirstOrDefault(Directory.Exists) ?? "",
+			};
+
+			if (dialog.ShowDialog(this) != true)
+				return;
+
+			var gameDir = GameInstall.FindGameDir(dialog.FolderName);
+			if (gameDir == null)
+			{
+				ShowPage(Home);
+				ShowProblem("That folder has no Dark Reign in it: choose the folder that holds the game's 'dark' folder.",
+					"INSTALL FROM GAME…", Install);
+				return;
+			}
+
+			InstallSource.Text = $"From {gameDir}";
+			InstallLine.Text = "Starting…";
+			ShowPage(InstallPage);
+			var sweep = new DoubleAnimation(-ProgressSweep.Width, Math.Max(ProgressTrack.ActualWidth, 556), TimeSpan.FromSeconds(1.4))
+			{
+				RepeatBehavior = RepeatBehavior.Forever,
+			};
+			ProgressSweep.BeginAnimation(Canvas.LeftProperty, sweep);
+
+			var lines = new List<string>();
+			int code;
+			try
+			{
+				code = await install.Import(gameDir, line => Dispatcher.BeginInvoke(() =>
+				{
+					lines.Add(line);
+					InstallLine.Text = line.Trim();
+				}));
+			}
+			catch (Exception ex)
+			{
+				lines.Add(ex.Message);
+				code = -1;
+			}
+
+			ProgressSweep.BeginAnimation(Canvas.LeftProperty, null);
+			ShowPage(Home);
+			LoadArt();
+			if (code == 0 && GameInstall.HasGameData)
+				ShowProblem();
+			else
+				ShowProblem($"The install did not finish: {lines.LastOrDefault() ?? $"exit code {code}"}", "TRY AGAIN", Install);
+		}
+
+		void ShowPage(FrameworkElement page)
+		{
+			foreach (var p in new FrameworkElement[] { Home, SettingsPage, InstallPage })
+				p.Visibility = p == page ? Visibility.Visible : Visibility.Collapsed;
 		}
 
 		void OnSettings(object sender, RoutedEventArgs e)
@@ -374,8 +465,7 @@ namespace DarkReign.Launcher
 				settings.UIScale = SuggestedScale(CurrentDisplay, CurrentDisplay.Native);
 
 			ShowSettings();
-			Home.Visibility = Visibility.Collapsed;
-			SettingsPage.Visibility = Visibility.Visible;
+			ShowPage(SettingsPage);
 		}
 
 		void OnSettingsDone(object sender, RoutedEventArgs e)
@@ -383,8 +473,7 @@ namespace DarkReign.Launcher
 			if (!SaveSettings())
 				return;
 
-			SettingsPage.Visibility = Visibility.Collapsed;
-			Home.Visibility = Visibility.Visible;
+			ShowPage(Home);
 			PlayButton.Focus();
 		}
 
@@ -433,7 +522,7 @@ namespace DarkReign.Launcher
 				settings.VSync = VSyncBox.IsChecked == true;
 		}
 
-		void OnOpenLogs(object sender, RoutedEventArgs e)
+		static void OpenLogs()
 		{
 			Directory.CreateDirectory(GameInstall.LogsDir);
 			Process.Start(new ProcessStartInfo(GameInstall.LogsDir) { UseShellExecute = true });
@@ -449,7 +538,7 @@ namespace DarkReign.Launcher
 			{
 				if (SettingsPage.Visibility == Visibility.Visible)
 					OnSettingsDone(sender, e);
-				else
+				else if (Home.Visibility == Visibility.Visible)
 					Close();
 
 				e.Handled = true;

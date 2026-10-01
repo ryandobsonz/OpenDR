@@ -57,6 +57,18 @@ namespace DarkReign.Launcher
 			return s;
 		}
 
+		// Borderless runs at the desktop size, which the engine only gets from FullscreenSize 0,0:
+		// with any other value its drawing surface is smaller than the window. The game's own
+		// Display menu can leave one there after a fullscreen resolution was chosen.
+		public bool FixBorderlessSize()
+		{
+			if (Mode != WindowMode.PseudoFullscreen || (FullscreenWidth == 0 && FullscreenHeight == 0))
+				return false;
+
+			FullscreenWidth = FullscreenHeight = 0;
+			return true;
+		}
+
 		public void Save()
 		{
 			var values = new Dictionary<string, string>
