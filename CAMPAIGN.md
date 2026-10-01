@@ -22,6 +22,16 @@ own copy. The converted maps go to your OpenRA map folder
 Run the import again after changing the importer: the maps are rebuilt from
 the game files each time.
 
+## Playing on a large screen
+
+OpenRA draws at the screen's own resolution and aspect ratio, ultrawide
+included, and scales the battlefield so its visible height stays in a band
+set by **Settings → Display → Battlefield Zoom**: Close shows 480 to 600
+game pixels top to bottom, about the original's 640×480 view; Medium 600 to
+900; Far 900 to 1300. The mouse wheel zooms within the band. At 4K, also set
+**UI Scale** to 2 or more, or the sidebar is small. The art is the 1997 art
+scaled up: sharper and larger, not more detailed.
+
 ## How it works
 
 | Part | Code | What it does |
@@ -62,6 +72,9 @@ changes the rate.
   original campaign mission needs them to be won.
 - **Harassing a region** (`CritHarassRegion`, one use) counts the team's units
   fighting in the region, not damage done.
+- **Units' tactical settings** (`SetTactAI`: pursuit, damage tolerance,
+  independence) are not read: every campaign use sets pursuit medium or
+  high, which OpenRA's default stance already is.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
 - **No campaign menu**: missions are chosen from the mission browser.
