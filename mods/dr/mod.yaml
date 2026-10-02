@@ -20,6 +20,7 @@ FileSystem: ContentInstallerFileSystem
 		content|SPRITES.FTG: base
 #		~content|spriteEx.ftg
 		content|SOUNDS.FTG
+		~content|shell/SOUNDS.FTG: shellsounds
 #		~content|music.zip
 #		~content|soundsEx.ftg
 		content|BARREN/SPRITES.FTG: barren

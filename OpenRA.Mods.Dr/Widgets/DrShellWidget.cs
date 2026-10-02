@@ -133,7 +133,7 @@ namespace OpenRA.Mods.Dr.Widgets
 			if (playing != null)
 			{
 				if (e.Event == KeyInputEvent.Down && !e.IsRepeat)
-					SkipClips();
+					Skip();
 
 				return true;
 			}
@@ -146,6 +146,7 @@ namespace OpenRA.Mods.Dr.Widgets
 		readonly Queue<DrShellClip> clips = new();
 		readonly Stopwatch fade = new();
 		DrShellVideo playing;
+		bool playingMovie;
 		DrShellVideo fading;
 		Action onClipsDone;
 		bool fadingIn;
@@ -180,11 +181,29 @@ namespace OpenRA.Mods.Dr.Widgets
 
 				playing?.Dispose();
 				playing = video;
+				playingMovie = clip.Sound == DrShellVideoSound.Video;
 				playing.Play();
 				return true;
 			}
 
 			return false;
+		}
+
+		/// <summary>A click or a key: skips a movie to what comes after it, or the menus' videos to the next screen.</summary>
+		public void Skip()
+		{
+			if (playing == null)
+				return;
+
+			if (!playingMovie || clips.Count == 0)
+			{
+				SkipClips();
+				return;
+			}
+
+			playing.End();
+			if (!NextClip())
+				FinishClips();
 		}
 
 		/// <summary>Ends the videos at once, on the last frame of the one playing.</summary>
@@ -243,7 +262,7 @@ namespace OpenRA.Mods.Dr.Widgets
 				return false;
 
 			if (mi.Event == MouseInputEvent.Down)
-				SkipClips();
+				Skip();
 
 			return true;
 		}

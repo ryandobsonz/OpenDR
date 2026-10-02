@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using OpenRA.Mods.Common.Widgets;
 using OpenRA.Mods.Dr.Graphics;
 using OpenRA.Primitives;
@@ -21,7 +22,7 @@ namespace OpenRA.Mods.Dr.Widgets
 	/// The mission ring around the Encryption Key on the cube's main face, read as a clock: mission N is the
 	/// disc at N o'clock, mission 12 the gate at the top, and the key in the middle the Togran's mission. A
 	/// disc shows which sides have won its mission with the frames of m_state; locked missions are darkened.
-	/// The key is a video in the hole the face leaves for it (GetKeyVideo: the file, and whether it loops).
+	/// The key is a video in the hole the face leaves for it (GetKeyVideos: each plays once, the last loops).
 	/// </summary>
 	public class DrShellRingWidget : DrShellAreaWidget
 	{
@@ -43,40 +44,54 @@ namespace OpenRA.Mods.Dr.Widgets
 		public Func<int, int> GetState = _ => 0;
 		public Func<int> GetSelected = () => 0;
 		public Action<int> OnSelect = _ => { };
-		public Func<(string File, bool Loop)> GetKeyVideo = () => (null, false);
+		public Func<string[]> GetKeyVideos = () => [];
 
 		int hover;
 		int ticks;
 		DrShellVideo key;
-		(string File, bool Loop) keyVideo;
+		string[] keyVideos = [];
+		int keyIndex;
 
-		/// <summary>Starts the key's video again, as when the face comes into view.</summary>
+		/// <summary>Starts the key's videos again, as when the face comes into view.</summary>
 		public void RestartKey()
 		{
 			key?.Dispose();
 			key = null;
-			keyVideo = default;
+			keyVideos = [];
 		}
 
 		void DrawKey()
 		{
-			var wanted = GetKeyVideo();
-			if (wanted != keyVideo)
+			var wanted = GetKeyVideos();
+			if (!wanted.SequenceEqual(keyVideos))
 			{
 				RestartKey();
-				keyVideo = wanted;
-				if (wanted.File != null)
-				{
-					key = DrShellVideo.Open(wanted.File, Shell.Art.Upscale, wanted.Loop, circle: true);
-					key?.Play();
-				}
+				keyVideos = wanted;
+				OpenKey(0);
 			}
+			else if (key != null && key.Finished && keyIndex + 1 < keyVideos.Length)
+				OpenKey(keyIndex + 1);
 
 			if (key == null)
 				return;
 
 			key.Update();
 			Shell.DrawSprite(key.Sprite, KeyVideoOrigin);
+		}
+
+		void OpenKey(int index)
+		{
+			keyIndex = index;
+			if (index >= keyVideos.Length)
+				return;
+
+			var next = DrShellVideo.Open(keyVideos[index], Shell.Art.Upscale, index == keyVideos.Length - 1, circle: true);
+			if (next == null)
+				return;
+
+			key?.Dispose();
+			key = next;
+			key.Play();
 		}
 
 		public override void Removed()
@@ -191,8 +206,7 @@ namespace OpenRA.Mods.Dr.Widgets
 					FillEllipse(Shell.ToScreen(r), Color.FromArgb(50, 255, 200, 120));
 			}
 
-			// The key's own video shows it selected; a lit key needs no blink.
-			if (IsUnlocked(DrCampaign.Togran) && hover == DrCampaign.Togran && selected != DrCampaign.Togran)
+			if (IsUnlocked(DrCampaign.Togran) && (hover == DrCampaign.Togran || (selected == DrCampaign.Togran && blink)))
 				FillEllipse(Shell.ToScreen(Key), Color.FromArgb(40, 255, 200, 120));
 		}
 	}

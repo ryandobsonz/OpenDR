@@ -30,12 +30,13 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 	/// button hands over to the engine. The game comes back here when the mission ends. Without the shell
 	/// art (an import from before it was copied) it opens OpenRA's own main menu instead.
 	///
-	/// The game's videos join the screens: the cube rises from the bridge's table (CUBE_IN) and sinks back
-	/// (CUBE_OUT); turning to another face draws the face's panel into the cube, turns the cube that way
-	/// (CUBE02 brings round the face on the left, CUBE03 the right, CUBE04 and CUBE_UP2 the top, CUBE05 and
-	/// CUBE_DN2 the bottom) and brings the new panel out (CUBE01); a briefing opens through an iris
-	/// (BRIEF_F, BRIEF_I). The Encryption Key turns in the ring (M_RING00-12, M_TOGRAN), and the movies play
-	/// at the start (INTRO), before the Togran's mission (SEGUE) and after it is won (OUTRO).
+	/// The game's videos join the screens as the original's shell (dkreign.exe) plays them. A new game plays
+	/// the intro, then the cube rises from the bridge's table (CUBE_IN); leaving, it sinks back (CUBE_OUT).
+	/// Turning to another face draws the face's panel into the cube, turns the cube (Turn) and brings the
+	/// new panel out (CUBE01); the briefing then opens through an iris (BRIEF_F, BRIEF_I). The Encryption
+	/// Key turns in the ring (M_RING00-12, M_TOGRAN); the segue plays before the Togran's mission and the
+	/// ending after it. The bridge hums under the cube's faces and the main menu has its own hum, with now
+	/// and then a sound from the cube.
 	/// </summary>
 	public class DrShellLogic : ChromeLogic
 	{
@@ -72,13 +73,14 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		[FluentReference]
 		const string MissionSuccessful = "label-dr-shell-mission-successful";
 
-		enum Screen { Main, Quit, Single, Cube, Story, BriefingF, BriefingI, Training, Options, Debrief }
+		// In the original's order from Cube on (its screens 0x19-0x21), which picks the turn between two faces.
+		enum Screen { Main, Quit, Single, Cube, Options, Archive, Story, Training, Return, Briefing, Debrief }
 
 		static readonly Dictionary<Screen, string> Backgrounds = new()
 		{
 			{ Screen.Main, "main" }, { Screen.Quit, "main" }, { Screen.Single, "single" }, { Screen.Cube, "missions" },
-			{ Screen.Story, "story" }, { Screen.BriefingF, "brief_f" }, { Screen.BriefingI, "brief_i" },
-			{ Screen.Training, "training" }, { Screen.Options, "options" }, { Screen.Debrief, "debrief" }
+			{ Screen.Options, "options" }, { Screen.Archive, "archive" }, { Screen.Story, "story" },
+			{ Screen.Training, "training" }, { Screen.Return, "return" }, { Screen.Debrief, "debrief" }
 		};
 
 		static readonly string[][] TrainingMissions = [["t1", "t2"], ["t3", "t4"]];
@@ -86,11 +88,40 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		static DrShellClip Clip(string name) => new($"content|shell/{name}.SMK");
 		static DrShellClip Movie(string name) => new($"content|movies/{name}.SMK", DrShellVideoSound.Video, 2);
 
-		/// <summary>A turn of the cube: the face's panel goes in, the cube turns, the next panel comes out.</summary>
-		static DrShellClip[] Turn(string name) => [Clip(name), Clip("CUBE01")];
-
 		static readonly DrShellClip CubeIn = Clip("CUBE_IN");
 		static readonly DrShellClip CubeOut = Clip("CUBE_OUT");
+
+		/// <summary>
+		/// The turn of the cube between two of its faces, as the original's table has it: the face's panel
+		/// goes in and the cube turns, CUBE02 bringing round the face on the left (options) and CUBE03 the
+		/// right (the archive), CUBE04 and CUBE_UP2 one above, CUBE05 and CUBE_DN2 one below; then CUBE01
+		/// brings the next panel out. Faces further on in the original's order are above.
+		/// </summary>
+		static DrShellClip[] Turn(Screen from, Screen to)
+		{
+			string turn;
+			if (from == Screen.Options || to == Screen.Archive)
+				turn = "CUBE03";
+			else if (from == Screen.Archive || to == Screen.Options)
+				turn = "CUBE02";
+			else if (from == Screen.Return)
+				turn = to == Screen.Cube ? "CUBE_UP2" : to == Screen.Training ? "CUBE05" : "CUBE04";
+			else if (from == Screen.Cube && to == Screen.Debrief)
+				turn = "CUBE05";
+			else if (from == Screen.Debrief && to == Screen.Cube)
+				turn = "CUBE04";
+			else if (from == Screen.Cube && to == Screen.Briefing)
+				turn = "CUBE_UP2";
+			else if (from == Screen.Briefing && to == Screen.Cube)
+				turn = "CUBE_DN2";
+			else
+				turn = from < to ? "CUBE04" : "CUBE05";
+
+			return [Clip(turn), Clip("CUBE01")];
+		}
+
+		const string ShellSounds = "shellsounds|";
+		const float ShellVolume = 90 / 127f;
 
 		readonly ModData modData;
 		readonly World world;
@@ -99,6 +130,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		readonly Dictionary<string, Dictionary<int, string>> briefings = new(StringComparer.OrdinalIgnoreCase);
 
 		Screen screen = Screen.Main;
+		char briefingSide = 'f';
 		bool panelOpen;
 		bool launching;
 		int mission = 1;
@@ -131,7 +163,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				if (preview.Status == MapStatus.Available && preview.Path != null)
 					maps.TryAdd(Path.GetFileName(preview.Path.TrimEnd('/', '\\')), preview);
 
-			shell.GetBackground = () => Backgrounds[screen];
+			shell.GetBackground = () => BackgroundOf(screen);
 			shell.OnKeyPress = HandleKey;
 
 			SetupMain(widget.Get("MAIN"));
@@ -139,23 +171,70 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			SetupSingle(widget.Get("SINGLE"));
 			SetupCube(widget.Get("CUBE"));
 			SetupStory(widget.Get("STORY"));
-			SetupBriefing(widget.Get("BRIEFING_F"), Screen.BriefingF);
-			SetupBriefing(widget.Get("BRIEFING_I"), Screen.BriefingI);
+			SetupBriefing(widget.Get("BRIEFING_F"), 'f');
+			SetupBriefing(widget.Get("BRIEFING_I"), 'i');
 			SetupTraining(widget.Get("TRAINING"));
 			SetupOptions(widget.Get("OPTIONS"));
 			SetupDebrief(widget.Get("DEBRIEF"));
 
+			Ambience(Screen.Main);
 			ReturnFromMission();
 
 			script ??= new Queue<string>((Environment.GetEnvironmentVariable("OPENDR_SHELL") ?? "")
 				.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+		}
 
-			// The intro plays the first time the game starts, as the original's did; test runs leave it out.
-			if (!DrCampaign.IntroSeen && HasMovie("INTRO") && Environment.GetEnvironmentVariable("OPENDR_SCRIPTED") == null)
+		// Sound
+
+		ISound ambience;
+		string ambienceName;
+		int punctuation = -1;
+
+		/// <summary>The original's hums: bridge.wav on the bridge and the cube's faces, bridge3.wav under the main menus.</summary>
+		void Ambience(Screen s) => Ambience(s is Screen.Main or Screen.Quit or Screen.Single ? "bridge3.wav" : "bridge.wav");
+
+		void Ambience(string name)
+		{
+			if (name == ambienceName)
+				return;
+
+			if (ambience != null)
+				Game.Sound.StopSound(ambience);
+
+			ambience = null;
+			ambienceName = name;
+			if (name != null && modData.DefaultFileSystem.Exists(ShellSounds + name))
 			{
-				DrCampaign.IntroSeen = true;
-				Go(Screen.Main, Movie("INTRO"));
+				ambience = Game.Sound.PlayLooped(SoundType.UI, ShellSounds + name);
+				if (ambience != null)
+					ambience.Volume = Game.Sound.SoundVolume * ShellVolume;
 			}
+		}
+
+		/// <summary>Now and then, on the cube's faces, one of the original's fourteen sounds of the cube at work.</summary>
+		void TickPunctuation()
+		{
+			if (screen < Screen.Cube || shell.CoversScreen || panelOpen)
+				return;
+
+			if (punctuation < 0)
+				punctuation = 600 + Game.CosmeticRandom.Next(300);
+
+			if (--punctuation > 0)
+				return;
+
+			punctuation = -1;
+			var sound = $"{ShellSounds}punct_{Game.CosmeticRandom.Next(14) + 1}.wav";
+			if (modData.DefaultFileSystem.Exists(sound))
+				Game.Sound.Play(SoundType.UI, sound, ShellVolume);
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing)
+				Ambience((string)null);
+
+			base.Dispose(disposing);
 		}
 
 		readonly Dictionary<Screen, Action> onShow = new();
@@ -163,12 +242,18 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		void Show(Screen s)
 		{
 			screen = s;
-			shell.Art.ReleaseExcept([Backgrounds[s]]);
+			Ambience(s);
+			shell.Art.ReleaseExcept([BackgroundOf(s)]);
 			if (onShow.TryGetValue(s, out var action))
 				action();
 		}
 
+		string BackgroundOf(Screen s) => s == Screen.Briefing ? (briefingSide == 'i' ? "brief_i" : "brief_f") : Backgrounds[s];
+
 		Func<bool> Visible(Screen s) => () => !panelOpen && screen == s && !shell.CoversScreen;
+
+		/// <summary>Turns the cube from this face to another.</summary>
+		void TurnTo(Screen to) => Go(to, Turn(screen, to));
 
 		/// <summary>Plays the videos between this screen and the next, then shows it.</summary>
 		void Go(Screen to, params DrShellClip[] clips) => Go(() => Show(to), clips);
@@ -180,6 +265,12 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				show();
 				return;
 			}
+
+			// The hum stops for the movies and as the cube sinks; the bridge's plays as it rises.
+			if (clips.Any(c => c.Sound == DrShellVideoSound.Video || c == CubeOut))
+				Ambience((string)null);
+			else if (clips.Contains(CubeIn))
+				Ambience("bridge.wav");
 
 			// Music gives way to the movies.
 			var music = clips.Any(c => c.Sound == DrShellVideoSound.Video) && Game.Sound.MusicPlaying;
@@ -205,22 +296,24 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			if (launched == null)
 				return;
 
-			// Back on the bridge, the cube rises again; the Togran's defeat first plays the ending.
+			// The game comes back to a bare face of the cube, which turns to the next; the Togran's defeat
+			// first plays the ending.
+			Show(Screen.Return);
 			if (launched.StartsWith('t'))
 			{
 				trainingSet = launched is "t3" or "t4" ? 1 : 0;
-				Go(Screen.Training, CubeIn);
+				TurnTo(Screen.Training);
 				return;
 			}
 
 			mission = int.TryParse(launched.AsSpan(1, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : 1;
-			if (won)
+			if (!won)
+				TurnTo(Screen.Cube);
+			else
 			{
 				briefingMission = launched;
-				Go(Screen.Debrief, mission == DrCampaign.Togran ? [Movie("OUTRO"), CubeIn] : [CubeIn]);
+				Go(Screen.Debrief, mission == DrCampaign.Togran ? [Movie("OUTRO"), .. Turn(Screen.Return, Screen.Debrief)] : Turn(Screen.Return, Screen.Debrief));
 			}
-			else
-				Go(Screen.Cube, CubeIn);
 		}
 
 		bool HandleKey(KeyInput e)
@@ -233,10 +326,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				case Screen.Main: Show(Screen.Quit); break;
 				case Screen.Quit: case Screen.Single: Show(Screen.Main); break;
 				case Screen.Cube: Go(Screen.Single, CubeOut); break;
-				case Screen.Options: Go(Screen.Cube, Turn("CUBE03")); break;
-				case Screen.Story: Go(Screen.Cube, Turn("CUBE_DN2")); break;
-				case Screen.Training: case Screen.Debrief: Go(Screen.Cube, Turn("CUBE04")); break;
-				case Screen.BriefingF: case Screen.BriefingI: BackFromBriefing(); break;
+				case Screen.Options: case Screen.Story: case Screen.Training: case Screen.Debrief: TurnTo(Screen.Cube); break;
+				case Screen.Briefing: BackFromBriefing(); break;
 			}
 
 			return true;
@@ -244,6 +335,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 		public override void Tick()
 		{
+			TickPunctuation();
 			if (script == null || (script.Count == 0 && scriptTicks == 0))
 				return;
 
@@ -268,7 +360,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			switch (step[0])
 			{
 				case "shot": Game.TakeScreenshot(); return;
-				case "skip": shell.SkipClips(); return;
+				case "skip": shell.Skip(); return;
 				case "wait": return;
 				case "intro": Go(Screen.Main, Movie("INTRO")); return;
 			}
@@ -289,12 +381,17 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				briefingMission = DrCampaign.MissionName(m, step.Length > 2 ? step[2][0] : 'f');
 			}
 
-			if (Enum.TryParse<Screen>(step[0], true, out var s))
+			// briefingf and briefingi name the briefing's side.
+			var name = step[0] is "briefingf" or "briefingi" ? "briefing" : step[0];
+			if (step[0] == "briefingi" && step.Length < 3)
+				briefingMission = DrCampaign.MissionName(mission, 'i');
+
+			if (Enum.TryParse<Screen>(name, true, out var s))
 			{
 				shell.SkipClips();
 				if (s == Screen.Story)
 					OpenStory(force: true);
-				else if (s is Screen.BriefingF or Screen.BriefingI)
+				else if (s == Screen.Briefing)
 					OpenBriefing(briefingMission, animate: false);
 				else
 					Show(s);
@@ -334,13 +431,13 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			single.IsVisible = Visible(Screen.Single);
 			var resume = single.Get<DrShellButtonWidget>("CONTINUE");
 			resume.IsVisible = () => DrCampaign.HasProgress;
-			resume.OnClick = OpenCube;
+			resume.OnClick = () => OpenCube(false);
 
 			single.Get<DrShellButtonWidget>("START_NEW_GAME").OnClick = () =>
 			{
 				if (!DrCampaign.HasProgress)
 				{
-					OpenCube();
+					OpenCube(true);
 					return;
 				}
 
@@ -348,7 +445,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				ConfirmationDialogs.ButtonPrompt(modData,
 					title: NewCampaignTitle,
 					text: NewCampaignPrompt,
-					onConfirm: () => { panelOpen = false; DrCampaign.Reset(); OpenCube(); },
+					onConfirm: () => { panelOpen = false; DrCampaign.Reset(); OpenCube(true); },
 					confirmText: NewCampaignConfirm,
 					onCancel: () => panelOpen = false);
 			};
@@ -363,10 +460,11 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			single.Get<DrShellButtonWidget>("PREVIOUS_MENU").OnClick = () => Show(Screen.Main);
 		}
 
-		void OpenCube()
+		/// <summary>Up to the cube from the bridge; a new game first plays the intro, as the original's did.</summary>
+		void OpenCube(bool newGame)
 		{
 			mission = Enumerable.Range(1, DrCampaign.Togran).LastOrDefault(DrCampaign.IsUnlocked, 1);
-			Go(Screen.Cube, CubeIn);
+			Go(Screen.Cube, newGame ? [Movie("INTRO"), CubeIn] : [CubeIn]);
 		}
 
 		// The cube's main face: the mission ring
@@ -392,26 +490,25 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			cube.Get<DrShellImageWidget>("FG_LOGO").GetFrame = () => DrCampaign.HasWon(DrCampaign.MissionName(mission, 'f')) ? 1 : 0;
 			cube.Get<DrShellImageWidget>("IMP_LOGO").GetFrame = () => DrCampaign.HasWon(DrCampaign.MissionName(mission, 'i')) ? 1 : 0;
 
-			// The key turns until its tumblers line up, one a mission won; with all twelve it lights up, and
-			// selected it comes alive.
-			ring.GetKeyVideo = () =>
+			// The key turns until its tumblers line up, one a mission won; with all twelve it lights up and
+			// comes alive.
+			ring.GetKeyVideos = () =>
 			{
 				var completed = DrCampaign.Completed;
-				if (completed < DrCampaign.Missions)
-					return ($"content|shell/M_RING{completed:D2}.SMK", true);
-
-				return mission == DrCampaign.Togran ? ("content|shell/M_TOGRAN.SMK", true) : ("content|shell/M_RING12.SMK", false);
+				return completed < DrCampaign.Missions
+					? [$"content|shell/M_RING{completed:D2}.SMK"]
+					: ["content|shell/M_RING12.SMK", "content|shell/M_TOGRAN.SMK"];
 			};
 
 			onShow[Screen.Cube] = ring.RestartKey;
 
-			cube.Get<DrShellButtonWidget>("BASIC_TRAINING").OnClick = () => { trainingSet = 0; Go(Screen.Training, Turn("CUBE05")); };
-			cube.Get<DrShellButtonWidget>("ADVANCED_TRAINING").OnClick = () => { trainingSet = 1; Go(Screen.Training, Turn("CUBE05")); };
+			cube.Get<DrShellButtonWidget>("BASIC_TRAINING").OnClick = () => { trainingSet = 0; TurnTo(Screen.Training); };
+			cube.Get<DrShellButtonWidget>("ADVANCED_TRAINING").OnClick = () => { trainingSet = 1; TurnTo(Screen.Training); };
 
 			var up = cube.Get<DrShellButtonWidget>("UP");
 			up.IsDisabled = () => !DrCampaign.IsUnlocked(mission);
 			up.OnClick = OpenStory;
-			cube.Get<DrShellButtonWidget>("LEFT").OnClick = () => Go(Screen.Options, Turn("CUBE02"));
+			cube.Get<DrShellButtonWidget>("LEFT").OnClick = () => TurnTo(Screen.Options);
 			cube.Get<DrShellButtonWidget>("RIGHT").IsDisabled = () => true;
 			cube.Get<DrShellButtonWidget>("DOWN").OnClick = () => Go(Screen.Single, CubeOut);
 		}
@@ -441,7 +538,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			imp.IsDisabled = () => mission == DrCampaign.Togran || Map(DrCampaign.MissionName(mission, 'i')) == null;
 			imp.OnClick = () => OpenBriefing(DrCampaign.MissionName(mission, 'i'));
 
-			story.Get<DrShellButtonWidget>("DOWN").OnClick = () => Go(Screen.Cube, Turn("CUBE_DN2"));
+			story.Get<DrShellButtonWidget>("DOWN").OnClick = () => TurnTo(Screen.Cube);
 		}
 
 		void OpenStory() => OpenStory(false);
@@ -454,7 +551,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			// The Togran's mission has no sides to choose between: the cube is spent, as the segue shows.
 			if (mission == DrCampaign.Togran)
 			{
-				OpenBriefing(DrCampaign.MissionName(mission, 't'), Movie("SEGUE"), animate: !force);
+				OpenBriefing(DrCampaign.MissionName(mission, 't'), [Movie("SEGUE")], animate: !force);
 				return;
 			}
 
@@ -463,17 +560,18 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			if (force)
 				Show(Screen.Story);
 			else
-				Go(Screen.Story, Turn("CUBE_UP2"));
+				TurnTo(Screen.Story);
 		}
 
 		// The briefing, with Launch
 
-		readonly Dictionary<Screen, DrShellTextWidget> briefingTexts = new();
+		readonly Dictionary<char, DrShellTextWidget> briefingTexts = new();
 
-		void SetupBriefing(Widget briefing, Screen s)
+		void SetupBriefing(Widget briefing, char side)
 		{
-			briefing.IsVisible = Visible(s);
-			var text = briefingTexts[s] = briefing.Get<DrShellTextWidget>("TEXT");
+			var visible = Visible(Screen.Briefing);
+			briefing.IsVisible = () => visible() && briefingSide == side;
+			var text = briefingTexts[side] = briefing.Get<DrShellTextWidget>("TEXT");
 			SetupScroll(briefing, text);
 
 			var launch = briefing.Get<DrShellButtonWidget>("LAUNCH");
@@ -483,28 +581,29 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			briefing.Get<DrShellButtonWidget>("BACK").OnClick = BackFromBriefing;
 		}
 
+		/// <summary>Back down the cube to the face the briefing came from.</summary>
 		void BackFromBriefing()
 		{
 			if (briefingMission.StartsWith('t'))
-				Show(Screen.Training);
+				TurnTo(Screen.Training);
 			else if (mission == DrCampaign.Togran)
-				Show(Screen.Cube);
+				TurnTo(Screen.Cube);
 			else
-				OpenStory(force: true);
+				OpenStory();
 		}
 
-		/// <summary>Opens a briefing through its iris, or after the given video.</summary>
-		void OpenBriefing(string name, DrShellClip? before = null, bool animate = true)
+		/// <summary>Turns the cube to the briefing, which opens through its iris; or plays the given videos instead.</summary>
+		void OpenBriefing(string name, DrShellClip[] instead = null, bool animate = true)
 		{
 			briefingMission = name;
-			var s = name.EndsWith('i') ? Screen.BriefingI : Screen.BriefingF;
+			briefingSide = name.EndsWith('i') ? 'i' : 'f';
 			var text = Briefing(name, 1);
 			var title = Map(name)?.Title.ToUpperInvariant();
-			briefingTexts[s].SetText(title != null ? $"\\c{title}\\n\\n{text}" : text);
+			briefingTexts[briefingSide].SetText(title != null ? $"\\c{title}\\n\\n{text}" : text);
 			if (!animate)
-				Show(s);
+				Show(Screen.Briefing);
 			else
-				Go(s, before ?? Clip(s == Screen.BriefingI ? "BRIEF_I" : "BRIEF_F"));
+				Go(Screen.Briefing, instead ?? [.. Turn(screen, Screen.Briefing), Clip(briefingSide == 'i' ? "BRIEF_I" : "BRIEF_F")]);
 		}
 
 		// Training
@@ -533,9 +632,9 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			// The text lists both missions' descriptions, which begin with their titles.
 			onShow[Screen.Training] = () => text.SetText(string.Join("\\n\\n\\n", TrainingMissions[trainingSet].Select(t => Briefing(t, 0))));
 
-			// Training is the face below the missions: up turns back to them, and so, the long way, does down.
-			training.Get<DrShellButtonWidget>("UP").OnClick = () => Go(Screen.Cube, Turn("CUBE04"));
-			training.Get<DrShellButtonWidget>("DOWN").OnClick = () => Go(Screen.Cube, Turn("CUBE05"));
+			// Either arrow turns back down to the missions.
+			training.Get<DrShellButtonWidget>("UP").OnClick = () => TurnTo(Screen.Cube);
+			training.Get<DrShellButtonWidget>("DOWN").OnClick = () => TurnTo(Screen.Cube);
 		}
 
 		// Options: OpenRA's load and settings panels, and the way out
@@ -556,7 +655,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 			options.Get<DrShellButtonWidget>("QUIT_TO_MAIN_MENU").OnClick = () => Go(Screen.Main, CubeOut);
 			options.Get<DrShellButtonWidget>("QUIT_TO_WINDOWS").OnClick = () => Show(Screen.Quit);
-			options.Get<DrShellButtonWidget>("RIGHT").OnClick = () => Go(Screen.Cube, Turn("CUBE03"));
+			options.Get<DrShellButtonWidget>("RIGHT").OnClick = () => TurnTo(Screen.Cube);
 		}
 
 		string ProgressText()
@@ -603,7 +702,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				if (mission < DrCampaign.Togran && DrCampaign.IsUnlocked(mission + 1))
 					mission++;
 
-				Go(Screen.Cube, Turn("CUBE04"));
+				TurnTo(Screen.Cube);
 			};
 		}
 

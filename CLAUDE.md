@@ -76,18 +76,20 @@ A step is a screen (`main`, `quit`, `single`, `cube`, `story`, `briefingf`,
 and side (`story:3`, `briefingi:7:i`; locks are ignored), or
 `click:X:Y`, a click at a point of the 640×480 screen through the real input
 path. Clicks play the videos between screens (a cube turn is 7.5 seconds);
-steps wait for them to end, except `shot` (a screenshot now), `skip` (to the
-screen after) and `wait` (nothing, 40 ticks). Screen steps skip them, and
-`intro` plays the intro. The script outlives a mission, so it can play
+steps wait for them to end, except `shot` (a screenshot now), `skip` (as a
+click: a movie to what follows it, else to the screen after) and `wait`
+(nothing, 40 ticks). Screen steps skip them all, and `intro` plays the intro.
+Start New Game plays the intro first, so a script skips it. The script outlives a mission, so it can play
 through one:
 
 ```
--Shell "click:320:101;click:320:203;click:364:193;click:137:41;click:405:391;click:321:18"
+-Shell "click:320:101;click:320:203;skip;click:364:193;click:137:41;click:405:391;click:321:18"
 -Test "100:cash 0 6000;110:killunits 1;120:spawn 0 trainingfacility.fguard 18,48;130:spawn 0 assemblyplant.human 22,43;500:leave"
 ```
 
-Single Player, Start New Game, mission 1, Freedom Guard, Launch; M01F is won
-and left; the debrief's Continue returns to the ring with mission 2 open.
+Single Player, Start New Game (skipping the intro), mission 1, Freedom
+Guard, Launch; M01F is won and left; the debrief's Continue returns to the
+ring with mission 2 open. Run it for 130 seconds: the turns take their time.
 `run-game.ps1` sets `OPENDR_SCRIPTED`, which keeps test wins out of the
 player's `dr-campaign.yaml`.
 
@@ -160,6 +162,13 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **Change screens in `Tick`, never in `Draw`**: showing a screen can read a
   mission's map, which can put up OpenRA's loading screen, and that ends the
   frame being drawn (`EndFrame called with renderType = None`).
+- **Read the original's code before guessing**: `dkreign.exe` is packed, but
+  `python tools/campaign/dkreign-exe.py unpack` (pip: unicorn, capstone,
+  pefile) emulates its unpacking stub and saves the image; then `strings`,
+  `xrefs` and `dis` find what uses a file or value. The shell's screens are a
+  switch on the screen number at 0x587274, the turns at 0x586000, the key at
+  0x57f421, the sounds at 0x586740 and 0x579600. Guessed from the videos, half
+  the turns were wrong and the intro played at the wrong time.
 - **Look at a Smacker video before guessing its use**:
   `dotnet bin\OpenRA.Utility.dll dr --dump-smacker FILE OUT [COLUMNS] [SCALE] [EVERY]`
   (from `engine`, with `MOD_SEARCH_PATHS` and `ENGINE_DIR` set as
@@ -176,15 +185,15 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **The expansion campaigns** (`sh*`, `fgx*`) convert but lack most units.
   They would need tech tables from `deftxtEx` and the Shadowhand and Xenite
   units added to OpenDR.
-- **The rest of the menus.** The original menus and their videos are in
-  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)). Still to come: the
-  shell's sounds (`shell/SOUNDS.FTG`, copied but not mounted), the original
-  credits (`shell/CREDITS.TXT`, `~T` titles and `~N` names), the archive
-  face (`archive`, the cube's right face, text in `shell/ARCHIVE.TXT`; the
-  turns are `CUBE03` there and `CUBE02` back) and the debrief's statistics
-  grid. The expansion's movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) wait for
-  its campaigns. The goal is a remaster: the original menus with the game on
-  the new engine.
+- **The rest of the menus.** The original menus, their videos and sounds are
+  in ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)). Still to come: the
+  original credits (`shell/CREDITS.TXT`, `~T` titles and `~N` names, with
+  `credits.wav`; the original rolls them after the ending), the archive face
+  (`archive`, the cube's right face, `Screen.Archive` already has its turns;
+  text in `shell/ARCHIVE.TXT`) and the debrief's statistics grid. The
+  expansion's movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) wait for its
+  campaigns. `dkreign-exe.py` answers how the original did each. The goal is
+  a remaster: the original menus with the game on the new engine.
 - **Distribution polish**: the package is a zip. An installer (Start menu,
   uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
   warns on first run). The GOG install lookup has never met a real GOG

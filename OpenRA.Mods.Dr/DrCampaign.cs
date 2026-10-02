@@ -19,8 +19,7 @@ namespace OpenRA.Mods.Dr
 	/// <summary>
 	/// The original campaign's progress, as the shell's mission ring shows it: twelve missions, each playable
 	/// from either side once the one before it is won, then the Togran's. Kept in dr-campaign.yaml in the
-	/// support folder, with whether the intro has played. Missions are named as the importer names their
-	/// maps: m01f, m01i ... m13t, t1 ... t4.
+	/// support folder. Missions are named as the importer names their maps: m01f, m01i ... m13t, t1 ... t4.
 	/// </summary>
 	public static class DrCampaign
 	{
@@ -28,7 +27,6 @@ namespace OpenRA.Mods.Dr
 		public const int Togran = 13;
 
 		static HashSet<string> won;
-		static bool introSeen;
 
 		/// <summary>The mission the shell last launched, and whether it was won, for the shell to come back to.</summary>
 		public static string Launched;
@@ -51,13 +49,10 @@ namespace OpenRA.Mods.Dr
 				{
 					if (File.Exists(FilePath))
 					{
-						var nodes = MiniYaml.FromFile(FilePath);
-						var node = nodes.FirstOrDefault(n => n.Key == "Won");
+						var node = MiniYaml.FromFile(FilePath).FirstOrDefault(n => n.Key == "Won");
 						if (node != null && !string.IsNullOrEmpty(node.Value.Value))
 							foreach (var m in node.Value.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
 								won.Add(m);
-
-						introSeen = nodes.FirstOrDefault(n => n.Key == "IntroSeen")?.Value.Value == "true";
 					}
 				}
 				catch (Exception e)
@@ -82,23 +77,6 @@ namespace OpenRA.Mods.Dr
 
 		public static bool HasProgress => Won.Count > 0;
 
-		/// <summary>Whether the intro has played; it plays by itself only the first time.</summary>
-		public static bool IntroSeen
-		{
-			get
-			{
-				_ = Won;
-				return introSeen;
-			}
-
-			set
-			{
-				_ = Won;
-				introSeen = value;
-				Save();
-			}
-		}
-
 		public static void RecordResult(string mission, bool victory)
 		{
 			LastResult = victory;
@@ -122,11 +100,7 @@ namespace OpenRA.Mods.Dr
 
 			try
 			{
-				var nodes = new List<MiniYamlNode>
-				{
-					new("Won", string.Join(", ", Won.OrderBy(m => m, StringComparer.OrdinalIgnoreCase))),
-					new("IntroSeen", introSeen ? "true" : "false")
-				};
+				var nodes = new List<MiniYamlNode> { new("Won", string.Join(", ", Won.OrderBy(m => m, StringComparer.OrdinalIgnoreCase))) };
 				nodes.WriteToFile(FilePath);
 			}
 			catch (Exception e)
