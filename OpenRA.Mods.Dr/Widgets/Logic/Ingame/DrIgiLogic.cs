@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using OpenRA.Mods.Common.Orders;
 using OpenRA.Mods.Common.Traits;
@@ -44,7 +45,11 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		bool windowOpen;
 		Action closeWindow;
 		Action confirmed;
+		string confirmText;
 		string missionEnd;
+		bool loadSaveOpen;
+		bool objectiveOpen;
+		Action closeLoadSave;
 
 		[ObjectCreator.UseCtor]
 		public DrIgiLogic(Widget widget, World world, ModData modData)
@@ -66,6 +71,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			BindTopBar(player);
 			BindBuild(player);
 			BindMenu();
+			BindLoadSave(player);
+			BindObjective(player);
 			BindMenuOptions();
 			BindOrders();
 			BindPaths();
@@ -75,6 +82,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 			var confirm = widget.Get("CONFIRM");
 			confirm.IsVisible = () => confirmed != null;
+			var areYouSure = igi.Library?.GetString("IGI_EVNT_AREUSURE");
+			widget.Get<DrIgiBoxWidget>("CONFIRM_BOX").GetText = () => confirmText ?? areYouSure;
 			widget.Get<DrIgiButtonWidget>("CONFIRM_YES").OnClick = () =>
 			{
 				var action = confirmed;
@@ -104,6 +113,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				{
 					if (confirmed != null)
 						confirmed = null;
+					else if (loadSaveOpen || objectiveOpen)
+						ClosePopups();
 					else if (world.OrderGenerator.GetType() != typeof(UnitOrderGenerator))
 						world.CancelInputMode();
 					else
@@ -145,6 +156,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			world.GameOver += () => Sync.RunUnsynced(world, () =>
 			{
 				closeWindow?.Invoke();
+				ClosePopups();
 				confirmed = null;
 				world.CancelInputMode();
 				var won = player != null && player.WinState == WinState.Won;
@@ -363,22 +375,16 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 		void BindMenu()
 		{
-			var options = widget.GetOrNull<MenuButtonWidget>("OPTIONS_BUTTON");
-			void OpenMenu() => options?.OnClick();
-
-			Button("LOAD_SAVE").OnClick = OpenMenu;
-			Button("OBJECTIVES").OnClick = OpenMenu;
-
 			var singlePlayer = world.LobbyInfo.NonBotClients.Count() == 1;
 			var restart = Button("RESTART");
 			restart.IsVisible = () => singlePlayer;
-			restart.OnClick = () => confirmed = Game.RestartGame;
+			restart.OnClick = () => Confirm(Game.RestartGame);
 			Button("RELINQUISH").IsVisible = () => !singlePlayer;
 			Button("RELINQUISH").IsDisabled = () => true;
 
-			Button("ABORT").OnClick = () => confirmed = Leave;
+			Button("ABORT").OnClick = () => Confirm(Leave);
 
-			Button("EXIT").OnClick = () => confirmed = Game.Exit;
+			Button("EXIT").OnClick = () => Confirm(Game.Exit);
 
 			var effects = widget.Get<DrIgiSliderWidget>("EFFECTS_VOLUME");
 			effects.GetValue = () => Game.Settings.Sound.SoundVolume;
@@ -409,6 +415,181 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			{
 				Game.Settings.Game.ViewportEdgeScrollStep = 10 + 40 * v;
 				Game.Settings.Save();
+			};
+		}
+
+		/// <summary>The original's "Are You Sure?", or another of its questions in that box, before an action.</summary>
+		void Confirm(Action action, string question = null)
+		{
+			confirmText = question != null ? igi.Library?.GetString(question) : null;
+			confirmed = action;
+		}
+
+		void ClosePopups()
+		{
+			closeLoadSave?.Invoke();
+			objectiveOpen = false;
+		}
+
+		/// <summary>
+		/// The original's Load/Save popup (Load/Save Game on the MENU tab): the saved games, a name to save under,
+		/// and Load, Save and Delete. Choosing a game puts its name in the field, so Save overwrites it after the
+		/// original's "Overwrite existing file?"; a double click loads it. Alone against the computer the game
+		/// waits while the popup is open.
+		/// </summary>
+		void BindLoadSave(Player player)
+		{
+			var saves = new List<DrSavedGame>();
+			var names = new List<string>();
+			var selected = -1;
+			DrSavedGame Selected() => selected >= 0 && selected < saves.Count ? saves[selected] : null;
+
+			var name = widget.Get<DrIgiTextFieldWidget>("SAVE_NAME");
+			var list = widget.Get<DrIgiListWidget>("SAVE_LIST");
+			widget.Get("LOAD_SAVE_POPUP").IsVisible = () => loadSaveOpen;
+			list.GetItems = () => names;
+			list.GetSelected = () => selected;
+			list.OnSelect = i =>
+			{
+				selected = i;
+				name.Text = saves[i].Name;
+			};
+
+			var up = Button("SAVE_LIST_UP");
+			up.IsDisabled = () => !list.CanScrollUp;
+			up.OnClick = () => list.Scroll(-1);
+			var down = Button("SAVE_LIST_DOWN");
+			down.IsDisabled = () => !list.CanScrollDown;
+			down.OnClick = () => list.Scroll(1);
+
+			void Refresh()
+			{
+				saves = DrSavedGames.List(modData);
+				names = saves.Select(s => s.Name).ToList();
+				selected = -1;
+				list.ScrollToTop();
+			}
+
+			var pause = world.LobbyInfo.NonBotClients.Count() == 1;
+			var wasPaused = false;
+			closeLoadSave = () =>
+			{
+				if (!loadSaveOpen)
+					return;
+
+				loadSaveOpen = false;
+				name.YieldKeyboardFocus();
+				if (pause && !world.IsGameOver)
+					world.SetPauseState(wasPaused);
+			};
+
+			bool CanSave() => world.Type == WorldType.Regular && !world.IsReplay && world.LobbyInfo.GlobalSettings.EnableGameSaves
+				&& player != null && player.WinState == WinState.Undefined && !world.IsGameOver;
+
+			void Save()
+			{
+				var file = name.Text.Trim();
+				if (!CanSave() || file.Length == 0 || confirmed != null)
+					return;
+
+				void Write()
+				{
+					world.RequestGameSave(file + ".orasav", false);
+					closeLoadSave();
+				}
+
+				if (File.Exists(Path.Combine(DrSavedGames.Folder(modData), file + ".orasav")))
+					Confirm(Write, "MLS_IGI_SAVE_OVERWRITE");
+				else
+					Write();
+			}
+
+			void Load(DrSavedGame save)
+			{
+				if (save == null || confirmed != null)
+					return;
+
+				closeLoadSave();
+				DrSavedGames.Load(save);
+			}
+
+			list.OnActivate = i => Load(saves[i]);
+
+			var load = Button("LOAD_GAME");
+			load.IsDisabled = () => Selected() == null || confirmed != null;
+			load.OnClick = () => Load(Selected());
+
+			var save = Button("SAVE_GAME");
+			save.IsDisabled = () => !CanSave() || name.Text.Trim().Length == 0 || confirmed != null;
+			save.OnClick = Save;
+			name.OnEnter = Save;
+			name.OnEscape = () => closeLoadSave();
+
+			var delete = Button("DELETE_GAME");
+			delete.IsDisabled = () => Selected() == null || confirmed != null;
+			delete.OnClick = () =>
+			{
+				var doomed = Selected();
+				Confirm(() =>
+				{
+					DrSavedGames.Delete(doomed);
+					Refresh();
+				});
+			};
+
+			Button("LOAD_SAVE").OnClick = () =>
+			{
+				if (loadSaveOpen)
+				{
+					closeLoadSave();
+					return;
+				}
+
+				objectiveOpen = false;
+				Refresh();
+				name.Text = "";
+				name.TakeKeyboardFocus();
+				if (pause)
+				{
+					wasPaused = world.PredictedPaused;
+					world.SetPauseState(true);
+				}
+
+				loadSaveOpen = true;
+			};
+		}
+
+		/// <summary>
+		/// Restate Objective: the original's text window over the map with the briefing's orders (0x42a690 reads
+		/// the mission's .brf into zone 3); the button again, or Escape, closes it.
+		/// </summary>
+		void BindObjective(Player player)
+		{
+			var text = widget.Get<DrIgiTextWidget>("OBJECTIVE_TEXT");
+			widget.Get("OBJECTIVE_WINDOW").IsVisible = () => objectiveOpen;
+			Button("OBJECTIVES").OnClick = () =>
+			{
+				if (objectiveOpen)
+				{
+					objectiveOpen = false;
+					return;
+				}
+
+				closeLoadSave?.Invoke();
+				var script = world.WorldActor.TraitOrDefault<DrScenarioScript>();
+				var orders = script?.Briefing(1);
+				if (string.IsNullOrEmpty(orders))
+					orders = script?.Briefing(0);
+
+				if (string.IsNullOrEmpty(orders))
+				{
+					// A map without a briefing: its objectives, as OpenRA keeps them.
+					var objectives = player?.PlayerActor.TraitOrDefault<MissionObjectives>()?.Objectives;
+					orders = objectives == null ? "" : string.Join("\\n", objectives.Select(o => o.Description));
+				}
+
+				text.SetText(orders);
+				objectiveOpen = true;
 			};
 		}
 

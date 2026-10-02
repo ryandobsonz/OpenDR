@@ -267,7 +267,7 @@ and 32 paths, 64 comms, 128 menu, 256 special.
 | Tab | Controls | Working |
 |---|---|---|
 | BUILD | The build menu: a rig's buildings, else every production building's units; red without the prerequisites, blue when the selected building cannot make it; left click orders one more or resumes, right click pauses then cancels, shift and right click cancels all; a number for those queued, PAUSED, a veil for the time left. Mouse wheel and arrows scroll | All but Decoy (no decoys in OpenDR yet). Upgrade queues the selected building's own upgrade at the headquarters (`upgrade.hq*`, `barracks*`, `assemblyplant*`, `phasing*`), its tip "Upgrade 2050c" |
-| MENU | Sliders for effects, music, game speed and scroll speed (`MEICON.BMP`, `MESLIDE.BMP`); Load/Save Game, Restate Objective, Start Again (Relinquish Control in multiplayer), Abort, Exit To System, the last three behind the original "Are You Sure?" | Load/Save Game and Restate Objective open OpenRA's in-game menu for now; game speed is fixed in OpenRA once a game starts |
+| MENU | Sliders for effects, music, game speed and scroll speed (`MEICON.BMP`, `MESLIDE.BMP`); Load/Save Game, Restate Objective, Start Again (Relinquish Control in multiplayer), Abort, Exit To System, the last three behind the original "Are You Sure?" | All but game speed, which OpenRA fixes once a game starts, and Relinquish Control |
 | ORDERS | Basic: Scout, Harass, Search & Destroy; Guard, Pursue, Default. Advanced adds Pursuit Range, Damage Tolerance and Independence (LOW/MED/HIGH, `ORLMH.BMP`) and Set Default | Guard |
 | PATHS | Basic: Add Waypoints, Clear All, Delete, Go. Advanced adds the path direction (one way, patrol, loop: `TRAILMDE.BMP`), the current and saved paths, De-Select, Save Path | None yet |
 | SPECIAL | Morph, Unmorph, Phase, Unphase, Self Destruct, Formation Move, Sell Water, Packup/UnPack, Set Exit Point | Set Exit Point (the building's rally point) |
@@ -311,6 +311,22 @@ Controls not working yet are drawn as the original drew a disabled button:
 red. Tips appear in
 the original's strip (`PT.BMP`) after 800 ms, as `TACTICS.CFG`'s
 `InfoDelay`.
+
+**Load/Save Game is the original's popup** (zone 12, 320,64–444,343, from
+0x4be70c): a name to save under (zone 8, at 330,74), the saved games (zone 9,
+330,98–436,228) with their scroll arrows, and Load, Save and Delete (zones
+5–7). Choosing a game puts its name in the field, so Save overwrites it after
+the original's "Overwrite existing file?"; a double click loads it; Delete
+asks "Are You Sure?". Alone against the computer the game waits while it is
+open. It lists every saved game, as the shell's Load Game and Custom Mission
+screens do between them (`DrSavedGames`). A loaded game goes straight on, as
+the original's did: `DrResumeLoadedGame` fades the battlefield in, which
+OpenRA leaves to its in-game menu.
+
+**Restate Objective is the original's text window** (zone 3, 49,96–398,415;
+0x42a690 reads the mission's `.brf` into it, 20 pixels in, 25 from the top):
+the briefing's orders (`\1`), scrolled by the wheel. The button again, or
+Escape, closes it.
 
 **A mission ends as the original's did** (zone 14, set up by 0x4ad130):
 "Mission Successful" or "Mission Failed" (`MLS_EVNT_MSUCCESS`, `MFAILURE`)

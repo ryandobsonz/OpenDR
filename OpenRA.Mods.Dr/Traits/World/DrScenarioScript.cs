@@ -148,6 +148,9 @@ namespace OpenRA.Mods.Dr.Traits
 				wr.Viewport.Center(w.Map.CenterOfCell(DrScenario.TileToCell(first.X, first.Y)));
 		}
 
+		/// <summary>A section of the mission's briefing, with its markup: 0 the background, 1 the orders, 2 the outcome, 3 Togra's word.</summary>
+		public string Briefing(int section) => briefing.GetValueOrDefault(section);
+
 		public void Trace(string message)
 		{
 			if (started)

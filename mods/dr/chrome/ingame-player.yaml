@@ -75,15 +75,6 @@ Container@PLAYER_WIDGETS:
 			Height: WINDOW_HEIGHT
 			Children:
 				LogicKeyListener@IGI_KEYS:
-				# OpenRA's in-game menu: the game's end opens it, and so do Load/Save Game and Restate Objective.
-				Container@MENU_BUTTONS:
-					Logic: MenuButtonsChromeLogic
-					Children:
-						MenuButton@OPTIONS_BUTTON:
-							Width: 0
-							Height: 0
-							Visible: false
-							DisableWorldSounds: true
 				# The top bar: Sell/Cancel, Power, Repair; the credits; Attack, Attack Without Moving, Stop.
 				DrIgiTopBar@TOP_BAR:
 					Tooltip: MLS_DISP_CREDIT
@@ -483,6 +474,55 @@ Container@PLAYER_WIDGETS:
 					Area: 588, 342, 52, 34
 				DrIgiResourceBars@RESOURCE_BARS:
 					Area: 588, 376, 52, 104
+				# The original's Load/Save popup (zone 12, 320,64-444,343): the name to save under (zone 8), the saved
+				# games (zone 9) and their scroll arrows (10, 11), then Load, Save and Delete (zones 5-7).
+				Container@LOAD_SAVE_POPUP:
+					Children:
+						DrIgiBox@LOAD_SAVE_BOX:
+							Area: 320, 64, 125, 280
+							Anchor: Center
+						DrIgiTextField@SAVE_NAME:
+							Area: 330, 74, 107, 18
+							Anchor: Center
+						DrIgiList@SAVE_LIST:
+							Area: 330, 98, 107, 131
+							Anchor: Center
+						DrIgiButton@SAVE_LIST_UP:
+							Area: 360, 234, 22, 22
+							Anchor: Center
+							Image: BUSCRLUP.BMP
+							Source: 0, 0, 22, 22
+							StateStride: 22, 0
+						DrIgiButton@SAVE_LIST_DOWN:
+							Area: 382, 234, 22, 22
+							Anchor: Center
+							Image: BUSCRLDN.BMP
+							Source: 0, 0, 22, 22
+							StateStride: 22, 0
+						DrIgiButton@LOAD_GAME:
+							Area: 330, 259, 0, 0
+							Anchor: Center
+							Size: Medium
+							Label: IGI_MELOAD
+						DrIgiButton@SAVE_GAME:
+							Area: 330, 284, 0, 0
+							Anchor: Center
+							Size: Medium
+							Label: IGI_MESAVE
+						DrIgiButton@DELETE_GAME:
+							Area: 330, 309, 0, 0
+							Anchor: Center
+							Size: Medium
+							Label: IGI_MEDELE
+				# Restate Objective (zone 3, 49,96-398,415): the briefing's orders, inset as 0x42a690 sets its text.
+				Container@OBJECTIVE_WINDOW:
+					Children:
+						DrIgiBox@OBJECTIVE_BOX:
+							Area: 49, 96, 350, 320
+							Anchor: Center
+						DrIgiText@OBJECTIVE_TEXT:
+							Area: 69, 121, 310, 275
+							Anchor: Center
 				# The original's "Are You Sure?", over the middle of the map view.
 				Container@CONFIRM:
 					Children:

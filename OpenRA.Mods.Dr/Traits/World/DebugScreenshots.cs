@@ -79,7 +79,11 @@ namespace OpenRA.Mods.Dr.Traits
 			if (realTime)
 				return;
 
+			// A loaded game replays its ticks up to the save: the steps up to there have run already.
 			tick++;
+			if (self.World.IsLoadingGameSave)
+				return;
+
 			foreach (var (_, command) in steps.Where(s => s.Tick == tick))
 			{
 				try
@@ -243,6 +247,11 @@ namespace OpenRA.Mods.Dr.Traits
 					}));
 					break;
 				}
+
+				case "type":
+					// Text as the keyboard types it, into whatever has the keyboard (a text field).
+					Game.RunAfterTick(() => Sync.RunUnsynced(w, () => Ui.HandleTextInput(string.Join(' ', c[1..]))));
+					break;
 
 				case "killtype":
 				{

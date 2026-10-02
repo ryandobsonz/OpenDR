@@ -75,9 +75,11 @@ Names are map actor names (`u<id>`, the original unit id) or those given to
 `spawn`. `order` exists, but its
 orders never reached units; use `teleport` and `steal` instead. `leave`
 returns to the menus, as the in-game Leave does. `save NAME` saves the game
-(NAME without spaces); a loaded game opens paused under the in-game menu,
-and `resume` presses its Resume a second later (give it the save's tick). A mission's end shows its "Mission Successful"
-or "Failed" popup; `press MISSION_END_CONTINUE` leaves as its Continue does.
+(NAME without spaces); a loaded game goes straight on, and its replay up to
+the save runs no steps, so give later steps ticks past the save's. `type
+TEXT` types into whatever has the keyboard (the Load/Save popup's name). A
+mission's end shows its "Mission Successful" or "Failed" popup; `press
+MISSION_END_CONTINUE` leaves as its Continue does.
 The game pauses when it ends, or when a step opens a window that pauses it
 (the settings, the in-game menu), so steps still to come then run a second
 apart in real time. Saves go to the player's own `Saves` folder: delete test saves.
@@ -215,10 +217,6 @@ comes first; a human playthrough then decides what matters next.
 
 1. **The in-game interface on the campaign's path**
    ([CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface) says what works):
-   - Load/Save Game: the original's popup over the map (zones 3–12: a list at
-     330,98–436,228, a name field at 330,74, Load/Save/Delete at 330,259/284/309,
-     its box from `TEXTBRDR.BMP`), instead of OpenRA's menu. Restate Objective
-     as the original's text window (zones 3/4, 49,96–398,415).
    - Cursors from `graphics/INTFACE/MOUSE.CRS` (already installed), the
      tooltips' exact place (`PT.BMP` is drawn at 639−171 by 0x428a40), the
      team lights' colours, the minimap's scroll arrows (`MM*.BMP`).

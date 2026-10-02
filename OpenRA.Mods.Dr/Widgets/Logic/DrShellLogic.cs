@@ -867,50 +867,13 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 		// Saved games, as the Load Game and Custom Mission screens list them
 
-		sealed record SavedGame(string Path, string Name, string Mission, MapPreview Map, DateTime Saved);
-
-		/// <summary>The saved games of the campaign's missions, or of the others; newest first.</summary>
-		List<SavedGame> SavedGames(bool campaign)
+		void LoadSavedGame(DrSavedGame save)
 		{
-			var folder = Path.Combine(Platform.SupportDir, "Saves", modData.Manifest.Id, modData.Manifest.Metadata.Version);
-			var saves = new List<SavedGame>();
-			if (!Directory.Exists(folder))
-				return saves;
-
-			foreach (var path in Directory.GetFiles(folder, "*.orasav", SearchOption.AllDirectories).OrderByDescending(File.GetLastWriteTime))
-			{
-				try
-				{
-					var map = modData.MapCache[new GameSave(path).GlobalSettings.Map];
-					var mission = map.Status == MapStatus.Available && map.Path != null ? Path.GetFileName(map.Path.TrimEnd('/', '\\')) : null;
-					if (DrCampaign.IsCampaignMission(mission) == campaign)
-						saves.Add(new SavedGame(path, Path.GetFileNameWithoutExtension(path), mission, map, File.GetLastWriteTime(path)));
-				}
-				catch (Exception e)
-				{
-					Log.Write("debug", $"Could not read the saved game {path}: {e.Message}");
-				}
-			}
-
-			return saves;
+			if (!launching && DrSavedGames.Load(save))
+				launching = true;
 		}
 
-		void LoadSavedGame(SavedGame save)
-		{
-			if (launching || save.Map.Status != MapStatus.Available)
-				return;
-
-			launching = true;
-			DrCampaign.Launched = save.Mission;
-			DrCampaign.LastResult = null;
-			Game.CreateAndStartLocalServer(save.Map.Uid,
-			[
-				Order.FromTargetString("LoadGameSave", Path.GetFileName(save.Path), true),
-				Order.Command($"state {Session.ClientState.Ready}")
-			]);
-		}
-
-		void DeleteSavedGame(SavedGame save, Action deleted)
+		void DeleteSavedGame(DrSavedGame save, Action deleted)
 		{
 			panelOpen = true;
 			ConfirmationDialogs.ButtonPrompt(modData,
@@ -920,15 +883,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				onConfirm: () =>
 				{
 					panelOpen = false;
-					try
-					{
-						File.Delete(save.Path);
-					}
-					catch (Exception e)
-					{
-						Log.Write("debug", $"Could not delete the saved game {save.Path}: {e.Message}");
-					}
-
+					DrSavedGames.Delete(save);
 					deleted();
 				},
 				confirmText: DeleteSaveConfirm,
@@ -989,7 +944,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		// Load Game, the original's saved game selection: the campaign's saved games
 
 		Screen loadGameReturn = Screen.Single;
-		List<SavedGame> campaignSaves = [];
+		List<DrSavedGame> campaignSaves = [];
 		int campaignSave = -1;
 
 		void OpenLoadGame(Screen from)
@@ -1001,8 +956,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		void SetupLoadGame(Widget load)
 		{
 			load.IsVisible = Visible(Screen.LoadGame);
-			SavedGame Selected() => campaignSave >= 0 && campaignSave < campaignSaves.Count ? campaignSaves[campaignSave] : null;
-			string Field(Func<SavedGame, string> f) => Selected() is { } s ? f(s) : "--";
+			DrSavedGame Selected() => campaignSave >= 0 && campaignSave < campaignSaves.Count ? campaignSaves[campaignSave] : null;
+			string Field(Func<DrSavedGame, string> f) => Selected() is { } s ? f(s) : "--";
 
 			var list = load.Get<DrShellMenuWidget>("SAVES");
 			list.GetItems = () => campaignSaves.Select(s => s.Name).ToList();
@@ -1030,7 +985,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 			void Refresh()
 			{
-				campaignSaves = SavedGames(true);
+				campaignSaves = DrSavedGames.List(modData, true);
 				campaignSave = -1;
 			}
 
@@ -1044,7 +999,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		// Custom missions: the missions that are not the campaign's, and their saved games
 
 		List<string> customMissions = [];
-		List<SavedGame> customSaves = [];
+		List<DrSavedGame> customSaves = [];
 		int customMission = -1;
 		int customSave = -1;
 
@@ -1052,7 +1007,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		{
 			custom.IsVisible = Visible(Screen.Custom);
 			string Mission() => customMission >= 0 && customMission < customMissions.Count ? customMissions[customMission] : null;
-			SavedGame Save() => customSave >= 0 && customSave < customSaves.Count ? customSaves[customSave] : null;
+			DrSavedGame Save() => customSave >= 0 && customSave < customSaves.Count ? customSaves[customSave] : null;
 			// A saved game whose mission has gone shows nothing and cannot be loaded, only deleted.
 			MapPreview Selected() => Mission() is { } m ? Map(m) : Save()?.Map is { Status: MapStatus.Available } map ? map : null;
 			string Field(Func<MapPreview, string> f) => Selected() is { } m ? f(m) : "--";
@@ -1107,7 +1062,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 					.Where(kv => !DrCampaign.IsCampaignMission(kv.Key) && kv.Value.Visibility.HasFlag(MapVisibility.MissionSelector))
 					.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
 					.Select(kv => kv.Key).ToList();
-				customSaves = SavedGames(false);
+				customSaves = DrSavedGames.List(modData, false);
 				customMission = customSave = -1;
 			}
 
