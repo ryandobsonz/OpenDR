@@ -190,7 +190,10 @@ killing teams the player must protect, as alliances change at cycle 0.
   ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)). Still to come: the
   debrief's statistics grid (`SS_COLLECTED`, `SS_CREATED`, `SS_LOST`,
   `SS_DESTROYED` by `SS_WATER`, `SS_TAELON`, `SS_UNITS`, `SS_BLDGS`, in
-  `dark/local/MLSTRING.CFG`), which needs the mission to report them, and
+  `dark/local/MLSTRING.CFG`), which needs the mission to report them (OpenRA's
+  `PlayerStatistics` counts kills and deaths of units and buildings, not
+  what was built or collected); the `debrief` art has two rows of a 103-pixel
+  label cell and eight 53-pixel cells at x 52–578, y 357–379 and 382–404. And
   the original's own Load Game and Custom Mission screens (`loadgame`,
   `custom`). The expansion's movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) and
   credits (`AddCredt.txt`) wait for its campaigns. `dkreign-exe.py` answers
