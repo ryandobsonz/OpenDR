@@ -57,9 +57,13 @@ namespace OpenRA.Mods.Dr.FileFormats
 		}
 
 		/// <summary>The game's text for a string name, or the fallback when MLSTRING.CFG lacks it.</summary>
+		/// <summary>The game's string by its name, else the mod's own (Fluent, for what the remaster adds), else the name.</summary>
 		public string GetString(string name, string fallback = null)
 		{
-			return strings.TryGetValue(name, out var text) ? text : fallback ?? name;
+			if (strings.TryGetValue(name, out var text))
+				return text;
+
+			return fallback ?? (FluentProvider.TryGetMessage(name, out var message) ? message : name);
 		}
 
 		public bool Contains(string name) => images.ContainsKey(name) || fileSystem.Exists("content|igi/" + name);

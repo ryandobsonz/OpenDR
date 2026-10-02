@@ -36,6 +36,7 @@ namespace OpenRA.Mods.Dr.Traits
 		readonly Dictionary<string, Actor> spawned = new();
 		WorldRenderer worldRenderer;
 		long tick;
+		bool realTime;
 
 		public DebugScreenshots()
 		{
@@ -54,9 +55,12 @@ namespace OpenRA.Mods.Dr.Traits
 		void IWorldLoaded.WorldLoaded(World w, WorldRenderer wr) { worldRenderer = wr; }
 
 		/// <summary>The game pauses when it ends; the steps still to come then run a second apart.</summary>
-		void IGameOver.GameOver(World world)
+		void IGameOver.GameOver(World world) => RunRestInRealTime(world, 2000);
+
+		/// <summary>The steps after this tick, a second apart in real time: the world has stopped ticking.</summary>
+		void RunRestInRealTime(World world, int delay)
 		{
-			var delay = 2000;
+			realTime = true;
 			foreach (var (_, command) in steps.Where(s => s.Tick > tick).OrderBy(s => s.Tick))
 			{
 				var c = command;
@@ -72,6 +76,9 @@ namespace OpenRA.Mods.Dr.Traits
 
 		void ITick.Tick(Actor self)
 		{
+			if (realTime)
+				return;
+
 			tick++;
 			foreach (var (_, command) in steps.Where(s => s.Tick == tick))
 			{
@@ -84,6 +91,10 @@ namespace OpenRA.Mods.Dr.Traits
 					Log.Write("debug", $"OPENDR_TEST {string.Join(' ', command)}: {e.Message}");
 				}
 			}
+
+			// A step that opened a window pausing the game (the settings, the in-game menu) stops the ticks too.
+			if (self.World.PredictedPaused && steps.Any(s => s.Tick > tick))
+				RunRestInRealTime(self.World, 1000);
 		}
 
 		static Player Team(World w, string team) => w.Players.First(p => p.InternalName == ImportDrCampaignCommand.TeamName(int.Parse(team, CultureInfo.InvariantCulture)));
@@ -210,8 +221,15 @@ namespace OpenRA.Mods.Dr.Traits
 				}
 
 				case "press":
-					// A button of the in-game interface by its widget id, as a click on it does.
-					Game.RunAfterTick(() => Sync.RunUnsynced(w, () => Ui.Root.GetOrNull<Widgets.DrIgiButtonWidget>(c[1])?.OnClick()));
+					// A button of the in-game interface, or of an OpenRA window, by its widget id, as a click on it does.
+					Game.RunAfterTick(() => Sync.RunUnsynced(w, () =>
+					{
+						var button = Ui.Root.GetOrNull(c[1]);
+						if (button is Widgets.DrIgiButtonWidget igi)
+							igi.OnClick();
+						else if (button is ButtonWidget b)
+							b.OnClick();
+					}));
 					break;
 
 				case "killtype":

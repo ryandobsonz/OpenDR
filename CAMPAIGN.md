@@ -273,6 +273,20 @@ and 32 paths, 64 comms, 128 menu, 256 special.
 | SPECIAL | Morph, Unmorph, Phase, Unphase, Self Destruct, Formation Move, Sell Water, Packup/UnPack, Set Exit Point | Set Exit Point (the building's rally point) |
 | COMMS | The players with their alliances, giving units or credits, messages to all, none, allies, neutral or enemies | None yet |
 
+**What the remaster adds to the original's menu** sits behind the MENU
+tab's Basic/Advanced toggle (`BASADV.BMP`, the toggle ORDERS and PATHS
+already have), so Basic is the original's menu untouched. Advanced, titled
+with the original's own "Options", has OpenRA's settings a tab each
+(Display, Audio, Input, Hotkeys, Gameplay) and its music player, which open
+over the battlefield as OpenRA's in-game menu opens them: the interface
+hidden, world sounds off, the game paused alone against the computer. Below
+them, settings worth having mid-mission change in place: battlefield zoom,
+health bars, edge scrolling and mouse panning (a click for the next choice,
+a right click for the last). Its words are the game's where it has them
+(`MLS_DISP_OPTIONS`, `ZoomStaticTitle`), else the mod's
+(`mods/dr/fluent/chrome.ftl`): a label is looked up in `MLSTRING.CFG`, then
+in Fluent.
+
 Controls not working yet are drawn as the original drew a disabled button:
 red. Escape cancels a pending order, else opens the MENU tab. Tips appear in
 the original's strip (`PT.BMP`) after 800 ms, as `TACTICS.CFG`'s

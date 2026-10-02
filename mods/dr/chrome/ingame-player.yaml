@@ -224,41 +224,127 @@ Container@PLAYER_WIDGETS:
 							Label: IGI_COENEM
 				Container@PANEL_MENU:
 					Children:
-						DrIgiImage@MENU_ICONS:
-							Area: 474, 105, 50, 90
-							Image: MEICON.BMP
-						DrIgiSlider@EFFECTS_VOLUME:
-							Area: 528, 105, 103, 15
-						DrIgiSlider@MUSIC_VOLUME:
-							Area: 528, 129, 103, 15
-						DrIgiSlider@GAME_SPEED:
-							Area: 528, 151, 103, 15
-						DrIgiSlider@SCROLL_SPEED:
-							Area: 528, 177, 103, 15
-						DrIgiButton@LOAD_SAVE:
-							Area: 479, 205, 0, 0
-							Size: Large
-							Label: IGI_MEPOPU
-						DrIgiButton@OBJECTIVES:
-							Area: 479, 231, 0, 0
-							Size: Large
-							Label: IGI_MEOBJE
-						DrIgiButton@RESTART:
-							Area: 479, 257, 0, 0
-							Size: Large
-							Label: IGI_MESTAR
-						DrIgiButton@RELINQUISH:
-							Area: 479, 257, 0, 0
-							Size: Large
-							Label: IGI_MERELI
-						DrIgiButton@ABORT:
-							Area: 479, 283, 0, 0
-							Size: Large
-							Label: IGI_MESURR
-						DrIgiButton@EXIT:
-							Area: 479, 309, 0, 0
-							Size: Large
-							Label: IGI_MEEXIT
+						# Basic is the original's menu; Advanced, in the original's own Basic/Advanced toggle (as ORDERS and
+						# PATHS have), holds what the remaster adds: OpenRA's settings, and the ones worth having at hand.
+						DrIgiImage@MENU_TOGGLE:
+							Area: 448, 64, 192, 32
+							Image: BASADV.BMP
+							Source: 0, 0, 192, 32
+							FrameStride: 192, 0
+						DrIgiButton@MENU_BASIC:
+							Area: 448, 64, 96, 32
+							Label: MLS_DISP_BASIC
+							HighlightFont: FONT12T.PCX
+						DrIgiButton@MENU_ADVANCED:
+							Area: 544, 64, 96, 32
+							Label: MLS_DISP_ADVANCED
+							HighlightFont: FONT12T.PCX
+							Tooltip: button-dr-igi-advanced-menu-tooltip
+						Container@MENU_BASIC_PANEL:
+							Children:
+								DrIgiImage@MENU_ICONS:
+									Area: 474, 105, 50, 90
+									Image: MEICON.BMP
+								DrIgiSlider@EFFECTS_VOLUME:
+									Area: 528, 105, 103, 15
+								DrIgiSlider@MUSIC_VOLUME:
+									Area: 528, 129, 103, 15
+								DrIgiSlider@GAME_SPEED:
+									Area: 528, 151, 103, 15
+								DrIgiSlider@SCROLL_SPEED:
+									Area: 528, 177, 103, 15
+								DrIgiButton@LOAD_SAVE:
+									Area: 479, 205, 0, 0
+									Size: Large
+									Label: IGI_MEPOPU
+								DrIgiButton@OBJECTIVES:
+									Area: 479, 231, 0, 0
+									Size: Large
+									Label: IGI_MEOBJE
+								DrIgiButton@RESTART:
+									Area: 479, 257, 0, 0
+									Size: Large
+									Label: IGI_MESTAR
+								DrIgiButton@RELINQUISH:
+									Area: 479, 257, 0, 0
+									Size: Large
+									Label: IGI_MERELI
+								DrIgiButton@ABORT:
+									Area: 479, 283, 0, 0
+									Size: Large
+									Label: IGI_MESURR
+								DrIgiButton@EXIT:
+									Area: 479, 309, 0, 0
+									Size: Large
+									Label: IGI_MEEXIT
+						Container@MENU_ADVANCED_PANEL:
+							Children:
+								DrIgiLabel@MENU_OPTIONS_TITLE:
+									Area: 448, 99, 192, 16
+									Text: MLS_DISP_OPTIONS
+									Align: Center
+								DrIgiButton@SETTINGS_DISPLAY:
+									Area: 478, 118, 0, 0
+									Size: Small
+									Label: button-dr-igi-display
+									Tooltip: button-dr-igi-display-tooltip
+								DrIgiButton@SETTINGS_AUDIO:
+									Area: 559, 118, 0, 0
+									Size: Small
+									Label: button-dr-igi-audio
+									Tooltip: button-dr-igi-audio-tooltip
+								DrIgiButton@SETTINGS_INPUT:
+									Area: 478, 143, 0, 0
+									Size: Small
+									Label: button-dr-igi-input
+									Tooltip: button-dr-igi-input-tooltip
+								DrIgiButton@SETTINGS_HOTKEYS:
+									Area: 559, 143, 0, 0
+									Size: Small
+									Label: button-dr-igi-hotkeys
+									Tooltip: button-dr-igi-hotkeys-tooltip
+								DrIgiButton@SETTINGS_GAMEPLAY:
+									Area: 478, 168, 0, 0
+									Size: Small
+									Label: button-dr-igi-gameplay
+									Tooltip: button-dr-igi-gameplay-tooltip
+								DrIgiButton@MUSIC:
+									Area: 559, 168, 0, 0
+									Size: Small
+									Label: button-dr-igi-music
+									Tooltip: button-dr-igi-music-tooltip
+								DrIgiLabel@ZOOM_TITLE:
+									Area: 456, 197, 100, 22
+									Text: ZoomStaticTitle
+								DrIgiButton@ZOOM:
+									Area: 559, 197, 0, 0
+									Size: Small
+									Tooltip: button-dr-igi-zoom-tooltip
+									RightClick: true
+								DrIgiLabel@HEALTH_BARS_TITLE:
+									Area: 456, 222, 100, 22
+									Text: label-dr-igi-health-bars
+								DrIgiButton@HEALTH_BARS:
+									Area: 559, 222, 0, 0
+									Size: Small
+									Tooltip: button-dr-igi-health-bars-tooltip
+									RightClick: true
+								DrIgiLabel@EDGE_SCROLL_TITLE:
+									Area: 456, 247, 100, 22
+									Text: label-dr-igi-edge-scroll
+								DrIgiButton@EDGE_SCROLL:
+									Area: 559, 247, 0, 0
+									Size: Small
+									Tooltip: button-dr-igi-edge-scroll-tooltip
+									RightClick: true
+								DrIgiLabel@MOUSE_SCROLL_TITLE:
+									Area: 456, 272, 100, 22
+									Text: label-dr-igi-mouse-scroll
+								DrIgiButton@MOUSE_SCROLL:
+									Area: 559, 272, 0, 0
+									Size: Small
+									Tooltip: button-dr-igi-mouse-scroll-tooltip
+									RightClick: true
 				Container@PANEL_ORDERS:
 					Children:
 						DrIgiImage@ORDERS_TOGGLE:

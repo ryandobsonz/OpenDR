@@ -64,7 +64,8 @@ background. Their output goes to `tools/campaign/out/`.
 `killunits TEAM`, `killall TEAM`, `kill NAME`, `killtype TEAM ACTOR`,
 `spawn TEAM ACTOR X,Y [NAME]`, `teleport NAME X,Y`, `steal INFILTRATOR TARGET`,
 `select NAME`, `explore TEAM`, `camera X,Y`, `press WIDGET` (an in-game
-interface button by its id in `ingame-player.yaml`, e.g. `TAB_MENU`),
+interface button by its id in `ingame-player.yaml`, e.g. `TAB_MENU`, or a
+button of an OpenRA window, e.g. the settings' `BACK_BUTTON`),
 `clickui X,Y` and `rclickui X,Y` (a click through the real input path, in
 the UI's pixels: the window's size over the interface scale, so 1280×720
 for the tests' 1600×900 at 125%; the debug log says what was under it).
@@ -74,8 +75,9 @@ orders never reached units; use `teleport` and `steal` instead. `leave`
 returns to the menus, as the in-game Leave does. `save NAME` saves the game
 (NAME without spaces); a loaded game opens paused under the in-game menu,
 and `resume` presses its Resume a second later (give it the save's tick).
-The game pauses when it ends, so steps still to come then run a second apart
-in real time. Saves go to the player's own `Saves` folder: delete test saves.
+The game pauses when it ends, or when a step opens a window that pauses it
+(the settings, the in-game menu), so steps still to come then run a second
+apart in real time. Saves go to the player's own `Saves` folder: delete test saves.
 
 The menus have their own script. Without `-Mission`, `run-game.ps1 -Shell`
 sets `OPENDR_SHELL`: steps 40 ticks apart, each screenshotted 30 ticks in.

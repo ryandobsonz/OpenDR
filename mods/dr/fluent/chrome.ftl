@@ -175,6 +175,43 @@ button-production-types-infantry-tooltip = Infantry
 button-production-types-vehicle-tooltip = Vehicles
 button-production-types-upgrade-tooltip = Upgrades
 
+## ingame-player.yaml: the MENU tab's Advanced page, what the remaster adds to the original's menu
+button-dr-igi-advanced-menu-tooltip = More options: settings, music, zoom and scrolling
+button-dr-igi-display = Display
+button-dr-igi-display-tooltip = Display settings: screen, interface size, battlefield zoom
+button-dr-igi-audio = Audio
+button-dr-igi-audio-tooltip = Audio settings: volumes, sound device
+button-dr-igi-input = Input
+button-dr-igi-input-tooltip = Mouse and scrolling settings
+button-dr-igi-hotkeys = Hotkeys
+button-dr-igi-hotkeys-tooltip = Change the keyboard shortcuts
+button-dr-igi-gameplay = Gameplay
+button-dr-igi-gameplay-tooltip = Gameplay settings: auto-save, player name and colour
+button-dr-igi-music = Music
+button-dr-igi-music-tooltip = Choose and play the game's music
+label-dr-igi-health-bars = Health Bars
+label-dr-igi-edge-scroll = Edge Scroll
+label-dr-igi-mouse-scroll = Mouse Scroll
+button-dr-igi-zoom-tooltip = Battlefield zoom: how much of the battlefield the screen shows
+button-dr-igi-health-bars-tooltip = When units' health bars show
+button-dr-igi-edge-scroll-tooltip = Scroll the map with the mouse at the screen's edge
+button-dr-igi-mouse-scroll-tooltip = How dragging with the mouse pans the map
+dr-igi-zoom =
+    .close = Close
+    .medium = Medium
+    .far = Far
+dr-igi-health-bars =
+    .standard = Selected
+    .damaged = Damaged
+    .always = Always
+dr-igi-on = On
+dr-igi-off = Off
+dr-igi-mouse-scroll =
+    .disabled = Off
+    .standard = Standard
+    .inverted = Inverted
+    .joystick = Joystick
+
 ## shell.yaml
 button-dr-shell-single-player = SINGLE PLAYER
 button-dr-shell-multi-player = MULTI PLAYER

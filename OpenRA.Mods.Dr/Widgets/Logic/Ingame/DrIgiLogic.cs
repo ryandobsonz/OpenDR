@@ -38,6 +38,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		string tab = "BUILD";
 		bool advancedOrders;
 		bool advancedPaths;
+		bool advancedMenu;
+		bool windowOpen;
 		Action confirmed;
 
 		[ObjectCreator.UseCtor]
@@ -59,6 +61,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			BindTopBar(player);
 			BindBuild(player);
 			BindMenu();
+			BindMenuOptions();
 			BindOrders();
 			BindPaths();
 			BindSpecial();
@@ -294,6 +297,103 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				Game.Settings.Game.ViewportEdgeScrollStep = 10 + 40 * v;
 				Game.Settings.Save();
 			};
+		}
+
+		/// <summary>
+		/// The MENU tab's Advanced page: what the remaster adds to the original's menu. OpenRA's settings, a
+		/// tab each, and its music player open over the battlefield as its own in-game menu does; zoom, health
+		/// bars and scrolling change in place (a click for the next choice, a right click for the last).
+		/// </summary>
+		void BindMenuOptions()
+		{
+			BindAdvancedToggle("MENU_BASIC", "MENU_ADVANCED", () => advancedMenu, v => advancedMenu = v);
+			widget.Get("MENU_BASIC_PANEL").IsVisible = () => !advancedMenu;
+			widget.Get("MENU_ADVANCED_PANEL").IsVisible = () => advancedMenu;
+			widget.Get<DrIgiImageWidget>("MENU_TOGGLE").GetFrame = () => advancedMenu ? 1 : 0;
+
+			foreach (var (name, panel) in new[]
+			{
+				("SETTINGS_DISPLAY", "DISPLAY_PANEL"), ("SETTINGS_AUDIO", "AUDIO_PANEL"), ("SETTINGS_INPUT", "INPUT_PANEL"),
+				("SETTINGS_HOTKEYS", "HOTKEYS_PANEL"), ("SETTINGS_GAMEPLAY", "GAMEPLAY_PANEL"),
+			})
+			{
+				// The settings open on their first tab; its buttons carry the panels' names.
+				Button(name).OnClick = () => OpenWindow("SETTINGS_PANEL",
+					window => window.Get("SETTINGS_TAB_CONTAINER").GetOrNull<ButtonWidget>(panel)?.OnClick());
+			}
+
+			Button("MUSIC").OnClick = () => OpenWindow("MUSIC_PANEL");
+
+			var graphics = Game.Settings.Graphics;
+			var game = Game.Settings.Game;
+			BindChoice("ZOOM", () => graphics.ViewportDistance, v => graphics.ViewportDistance = v,
+				(WorldViewport.Close, "dr-igi-zoom.close"), (WorldViewport.Medium, "dr-igi-zoom.medium"), (WorldViewport.Far, "dr-igi-zoom.far"));
+			BindChoice("HEALTH_BARS", () => game.StatusBars, v => game.StatusBars = v,
+				(StatusBarsType.Standard, "dr-igi-health-bars.standard"), (StatusBarsType.DamageShow, "dr-igi-health-bars.damaged"),
+				(StatusBarsType.AlwaysShow, "dr-igi-health-bars.always"));
+			BindChoice("EDGE_SCROLL", () => game.ViewportEdgeScroll, v => game.ViewportEdgeScroll = v, (true, "dr-igi-on"), (false, "dr-igi-off"));
+			BindChoice("MOUSE_SCROLL", () => game.MouseScroll, v => game.MouseScroll = v,
+				(MouseScrollType.Standard, "dr-igi-mouse-scroll.standard"), (MouseScrollType.Inverted, "dr-igi-mouse-scroll.inverted"),
+				(MouseScrollType.Joystick, "dr-igi-mouse-scroll.joystick"), (MouseScrollType.Disabled, "dr-igi-mouse-scroll.disabled"));
+		}
+
+		/// <summary>A button that steps through a setting's choices, each labelled by a Fluent message.</summary>
+		void BindChoice<T>(string name, Func<T> get, Action<T> set, params (T Value, string Label)[] choices)
+		{
+			var labels = choices.Select(c => FluentProvider.GetMessage(c.Label)).ToArray();
+			int Index() => Array.FindIndex(choices, c => EqualityComparer<T>.Default.Equals(c.Value, get()));
+			void Step(int by)
+			{
+				// From a value not offered here (Native zoom, set elsewhere), to the first or the last.
+				var i = Index();
+				set(choices[i < 0 ? (by > 0 ? 0 : choices.Length - 1) : (i + by + choices.Length) % choices.Length].Value);
+				Game.Settings.Save();
+			}
+
+			var button = Button(name);
+			button.GetLabel = () => Index() is var i && i >= 0 ? labels[i] : get().ToString();
+			button.OnClick = () => Step(1);
+			button.OnRightClick = () => Step(-1);
+		}
+
+		/// <summary>
+		/// One of OpenRA's windows over the battlefield, as its in-game menu opens them: the interface hidden,
+		/// world sounds off and, alone against the computer, the game paused, until it closes.
+		/// </summary>
+		void OpenWindow(string id, Action<Widget> opened = null)
+		{
+			if (windowOpen)
+				return;
+
+			var worldRoot = Ui.Root.Get("WORLD_ROOT");
+			var pause = world.LobbyInfo.NonBotClients.Count() == 1;
+			var paused = world.PredictedPaused;
+			var sounds = Game.Sound.DisableWorldSounds;
+
+			world.CancelInputMode();
+			worldRoot.IsVisible = () => false;
+			Game.Sound.DisableWorldSounds = true;
+			if (pause)
+				world.SetPauseState(true);
+
+			windowOpen = true;
+			var window = Game.OpenWindow(id, new WidgetArgs
+			{
+				{
+					"onExit", () =>
+					{
+						worldRoot.IsVisible = () => true;
+						Game.Sound.DisableWorldSounds = sounds;
+						if (pause)
+							world.SetPauseState(paused);
+
+						windowOpen = false;
+					}
+				}
+			});
+
+			opened?.Invoke(window);
+			Game.RunAfterTick(Ui.ResetTooltips);
 		}
 
 		void BindAdvancedToggle(string basic, string advanced, Func<bool> get, Action<bool> set)

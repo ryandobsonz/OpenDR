@@ -445,8 +445,13 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			{
 				var at = shell.ToScreen(new float2(int.Parse(step[1], CultureInfo.InvariantCulture), int.Parse(step[2], CultureInfo.InvariantCulture)));
 				var location = new int2((int)at.X, (int)at.Y);
-				foreach (var e in new[] { MouseInputEvent.Move, MouseInputEvent.Down, MouseInputEvent.Up })
-					Ui.HandleInput(new MouseInput(e, e == MouseInputEvent.Move ? MouseButton.None : MouseButton.Left, location, int2.Zero, Modifiers.None, 1));
+
+				// After the widgets' tick, as real input arrives: a click that opens a window changes the tree it walks.
+				Game.RunAfterTick(() =>
+				{
+					foreach (var e in new[] { MouseInputEvent.Move, MouseInputEvent.Down, MouseInputEvent.Up })
+						Ui.HandleInput(new MouseInput(e, e == MouseInputEvent.Move ? MouseButton.None : MouseButton.Left, location, int2.Zero, Modifiers.None, 1));
+				});
 
 				return;
 			}
