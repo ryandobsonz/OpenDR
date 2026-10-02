@@ -33,7 +33,9 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		static readonly string[] Tabs = ["BUILD", "COMMS", "MENU", "ORDERS", "PATHS", "SPECIAL"];
 
 		readonly World world;
+		readonly ModData modData;
 		readonly Widget widget;
+		readonly List<(HotkeyReference Key, Action Run)> hotkeys = [];
 		readonly DrIgiWidget igi;
 		string tab = "BUILD";
 		bool advancedOrders;
@@ -43,9 +45,10 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		Action confirmed;
 
 		[ObjectCreator.UseCtor]
-		public DrIgiLogic(Widget widget, World world)
+		public DrIgiLogic(Widget widget, World world, ModData modData)
 		{
 			this.world = world;
+			this.modData = modData;
 			this.widget = widget;
 			igi = (DrIgiWidget)widget;
 			var player = world.LocalPlayer;
@@ -66,6 +69,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			BindPaths();
 			BindSpecial();
 			BindMinimap(player);
+			BindHotkeys();
 
 			var confirm = widget.Get("CONFIRM");
 			confirm.IsVisible = () => confirmed != null;
@@ -77,24 +81,95 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			};
 			widget.Get<DrIgiButtonWidget>("CONFIRM_NO").OnClick = () => confirmed = null;
 
-			// Escape cancels a pending order (a building to place, a target to pick), else opens the menu.
+			// Escape cancels a pending order (a building to place, a target to pick), else opens the menu; the
+			// rest are the original's keyboard commands (BindHotkeys).
 			widget.Get<LogicKeyListenerWidget>("IGI_KEYS").AddHandler(e =>
 			{
-				if (e.Event != KeyInputEvent.Down || e.Key != Keycode.ESCAPE)
+				if (e.Event != KeyInputEvent.Down)
 					return false;
 
-				if (confirmed != null)
-					confirmed = null;
-				else if (world.OrderGenerator.GetType() != typeof(UnitOrderGenerator))
-					world.CancelInputMode();
-				else
-					tab = tab == "MENU" ? "BUILD" : "MENU";
+				if (e.Key == Keycode.ESCAPE && e.Modifiers == Modifiers.None)
+				{
+					if (confirmed != null)
+						confirmed = null;
+					else if (world.OrderGenerator.GetType() != typeof(UnitOrderGenerator))
+						world.CancelInputMode();
+					else
+						tab = tab == "MENU" ? "BUILD" : "MENU";
 
-				return true;
+					return true;
+				}
+
+				if (e.IsRepeat)
+					return false;
+
+				foreach (var (key, run) in hotkeys)
+				{
+					if (key.IsActivatedBy(e))
+					{
+						run();
+						return true;
+					}
+				}
+
+				return false;
 			});
 		}
 
 		DrIgiButtonWidget Button(string name) => widget.Get<DrIgiButtonWidget>(name);
+
+		/// <summary>
+		/// Dark Reign's keyboard commands (its F1 list, dark/local/HELP.TXT), as rebindable hotkeys
+		/// (mods/dr/hotkeys.yaml): the tabs, and the buttons they press wherever their tab is.
+		/// </summary>
+		void BindHotkeys()
+		{
+			void Bind(string hotkey, Action run) => hotkeys.Add((modData.Hotkeys[hotkey], run));
+			void Press(string hotkey, string name)
+			{
+				var button = Button(name);
+				Bind(hotkey, () =>
+				{
+					if (!button.IsVisible() || button.IsDisabled())
+						return;
+
+					Game.Sound.PlayNotification(modData.DefaultRules, null, "Sounds", ChromeMetrics.Get<string>("ClickSound"), null);
+					button.OnClick();
+				});
+			}
+
+			Bind("IgiBuildTab", () => tab = "BUILD");
+			Bind("IgiCommsTab", () => tab = "COMMS");
+			Bind("IgiOrdersTab", () => tab = "ORDERS");
+			Bind("IgiPathsTab", () => tab = "PATHS");
+			Bind("IgiSpecialTab", () => tab = "SPECIAL");
+			Bind("IgiHotkeyList", () => OpenSettings("HOTKEYS_PANEL"));
+			Press("IgiExitToMainMenu", "ABORT");
+
+			Press("IgiAttack", "ATTACK");
+			Press("IgiAttackInPlace", "ATTACK_IN_PLACE");
+			Press("Stop", "STOP");
+			Press("Guard", "GUARD");
+			Press("Sell", "SELL");
+			Press("Repair", "REPAIR");
+			Press("PowerDown", "POWER");
+			Press("IgiSetExitPoint", "SET_EXIT_POINT");
+
+			// As OpenRA's command bar orders them.
+			Bind("Scatter", () => IssueOrders(Selected.Where(a => a.Info.HasTraitInfo<IMoveInfo>()).Select(a => new Order("Scatter", a, false))));
+			Bind("Deploy", () => IssueOrders(Selected
+				.SelectMany(a => a.TraitsImplementing<IIssueDeployOrder>().Where(d => d.CanIssueDeployOrder(a, false)).Select(d => d.IssueDeployOrder(a, false)))
+				.Where(o => o != null)));
+		}
+
+		void IssueOrders(IEnumerable<Order> orders)
+		{
+			var all = orders.ToArray();
+			foreach (var o in all)
+				world.IssueOrder(o);
+
+			all.PlayVoiceForOrders();
+		}
 
 		IEnumerable<Actor> Selected => world.Selection.Actors.Where(a => a.Owner == world.LocalPlayer && a.IsInWorld && !a.IsDead);
 
@@ -317,9 +392,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				("SETTINGS_HOTKEYS", "HOTKEYS_PANEL"), ("SETTINGS_GAMEPLAY", "GAMEPLAY_PANEL"),
 			})
 			{
-				// The settings open on their first tab; its buttons carry the panels' names.
-				Button(name).OnClick = () => OpenWindow("SETTINGS_PANEL",
-					window => window.Get("SETTINGS_TAB_CONTAINER").GetOrNull<ButtonWidget>(panel)?.OnClick());
+				Button(name).OnClick = () => OpenSettings(panel);
 			}
 
 			Button("MUSIC").OnClick = () => OpenWindow("MUSIC_PANEL");
@@ -355,6 +428,10 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			button.OnClick = () => Step(1);
 			button.OnRightClick = () => Step(-1);
 		}
+
+		/// <summary>OpenRA's settings on one of its tabs; they open on the first, and their tab buttons carry the panels' names.</summary>
+		void OpenSettings(string panel) => OpenWindow("SETTINGS_PANEL",
+			window => window.Get("SETTINGS_TAB_CONTAINER").GetOrNull<ButtonWidget>(panel)?.OnClick());
 
 		/// <summary>
 		/// One of OpenRA's windows over the battlefield, as its in-game menu opens them: the interface hidden,

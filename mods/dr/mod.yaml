@@ -212,7 +212,7 @@ Music:
 Hotkeys:
 	common|hotkeys/game.yaml
 	common|hotkeys/observer.yaml
-	common|hotkeys/production-common.yaml
+	# common|hotkeys/production-common.yaml: its palette and tab keys have no use under the original interface
 	common|hotkeys/supportpowers.yaml
 	common|hotkeys/viewport.yaml
 	common|hotkeys/chat.yaml

@@ -232,6 +232,18 @@ namespace OpenRA.Mods.Dr.Traits
 					}));
 					break;
 
+				case "key":
+				{
+					// A key as the keyboard sends it, by its hotkey name and modifiers: "key A Shift", "key F1".
+					var hotkey = FieldLoader.GetValue<Hotkey>("key", string.Join(' ', c[1..]));
+					Game.RunAfterTick(() => Sync.RunUnsynced(w, () =>
+					{
+						foreach (var e in new[] { KeyInputEvent.Down, KeyInputEvent.Up })
+							Ui.HandleKeyPress(new KeyInput { Event = e, Key = hotkey.Key, Modifiers = hotkey.Modifiers, MultiTapCount = 1 });
+					}));
+					break;
+				}
+
 				case "killtype":
 				{
 					var p = Team(w, c[1]);

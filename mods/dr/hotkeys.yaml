@@ -1,39 +1,96 @@
-NextProductionTab: PAGEDOWN
-	Description: hotkey-description-nextproductiontab
-	Types: Production
+# Dark Reign's own keyboard commands (dark/local/HELP.TXT, the list its F1 shows) are the defaults here,
+# bound to the original interface by DrIgiLogic, and each can be changed in Settings > Hotkeys. OpenRA's
+# commands that clash with them lose their key; those with nothing behind them under the original
+# interface (its command bar, stances, beacons, production tabs and palette) are taken off the list.
+
+# The original's tabs; Escape, the MENU tab, is fixed as it was.
+IgiBuildTab: B
+	Description: hotkey-description-igi-build-tab
+	Types: Menu
 	Contexts: player
 
-PreviousProductionTab: PAGEUP
-	Description: hotkey-description-previousproductiontab
-	Types: Production
+IgiCommsTab: C
+	Description: hotkey-description-igi-comms-tab
+	Types: Menu
 	Contexts: player
 
-ProductionTypeBuilding: E
-	Description: hotkey-description-productiontypebuilding
-	Types: Production
+IgiOrdersTab: O
+	Description: hotkey-description-igi-orders-tab
+	Types: Menu
 	Contexts: player
 
-ProductionTypeUpgrade: R
-	Description: hotkey-description-productiontypeupgrade
-	Types: Production
+IgiPathsTab: P
+	Description: hotkey-description-igi-paths-tab
+	Types: Menu
 	Contexts: player
 
-ProductionTypeInfantry: T
-	Description: hotkey-description-productiontypeinfantry
-	Types: Production
+IgiSpecialTab: BACKQUOTE
+	Description: hotkey-description-igi-special-tab
+	Types: Menu
 	Contexts: player
 
-ProductionTypeVehicle: Y
-	Description: hotkey-description-productiontypevehicle
-	Types: Production
+# The original's F1 listed its keys; here it opens this list, where they can be changed.
+IgiHotkeyList: F1
+	Description: hotkey-description-igi-hotkey-list
+	Types: Menu
 	Contexts: player
 
-ProductionTypeEconomy: U
-	Description: hotkey-description-productiontypeeconomy
-	Types: Production
+IgiExitToMainMenu: Q Shift
+	Description: hotkey-description-igi-exit-to-main-menu
+	Types: Menu
 	Contexts: player
 
-PowerDown: X
+# Units
+IgiAttack: A
+	Description: hotkey-description-igi-attack
+	Types: Unit
+	Contexts: player
+
+IgiAttackInPlace: A Shift
+	Description: hotkey-description-igi-attack-in-place
+	Types: Unit
+	Contexts: player
+
+Stop: S
+
+SelectAllUnits: E
+
+Scatter: X
+
+Deploy: I
+
+# Buildings
+IgiSetExitPoint: HOME
+	Description: hotkey-description-igi-set-exit-point
+	Types: OrderGenerator
+	Contexts: player
+
+# HOME was the exit point's, C the comms', in the original: no key, as OpenRA leaves some.
+ToSelection: UNKNOWN
+
+Repair: UNKNOWN
+
+PowerDown:
 	Description: hotkey-description-powerdown
 	Types: OrderGenerator
 	Contexts: player
+
+# The original's CD player, on the keypad.
+StopMusic: KP_MULTIPLY
+
+NextMusic: KP_PLUS
+
+PrevMusic: KP_MINUS
+
+# From production-common.yaml, which is not loaded: its palette and tab keys have no use here.
+CycleProductionBuildings: TAB Ctrl
+	Description: hotkey-description-cycleproductionbuildings
+	Types: Production
+	Contexts: player, spectator
+
+-AttackMove:
+-StanceAttackAnything:
+-StanceDefend:
+-StanceReturnFire:
+-StanceHoldFire:
+-PlaceBeacon:

@@ -65,7 +65,9 @@ background. Their output goes to `tools/campaign/out/`.
 `spawn TEAM ACTOR X,Y [NAME]`, `teleport NAME X,Y`, `steal INFILTRATOR TARGET`,
 `select NAME`, `explore TEAM`, `camera X,Y`, `press WIDGET` (an in-game
 interface button by its id in `ingame-player.yaml`, e.g. `TAB_MENU`, or a
-button of an OpenRA window, e.g. the settings' `BACK_BUTTON`),
+button of an OpenRA window, e.g. the settings' `BACK_BUTTON`), `key KEY
+[MODIFIERS]` (a key through the real input path, by OpenRA's key names:
+`key A Shift`, `key F1`, `key BACKQUOTE`),
 `clickui X,Y` and `rclickui X,Y` (a click through the real input path, in
 the UI's pixels: the window's size over the interface scale, so 1280×720
 for the tests' 1600×900 at 125%; the debug log says what was under it).
@@ -223,6 +225,11 @@ the game itself (OpenDR on the new engine). UI work comes first.
      team lights' colours, the minimap's scroll arrows (`MM*.BMP`).
    - Multi Player and Instant Action from `graphics/INTFACE/MULTMENU` (the
      manual's screenshots show them), replacing OpenRA's panels.
+   - OpenRA's settings and music panels, which the MENU tab's Advanced page
+     and F1 open, still look like OpenRA's (OpenDR's dialog art, OpenRA's
+     fonts and layout). Drawing them with the original's art (`TEXTBRDR.BMP`
+     box, `SBTNS.BMP` buttons, the PCX fonts) would finish the remaster's
+     look; the controls behind them are done.
 2. **The gameplay behind the interface's buttons**, owed even though no
    campaign mission needs them: the units' tactics (pursuit, damage
    tolerance, independence; `SetTactAI` in the scenarios), the orders

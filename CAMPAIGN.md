@@ -287,8 +287,33 @@ a right click for the last). Its words are the game's where it has them
 (`mods/dr/fluent/chrome.ftl`): a label is looked up in `MLSTRING.CFG`, then
 in Fluent.
 
+**The keyboard is the original's** (`dark/local/HELP.TXT`, the list its F1
+showed), as OpenRA hotkeys that Settings → Hotkeys can change
+(`mods/dr/hotkeys.yaml`, bound in `DrIgiLogic.BindHotkeys`). A key presses
+its button wherever that button's tab is, if the button is enabled.
+
+| Key | Does | Key | Does |
+|---|---|---|---|
+| B, C, O, P, \` | BUILD, COMMS, ORDERS, PATHS, SPECIAL | Esc | MENU (or cancels a pending order) |
+| A | Attack | Shift+A | Attack Without Moving |
+| S | Stop | X | Scatter |
+| E | Select the units on screen (again: all) | I | The unit's special function (OpenRA's deploy) |
+| H | Centre on the base | Space | Last event |
+| Home | Set Exit Point | Shift+Q | Abort, after "Are You Sure?" |
+| Keypad *, +, − | Stop music, next track, previous | F1 | Settings → Hotkeys, the list of keys |
+| Ctrl+n, n | Make, select tactical group n | Pause | Pause |
+
+OpenRA's own keys stay where they do not clash: Sell (Z), Guard (D), the
+screenshot (Ctrl+P), mute (M), select by type (W), the status bars (comma).
+Repair, Power and Jump To Selection lost theirs to the original's C, X and
+Home, and can be given one. The original's keys for what OpenDR lacks (M
+move, F formation, T turn, R repair, W rearm, D decoy, N next unit, End,
+Shift+L water sale, Shift+D self destruct) wait for it. OpenRA's hotkeys
+with nothing behind them under this interface (attack move, stances,
+beacons, the production palette and tabs) are off the list.
+
 Controls not working yet are drawn as the original drew a disabled button:
-red. Escape cancels a pending order, else opens the MENU tab. Tips appear in
+red. Tips appear in
 the original's strip (`PT.BMP`) after 800 ms, as `TACTICS.CFG`'s
 `InfoDelay`. The game's end still opens OpenRA's in-game menu, whose Leave
 returns to the menus.
