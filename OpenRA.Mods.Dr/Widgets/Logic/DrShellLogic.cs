@@ -18,6 +18,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OpenRA.Mods.Common.Widgets;
 using OpenRA.Mods.Common.Widgets.Logic;
+using OpenRA.Mods.Dr.FileFormats;
 using OpenRA.Mods.Dr.Graphics;
 using OpenRA.Network;
 using OpenRA.Widgets;
@@ -74,11 +75,11 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		const string MissionSuccessful = "label-dr-shell-mission-successful";
 
 		// In the original's order from Cube on (its screens 0x19-0x21), which picks the turn between two faces.
-		enum Screen { Main, Quit, Single, Cube, Options, Archive, Story, Training, Return, Briefing, Debrief }
+		enum Screen { Main, Quit, Single, Credits, Cube, Options, Archive, Story, Training, Return, Briefing, Debrief }
 
 		static readonly Dictionary<Screen, string> Backgrounds = new()
 		{
-			{ Screen.Main, "main" }, { Screen.Quit, "main" }, { Screen.Single, "single" }, { Screen.Cube, "missions" },
+			{ Screen.Main, "main" }, { Screen.Quit, "main" }, { Screen.Single, "single" }, { Screen.Credits, "credits" }, { Screen.Cube, "missions" },
 			{ Screen.Options, "options" }, { Screen.Archive, "archive" }, { Screen.Story, "story" },
 			{ Screen.Training, "training" }, { Screen.Return, "return" }, { Screen.Debrief, "debrief" }
 		};
@@ -165,6 +166,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 			shell.GetBackground = () => BackgroundOf(screen);
 			shell.OnKeyPress = HandleKey;
+			archive = DrArchive.Load(modData.DefaultFileSystem);
 
 			SetupMain(widget.Get("MAIN"));
 			SetupQuit(widget.Get("QUIT_PROMPT"));
@@ -175,6 +177,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			SetupBriefing(widget.Get("BRIEFING_I"), 'i');
 			SetupTraining(widget.Get("TRAINING"));
 			SetupOptions(widget.Get("OPTIONS"));
+			SetupArchive(widget.Get("ARCHIVE"));
+			SetupCredits(widget.Get("CREDITS_SCREEN"));
 			SetupDebrief(widget.Get("DEBRIEF"));
 
 			Ambience(Screen.Main);
@@ -191,7 +195,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		int punctuation = -1;
 
 		/// <summary>The original's hums: bridge.wav on the bridge and the cube's faces, bridge3.wav under the main menus.</summary>
-		void Ambience(Screen s) => Ambience(s is Screen.Main or Screen.Quit or Screen.Single ? "bridge3.wav" : "bridge.wav");
+		void Ambience(Screen s) => Ambience(s == Screen.Credits ? "credits.wav" : s < Screen.Cube ? "bridge3.wav" : "bridge.wav");
 
 		void Ambience(string name)
 		{
@@ -297,7 +301,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				return;
 
 			// The game comes back to a bare face of the cube, which turns to the next; the Togran's defeat
-			// first plays the ending.
+			// plays the ending, then the credits roll, as in the original.
 			Show(Screen.Return);
 			if (launched.StartsWith('t'))
 			{
@@ -312,7 +316,10 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			else
 			{
 				briefingMission = launched;
-				Go(Screen.Debrief, mission == DrCampaign.Togran ? [Movie("OUTRO"), .. Turn(Screen.Return, Screen.Debrief)] : Turn(Screen.Return, Screen.Debrief));
+				if (mission == DrCampaign.Togran)
+					Go(Screen.Credits, Movie("OUTRO"));
+				else
+					TurnTo(Screen.Debrief);
 			}
 		}
 
@@ -324,10 +331,17 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			switch (screen)
 			{
 				case Screen.Main: Show(Screen.Quit); break;
-				case Screen.Quit: case Screen.Single: Show(Screen.Main); break;
+				case Screen.Quit: case Screen.Single: case Screen.Credits: Show(Screen.Main); break;
 				case Screen.Cube: Go(Screen.Single, CubeOut); break;
 				case Screen.Options: case Screen.Story: case Screen.Training: case Screen.Debrief: TurnTo(Screen.Cube); break;
 				case Screen.Briefing: BackFromBriefing(); break;
+				case Screen.Archive:
+					if (archiveNode?.Parent != null)
+						OpenArchive(archiveNode.Parent);
+					else
+						TurnTo(Screen.Cube);
+
+					break;
 			}
 
 			return true;
@@ -411,7 +425,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			var intro = main.Get<DrShellButtonWidget>("REPLAY_INTRO");
 			intro.IsDisabled = () => !HasMovie("INTRO");
 			intro.OnClick = () => Go(Screen.Main, Movie("INTRO"));
-			main.Get<DrShellButtonWidget>("CREDITS").OnClick = () => OpenPanel("CREDITS_PANEL", new WidgetArgs());
+			main.Get<DrShellButtonWidget>("CREDITS").OnClick = () => Show(Screen.Credits);
 			main.Get<DrShellButtonWidget>("QUIT").OnClick = () => Show(Screen.Quit);
 			main.Get<DrShellButtonWidget>("SETTINGS").OnClick = () => OpenPanel("SETTINGS_PANEL", new WidgetArgs());
 			main.Get<DrShellButtonWidget>("REPLAYS").OnClick = () => OpenPanel("REPLAYBROWSER_PANEL", new WidgetArgs { { "onStart", () => { } } });
@@ -509,7 +523,9 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			up.IsDisabled = () => !DrCampaign.IsUnlocked(mission);
 			up.OnClick = OpenStory;
 			cube.Get<DrShellButtonWidget>("LEFT").OnClick = () => TurnTo(Screen.Options);
-			cube.Get<DrShellButtonWidget>("RIGHT").IsDisabled = () => true;
+			var right = cube.Get<DrShellButtonWidget>("RIGHT");
+			right.IsDisabled = () => archive == null;
+			right.OnClick = () => TurnTo(Screen.Archive);
 			cube.Get<DrShellButtonWidget>("DOWN").OnClick = () => Go(Screen.Single, CubeOut);
 		}
 
@@ -677,6 +693,69 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			}
 
 			return sb.ToString();
+		}
+
+		// The credits, as the original rolls them
+
+		void SetupCredits(Widget credits)
+		{
+			credits.IsVisible = Visible(Screen.Credits);
+			var roll = credits.Get<DrShellCreditsWidget>("ROLL");
+			onShow[Screen.Credits] = roll.Restart;
+			credits.Get<DrShellButtonWidget>("SLOWER").OnClick = roll.Slower;
+			credits.Get<DrShellButtonWidget>("FASTER").OnClick = roll.Faster;
+			credits.Get<DrShellButtonWidget>("PREVIOUS_MENU").OnClick = () => Show(Screen.Main);
+		}
+
+		// The archive, the cube's right face: the history of the war, its people and units, and a journal
+
+		DrArchive archive;
+		DrArchive.Node archiveNode;
+		DrShellTextWidget archiveText;
+
+		void SetupArchive(Widget page)
+		{
+			page.IsVisible = Visible(Screen.Archive);
+			page.Get<DrShellLabelWidget>("HEADING").GetText = () =>
+				(archiveNode?.Items != null ? archiveNode : archiveNode?.Parent)?.Title.ToUpperInvariant();
+
+			var items = page.Get<DrShellMenuWidget>("ITEMS");
+			items.IsVisible = () => archiveNode?.Items != null;
+			items.GetItems = () => ArchiveItems(archiveNode).Select(n => n.Title).ToList();
+			items.OnSelect = i => OpenArchive(ArchiveItems(archiveNode)[i]);
+
+			archiveText = page.Get<DrShellTextWidget>("TEXT");
+			archiveText.IsVisible = () => archiveNode?.Items == null;
+			SetupScroll(page, archiveText);
+			foreach (var id in new[] { "SCROLL_UP", "SCROLL_DOWN" })
+				page.Get<DrShellButtonWidget>(id).IsVisible = archiveText.IsVisible;
+
+			var up = page.Get<DrShellButtonWidget>("UP_ONE");
+			up.IsDisabled = () => archiveNode?.Parent == null;
+			up.OnClick = () => OpenArchive(archiveNode.Parent);
+			page.Get<DrShellButtonWidget>("LEFT").OnClick = () => TurnTo(Screen.Cube);
+
+			onShow[Screen.Archive] = () => OpenArchive(archive?.Root);
+		}
+
+		/// <summary>A menu's items; the journal, the root's last, has as many entries as missions won, and one more.</summary>
+		List<DrArchive.Node> ArchiveItems(DrArchive.Node menu)
+		{
+			if (menu?.Items == null)
+				return [];
+
+			var root = archive.Root;
+			if (menu.Parent == root && root.Items.Count > 0 && menu == root.Items[^1])
+				return menu.Items.Take(DrCampaign.Completed + 1).ToList();
+
+			return menu.Items;
+		}
+
+		void OpenArchive(DrArchive.Node node)
+		{
+			archiveNode = node;
+			if (node?.Items == null)
+				archiveText.SetText(node?.Text ?? "");
 		}
 
 		// The debrief after a won mission: the historical outcome

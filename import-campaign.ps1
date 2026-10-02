@@ -65,6 +65,10 @@ if ($shell) {
     Get-ChildItem -LiteralPath $shell -Filter "*.smk" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\$($_.Name.ToUpperInvariant())") -Force }
     $fixed = Find-Path $GameDir "mods/fix_cubes/shell/CUBE02.SMK"
     if ($fixed) { Copy-Item -LiteralPath $fixed (Join-Path $content "shell\CUBE02.SMK") -Force }
+    # The archive's text and the credits; the patch updates the credits.
+    Get-ChildItem -LiteralPath $shell -Filter "*.txt" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\$($_.Name.ToUpperInvariant())") -Force }
+    $patched = Find-Path $GameDir "mods/patch_1_8_2/shell"
+    if ($patched) { Get-ChildItem -LiteralPath $patched -Filter "*.txt" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\$($_.Name.ToUpperInvariant())") -Force } }
 }
 $movies = Find-Path $dark "movies"
 if ($movies) {

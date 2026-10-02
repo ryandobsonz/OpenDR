@@ -217,6 +217,44 @@ DrShell@DR_SHELL:
 				DrShellButton@RIGHT:
 					Area: 595,210,44,58
 					Image: cube_rgt
+		Container@CREDITS_SCREEN:
+			Children:
+				DrShellLabel@TITLE:
+					Area: 160,78,320,22
+					Font: font12
+					Text: label-dr-shell-credits
+				DrShellCredits@ROLL:
+					Area: 72,102,494,256
+					Extra: ~TOpenDR, ~Ndrogoganor and its contributors, ~TOpenRA, ~NThe OpenRA Developers and Contributors
+				DrShellButton@SLOWER:
+					Area: 70,360,44,20
+				DrShellButton@FASTER:
+					Area: 522,360,50,20
+				DrShellButton@PREVIOUS_MENU:
+					Area: 30,414,106,32
+					Text: button-dr-shell-previous-menu
+		Container@ARCHIVE:
+			Children:
+				DrShellLabel@TITLE:
+					Area: 0,15,640,30
+					Font: font16
+					Text: label-dr-shell-archive
+				DrShellLabel@HEADING:
+					Area: 120,64,392,24
+				DrShellMenu@ITEMS:
+					Area: 124,96,392,270
+				DrShellText@TEXT:
+					Area: 124,96,388,268
+				DrShellButton@SCROLL_UP:
+					Area: 517,61,18,16
+				DrShellButton@SCROLL_DOWN:
+					Area: 517,353,18,16
+				DrShellButton@UP_ONE:
+					Area: 205,376,236,36
+					Text: button-dr-shell-up-one-level
+				DrShellButton@LEFT:
+					Area: 0,210,44,56
+					Image: cube_lft
 		Container@DEBRIEF:
 			Children:
 				DrShellLabel@TITLE:

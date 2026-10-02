@@ -94,14 +94,16 @@ OpenRA's menu, and the launcher offers to install again.
 
 | Screen | What it does |
 |---|---|
-| Main menu | Single Player; Multi Player, Instant Action (a skirmish), Construction Kit (the map editor), Credits and Replays open OpenRA's panels over the shell's art; Settings in the left corner, as the original's Darker sat there; Quit asks with the original's dialog. Replay Intro plays the intro |
+| Main menu | Single Player; Multi Player, Instant Action (a skirmish), Construction Kit (the map editor) and Replays open OpenRA's panels over the shell's art; Settings in the left corner, as the original's Darker sat there; Quit asks with the original's dialog. Replay Intro plays the intro; Credits rolls the original's |
+| Credits | The original's credits rolling up their box as it rolled them (`shell/USACREDT.TXT` and `AUSCREDT.TXT` side by side, Activision's centred at 220 and Auran's at 420, then `CREDITS.TXT`; `~T` a title in red, `~N` a name), starting after a pause at a pixel a tick; `<<` and `>>` change the speed a pixel at a time, to 30 either way, and the roll comes round again. The 1.8.2 patch's own credits head Activision's; the expansion's (`AddCredt.txt`) are left out, as the original leaves them out of its campaign. OpenDR and OpenRA close it |
 | Single Player | Continue Campaign, Start New Game (which asks before clearing progress), Load Game, Play Custom Mission (the mission browser) |
-| The cube: missions | The mission ring around the Encryption Key, read as a clock: mission N at N o'clock, the gate at the top is 12, the key itself 13. A disc lights its side's emblem once that side has won it; locked missions are dark. Click to select, again (or the arrow above) to open. Basic and Advanced Training on either side; the left arrow turns to Options, the bottom arrow leaves |
+| The cube: missions | The mission ring around the Encryption Key, read as a clock: mission N at N o'clock, the gate at the top is 12, the key itself 13. A disc lights its side's emblem once that side has won it; locked missions are dark. Click to select, again (or the arrow above) to open. Basic and Advanced Training on either side; the left arrow turns to Options, the right to the archive, the bottom arrow leaves |
 | Mission background | The briefing's setting (its `\0`); the Freedom Guard or Imperium emblem at the top picks the side |
 | Briefing | The orders (`\1`), Freedom Guard's or Imperium's screen; **Launch** starts the mission in the engine |
 | Debrief | After a win: the historical outcome (`\2`) and Togra's word (`\3`); on to the next mission |
 | Training | The two Basic or Advanced missions (`t1`–`t4`), each to its briefing |
 | Options | Mission progression; Load Game and Settings (OpenRA's panels); OpenRA Menu, OpenRA's own main menu; Quit to Main Menu or to Windows |
+| Archive | The cube's right face: `shell/ARCHIVE.TXT`, Togra's final message, the history of the conflict, biographies, unit specifications and a journal, as menus of pages; Up One Level climbs. As in the original, the journal has an entry for each mission won and one more |
 
 As in the original, missions open in order: the first always, each next once
 the one before is won from either side, the Togran's once all twelve are.
@@ -137,7 +139,7 @@ table of which turn joins which faces, and when each video and sound plays.
 | `M_RING00`–`11` | The Encryption Key, in the hole the missions face leaves for it at (248, 190): concentric rings whose tumblers turn until they line up under the slot, one for each mission won (from either side), a beam reaching further in with each. Each loops |
 | `M_RING12`, `M_TOGRAN` | All twelve won: the key lights up, then comes alive, a red swirl, looping |
 | `SEGUE` | Opening the Togran's mission from the key: the key is complete, the cube goes into the bridge's table and the Togran's planet appears; then its briefing |
-| `OUTRO` | After the Togran's mission is won (the original then rolled the credits; here the debrief follows) |
+| `OUTRO` | After the Togran's mission is won; then the credits roll, as in the original |
 
 Back from a mission the cube shows a bare face (`return`) and turns to the
 debrief after a win (`CUBE04`), the missions after a loss (`CUBE_UP2`), or
@@ -176,10 +178,11 @@ filtered); the movies only filtered, or their dithering shows as blocks.
 
 Code: `FileFormats/DrShellLibrary.cs` (the files), `Graphics/DrShellArt.cs`
 (textures and fonts), `FileFormats/SmackerVideo.cs` (the videos),
-`Graphics/DrShellVideo.cs` (playing one), `Widgets/DrShell*Widget.cs` (the
-640×480 screen, its videos between screens, and its buttons, text and ring),
-`Widgets/Logic/DrShellLogic.cs` (the screens),
-`DrCampaign.cs` (progress), `mods/dr/chrome/shell.yaml` (the layout).
+`FileFormats/DrArchive.cs` (the archive), `Graphics/DrShellVideo.cs`
+(playing a video), `Widgets/DrShell*Widget.cs` (the 640×480 screen, its
+videos between screens, and its buttons, text, menus, ring and credits),
+`Widgets/Logic/DrShellLogic.cs` (the screens), `DrCampaign.cs` (progress),
+`mods/dr/chrome/shell.yaml` (the layout).
 
 ## Playing on a large screen
 
@@ -236,10 +239,9 @@ changes the rate.
   high, which OpenRA's default stance already is.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
-- **The menus are not all there**: the cube turns, the key fills in, the
-  movies play and the bridge hums ([The menus' videos and
-  sounds](#the-menus-videos-and-sounds)), but the credits are OpenRA's, and
-  the cube's archive face and the debrief's statistics are not there yet.
+- **The debrief has no statistics**: the original's grid of units and
+  buildings created, lost and destroyed, and water and taelon collected, is
+  not there yet; the debrief shows the historical outcome alone.
 
 ## Working on it
 

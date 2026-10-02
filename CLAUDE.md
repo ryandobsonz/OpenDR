@@ -71,8 +71,8 @@ ends, so steps still to come then run a second apart in real time.
 
 The menus have their own script. Without `-Mission`, `run-game.ps1 -Shell`
 sets `OPENDR_SHELL`: steps 40 ticks apart, each screenshotted 30 ticks in.
-A step is a screen (`main`, `quit`, `single`, `cube`, `story`, `briefingf`,
-`briefingi`, `training`, `options`, `debrief`), optionally with a mission
+A step is a screen (`main`, `quit`, `single`, `credits`, `cube`, `story`,
+`briefingf`, `briefingi`, `training`, `options`, `archive`, `debrief`), optionally with a mission
 and side (`story:3`, `briefingi:7:i`; locks are ignored), or
 `click:X:Y`, a click at a point of the 640×480 screen through the real input
 path. Clicks play the videos between screens (a cube turn is 7.5 seconds);
@@ -185,15 +185,17 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **The expansion campaigns** (`sh*`, `fgx*`) convert but lack most units.
   They would need tech tables from `deftxtEx` and the Shadowhand and Xenite
   units added to OpenDR.
-- **The rest of the menus.** The original menus, their videos and sounds are
-  in ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)). Still to come: the
-  original credits (`shell/CREDITS.TXT`, `~T` titles and `~N` names, with
-  `credits.wav`; the original rolls them after the ending), the archive face
-  (`archive`, the cube's right face, `Screen.Archive` already has its turns;
-  text in `shell/ARCHIVE.TXT`) and the debrief's statistics grid. The
-  expansion's movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) wait for its
-  campaigns. `dkreign-exe.py` answers how the original did each. The goal is
-  a remaster: the original menus with the game on the new engine.
+- **The rest of the menus.** The original menus, their videos and sounds,
+  the archive and the credits are in
+  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)). Still to come: the
+  debrief's statistics grid (`SS_COLLECTED`, `SS_CREATED`, `SS_LOST`,
+  `SS_DESTROYED` by `SS_WATER`, `SS_TAELON`, `SS_UNITS`, `SS_BLDGS`, in
+  `dark/local/MLSTRING.CFG`), which needs the mission to report them, and
+  the original's own Load Game and Custom Mission screens (`loadgame`,
+  `custom`). The expansion's movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) and
+  credits (`AddCredt.txt`) wait for its campaigns. `dkreign-exe.py` answers
+  how the original did each. The goal is a remaster: the original menus with
+  the game on the new engine.
 - **Distribution polish**: the package is a zip. An installer (Start menu,
   uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
   warns on first run). The GOG install lookup has never met a real GOG
