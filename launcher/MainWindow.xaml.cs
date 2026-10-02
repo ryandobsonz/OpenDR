@@ -323,6 +323,8 @@ namespace DarkReign.Launcher
 					(message, action, onAction) = ("The campaign missions are not converted yet.", "INSTALL FROM GAME…", Install);
 				else if (message == null && !GameInstall.HasShellArt)
 					(message, action, onAction) = ("Install again to play from the original menus.", "INSTALL FROM GAME…", Install);
+				else if (message == null && !GameInstall.HasShellVideo)
+					(message, action, onAction) = ("Install again for the menus' animations and the movies.", "INSTALL FROM GAME…", Install);
 			}
 
 			StatusText.Text = message ?? "";

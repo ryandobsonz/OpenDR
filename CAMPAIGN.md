@@ -16,8 +16,8 @@ own copy. The converted maps go to your OpenRA map folder
 2. Start `DarkReign.exe`, choose **Install from game** and pick a full copy
    of the game (the 1.8.2 community patch, or GOG). That runs
    `import-campaign.ps1 -GameDir "<the folder holding dark>"`, which installs
-   the game content OpenDR reads, the snow tileset and the CD soundtrack
-   included, and converts every mission. Run it by hand with mission names
+   the game content OpenDR reads, the snow tileset, the CD soundtrack, the
+   menus' videos and the movies included, and converts every mission. Run it by hand with mission names
    after it (`M01F M01I`) to convert only those.
 3. **Play** opens the original game's menus: **Single Player → Start New
    Game** leads to the mission ring, where each mission is played from
@@ -93,7 +93,7 @@ OpenRA's menu, and the launcher offers to install again.
 
 | Screen | What it does |
 |---|---|
-| Main menu | Single Player; Multi Player, Instant Action (a skirmish), Construction Kit (the map editor), Credits and Replays open OpenRA's panels over the shell's art; Settings in the left corner, as the original's Darker sat there; Quit asks with the original's dialog. Replay Intro waits for video |
+| Main menu | Single Player; Multi Player, Instant Action (a skirmish), Construction Kit (the map editor), Credits and Replays open OpenRA's panels over the shell's art; Settings in the left corner, as the original's Darker sat there; Quit asks with the original's dialog. Replay Intro plays the intro |
 | Single Player | Continue Campaign, Start New Game (which asks before clearing progress), Load Game, Play Custom Mission (the mission browser) |
 | The cube: missions | The mission ring around the Encryption Key, read as a clock: mission N at N o'clock, the gate at the top is 12, the key itself 13. A disc lights its side's emblem once that side has won it; locked missions are dark. Click to select, again (or the arrow above) to open. Basic and Advanced Training on either side; the left arrow turns to Options, the bottom arrow leaves |
 | Mission background | The briefing's setting (its `\0`); the Freedom Guard or Imperium emblem at the top picks the side |
@@ -118,9 +118,62 @@ character code, between full-height columns of the colour in its top left
 corner. The button positions are the game's own (`dark/shell/shellCFG.h`);
 the rest are where each lit overlay matches its screen.
 
+### The menus' videos
+
+The shell plays the game's own Smacker videos (`dark/shell/*.SMK`, 640×480 at
+10 frames a second, and the movies in `dark/movies`, 320×240 at 15), as the
+original did between its screens:
+
+| Video | When |
+|---|---|
+| `CUBE_IN` | The cube rises from the bridge's table and the view closes on its face: Single Player into the cube, and back from a mission |
+| `CUBE_OUT` | The face's panel draws in and the cube sinks into the table: leaving the cube |
+| `CUBE02`, `CUBE03` | The panel draws into the glass cube and the cube turns, bringing round the face on the left (Options) or the right; Options back to the missions turns the other way |
+| `CUBE_UP2`, `CUBE_DN2` | The same, rolling the cube to bring down the face above (the mission background) and back |
+| `CUBE04`, `CUBE05` | Rolling the other way: to training, the face below, and back from training and the debrief |
+| `CUBE01` | The last part of every turn: the new face's panel comes out of the cube and fills the screen (`CUBE_IN` is `CUBE00`, the rise, and `CUBE01`) |
+| `BRIEF_F`, `BRIEF_I` | An iris opens from the face onto the briefing room |
+| `M_RING00`–`11` | The Encryption Key, in the hole the missions face leaves for it at (248, 190): concentric rings whose tumblers turn until they line up under the slot, one for each mission won (from either side), a beam reaching further in with each. Each loops |
+| `M_RING12` | All twelve won: the key lights up, a spiral of lights and then the bright key, held |
+| `M_TOGRAN` | The key selected, as the Togran's mission: the key alive, a red swirl |
+| `INTRO` | The first time the game starts, and Replay Intro |
+| `SEGUE` | Opening the Togran's mission: the key is complete, the cube goes into the bridge's table and the Togran's planet appears; then its briefing |
+| `OUTRO` | After the Togran's mission is won, before the debrief |
+
+Which turn goes with which arrow is read from the videos (a turn's edges
+sweep right in `CUBE02`, left in `CUBE03`, down in `CUBE04`, up in `CUBE05`);
+the executable is packed, so the original's own pairing is unknown. Every turn
+ends on the frame where `CUBE00` ends, which is where `CUBE01` begins. The
+faces in the videos are a bare grey stone where the still art has its brown,
+veined face with buttons; the last frame fades into the screen in a third of a
+second, and the screen before into the first frame. A click or a key skips to
+the screen after. `M_RING13`, eight frames of the lit key brightening, with
+black corners and a white edge, is not used.
+
+The 1.8.2 patch's `fix_cubes` mod has a `CUBE02` whose sound does not cut out
+after two seconds; the import takes it when it is there. Its `fast_cubes`
+mod (30 frames a second, two seconds a turn) is not used: the original's turns
+take seven and a half seconds.
+
+A Smacker file is a 104-byte header (size, frames, frame rate, seven audio
+tracks' rates and flags), each frame's size and type (a palette, which audio
+tracks), four Huffman trees and the frames. A frame is a palette change
+(entries kept, copied from the last palette, or new in six bits a colour),
+each audio track's data, then the picture in 4×4 blocks, each run of blocks
+one type: two colours and a 16-bit map, sixteen pixels coded two at a time,
+unchanged, or one colour. The trees code 16-bit values as pairs of 8-bit
+codes, and three escape values hold the last three decoded. Audio is DPCM:
+each sample's change from the one before, Huffman coded per byte. The shell's
+videos are drawn as its still art is (enlarged by a whole factor, then
+filtered); the movies only filtered, or their dithering shows as blocks.
+Their sound plays at the effects volume, the movies' at the video volume, and
+music pauses for the movies.
+
 Code: `FileFormats/DrShellLibrary.cs` (the files), `Graphics/DrShellArt.cs`
-(textures and fonts), `Widgets/DrShell*Widget.cs` (the 640×480 screen and
-its buttons, text and ring), `Widgets/Logic/DrShellLogic.cs` (the screens),
+(textures and fonts), `FileFormats/SmackerVideo.cs` (the videos),
+`Graphics/DrShellVideo.cs` (playing one), `Widgets/DrShell*Widget.cs` (the
+640×480 screen, its videos between screens, and its buttons, text and ring),
+`Widgets/Logic/DrShellLogic.cs` (the screens),
 `DrCampaign.cs` (progress), `mods/dr/chrome/shell.yaml` (the layout).
 
 ## Playing on a large screen
@@ -178,11 +231,10 @@ changes the rate.
   high, which OpenRA's default stance already is.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
-- **The menus are still**: OpenRA cannot play Smacker video, so the cube
-  does not turn between faces (`CUBE*.SMK`), the Encryption Key does not
-  fill in as missions are won (`M_RING*.SMK`), and the intro and cutscenes
-  are missing. The menus are silent, the credits are OpenRA's, and the
-  cube's archive face and the debrief's statistics are not there yet.
+- **The menus are not all there**: the cube turns, the key fills in and the
+  movies play ([The menus' videos](#the-menus-videos)), but the menus' own
+  sounds are missing, the credits are OpenRA's, and the cube's archive face
+  and the debrief's statistics are not there yet.
 
 ## Working on it
 

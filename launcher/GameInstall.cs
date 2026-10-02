@@ -60,8 +60,10 @@ namespace DarkReign.Launcher
 		public bool HasEngine => File.Exists(GameExe);
 		public static bool HasGameData => File.Exists(Path.Combine(ContentDir, "SPRITES.FTG"));
 
-		// The original menus' art, which imports before the shell existed did not copy.
+		// The original menus' art, which imports before the shell existed did not copy, and their videos,
+		// which imports before the Smacker player did not.
 		public static bool HasShellArt => File.Exists(Path.Combine(ContentDir, "shell", "shell.rld"));
+		public static bool HasShellVideo => File.Exists(Path.Combine(ContentDir, "shell", "CUBE_IN.SMK"));
 		public static int CampaignMissions => Directory.Exists(CampaignDir) ? Directory.EnumerateDirectories(CampaignDir).Count() : 0;
 
 		// Why the game cannot start yet, or null when it can.

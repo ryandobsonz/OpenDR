@@ -75,7 +75,11 @@ A step is a screen (`main`, `quit`, `single`, `cube`, `story`, `briefingf`,
 `briefingi`, `training`, `options`, `debrief`), optionally with a mission
 and side (`story:3`, `briefingi:7:i`; locks are ignored), or
 `click:X:Y`, a click at a point of the 640×480 screen through the real input
-path. The script outlives a mission, so it can play through one:
+path. Clicks play the videos between screens (a cube turn is 7.5 seconds);
+steps wait for them to end, except `shot` (a screenshot now), `skip` (to the
+screen after) and `wait` (nothing, 40 ticks). Screen steps skip them, and
+`intro` plays the intro. The script outlives a mission, so it can play
+through one:
 
 ```
 -Shell "click:320:101;click:320:203;click:364:193;click:137:41;click:405:391;click:321:18"
@@ -153,6 +157,14 @@ killing teams the player must protect, as alliances change at cycle 0.
   ticking, which is why `DebugScreenshots` runs late steps in real time.
 - **Training briefings have no `\0`**: their description is the text before
   `\1`.
+- **Change screens in `Tick`, never in `Draw`**: showing a screen can read a
+  mission's map, which can put up OpenRA's loading screen, and that ends the
+  frame being drawn (`EndFrame called with renderType = None`).
+- **Look at a Smacker video before guessing its use**:
+  `dotnet bin\OpenRA.Utility.dll dr --dump-smacker FILE OUT [COLUMNS] [SCALE] [EVERY]`
+  (from `engine`, with `MOD_SEARCH_PATHS` and `ENGINE_DIR` set as
+  `build-import.ps1` does) writes a sheet of its frames and its sound as a
+  WAV.
 
 ## Open work, roughly by value
 
@@ -164,17 +176,15 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **The expansion campaigns** (`sh*`, `fgx*`) convert but lack most units.
   They would need tech tables from `deftxtEx` and the Shadowhand and Xenite
   units added to OpenDR.
-- **The menus' video.** The original menus are in
-  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)) but still: a Smacker
-  decoder in the mod would give the cube's turns (`CUBE*.SMK`, `CUBE_IN`
-  from the bridge), the Encryption Key filling in (`M_RING00`–`13`,
-  `M_TOGRAN`, 144×144 at the ring's centre), the briefing screens'
-  animations (`BRIEF_F`/`BRIEF_I`) and the intro and cutscenes in
-  `dark/movies`. Then the shell's sounds (`shell/SOUNDS.FTG`, copied but not
-  mounted), the original credits (`shell/CREDITS.TXT`, `~T` titles and `~N`
-  names), the archive face (`archive`, text in `shell/ARCHIVE.TXT`) and the
-  debrief's statistics grid. The goal is a remaster: the original menus with
-  the game on the new engine.
+- **The rest of the menus.** The original menus and their videos are in
+  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)). Still to come: the
+  shell's sounds (`shell/SOUNDS.FTG`, copied but not mounted), the original
+  credits (`shell/CREDITS.TXT`, `~T` titles and `~N` names), the archive
+  face (`archive`, the cube's right face, text in `shell/ARCHIVE.TXT`; the
+  turns are `CUBE03` there and `CUBE02` back) and the debrief's statistics
+  grid. The expansion's movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) wait for
+  its campaigns. The goal is a remaster: the original menus with the game on
+  the new engine.
 - **Distribution polish**: the package is a zip. An installer (Start menu,
   uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
   warns on first run). The GOG install lookup has never met a real GOG

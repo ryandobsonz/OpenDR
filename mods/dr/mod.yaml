@@ -284,6 +284,8 @@ SupportsMapsFrom: dr
 
 SoundFormats: Aud, Wav, Ogg
 
+VideoFormats: Smacker
+
 SpriteFormats: DrSpr, DrTil, DrCrs, ShpTD, TmpRA, TmpTD, ShpTS, PngSheet
 
 TerrainFormat: DrTerrain

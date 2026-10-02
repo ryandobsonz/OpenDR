@@ -53,7 +53,7 @@ namespace OpenRA.Mods.Dr.Widgets
 
 		public override bool HandleMouseInput(MouseInput mi)
 		{
-			if (mi.Button != MouseButton.Left)
+			if (mi.Button != MouseButton.Left || (Blocked && !HasMouseFocus))
 				return false;
 
 			if (mi.Event == MouseInputEvent.Down)
@@ -83,7 +83,7 @@ namespace OpenRA.Mods.Dr.Widgets
 		public override void Draw()
 		{
 			var disabled = IsDisabled();
-			var hover = !disabled && (Ui.MouseOverWidget == this || depressed);
+			var hover = !disabled && !Blocked && (Ui.MouseOverWidget == this || depressed);
 			var selected = IsHighlighted();
 
 			if (Image != null)

@@ -57,6 +57,24 @@ if ($legal) { Copy-Item -LiteralPath $legal.FullName (Join-Path $content "legal.
 elseif (-not (Test-Path (Join-Path $content "legal.txt"))) { Set-Content (Join-Path $content "legal.txt") "Dark Reign extra content" }
 if ($missing) { Write-Warning ("Not found in the game, so not installed: " + ($missing -join ", ")) }
 
+# The menus' videos (Smacker): the cube's turns, the Encryption Key, the briefings' irises; and the
+# movies: the intro, the segue to the Togran's mission and the ending. The 1.8.2 patch's fix_cubes
+# mod has a CUBE02 whose sound does not cut out after two seconds.
+$shell = Find-Path $dark "shell"
+if ($shell) {
+    Get-ChildItem -LiteralPath $shell -Filter "*.smk" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\$($_.Name.ToUpperInvariant())") -Force }
+    $fixed = Find-Path $GameDir "mods/fix_cubes/shell/CUBE02.SMK"
+    if ($fixed) { Copy-Item -LiteralPath $fixed (Join-Path $content "shell\CUBE02.SMK") -Force }
+}
+$movies = Find-Path $dark "movies"
+if ($movies) {
+    New-Item -ItemType Directory -Force (Join-Path $content "movies") | Out-Null
+    foreach ($movie in "INTRO.SMK", "SEGUE.SMK", "OUTRO.SMK") {
+        $source = Find-Path $movies $movie
+        if ($source) { Copy-Item -LiteralPath $source (Join-Path $content "movies\$movie") -Force }
+    }
+}
+
 # The 1.8.2 patch launcher's art, which DarkReign.exe shows; without it, it draws its own.
 $art = Find-Path $GameDir "launcher/ldata"
 if ($art) {
