@@ -18,10 +18,11 @@ using OpenRA.Primitives;
 namespace OpenRA.Mods.Dr.Widgets
 {
 	/// <summary>
-	/// The debrief's statistics, laid out as the original's shell (dkreign.exe, 0x581d3d) lays them out over the
-	/// debrief art's two rows of boxes: COLLECTED, CREATED, LOST and DESTROYED over their columns, SIDE and the
-	/// columns' names below, then a row for the player's team and one for team 1, each its side's name and eight
-	/// figures. In each column the larger figure is framed in red; a column of noughts has none.
+	/// A mission's statistics, laid out as the original's shell (dkreign.exe) lays them out: COLLECTED, CREATED,
+	/// LOST and DESTROYED over their columns, the columns' names below, then a row a team, each its side's name
+	/// (and, in the results, who played it) and eight figures. In each column the highest figure is framed in
+	/// red; a column of noughts has none. The debrief (0x581d3d) has two rows under its outcome; the results
+	/// after a custom mission (cdebrief, 0x57e000) a row for each team a human or the computer played.
 	/// </summary>
 	public class DrShellStatisticsWidget : DrShellAreaWidget
 	{
@@ -36,6 +37,9 @@ namespace OpenRA.Mods.Dr.Widgets
 
 		[FluentReference]
 		const string Destroyed = "label-dr-shell-destroyed";
+
+		[FluentReference]
+		const string Player = "label-dr-shell-player";
 
 		[FluentReference]
 		const string Side = "label-dr-shell-side";
@@ -73,24 +77,34 @@ namespace OpenRA.Mods.Dr.Widgets
 		// By the original's side numbers, as the scenarios give them.
 		static readonly string[] Sides = [FreedomGuard, Imperium, Civilian, Togran, Xenite, Shadowhand];
 
-		const int GroupY = 315;
-		const int HeadingY = 335;
-		const int HeadingHeight = 20;
-		const int RowY = 356;
-		const int RowStep = 26;
-		const int RowHeight = 24;
-		const int SideX = 52;
-		const int SideWidth = 104;
-		const int CellX = 157;
-		const int CellStep = 53;
-		const int CellWidth = 52;
-
-		// The debrief art's colour 0xaa, which frames the larger figures.
+		// The debrief art's colour 0xaa, which frames the highest figures.
 		static readonly Color Frame = Color.FromArgb(215, 0, 8);
 
 		public readonly string Font = "font12";
 
-		public Func<(int Side, int[] Figures)[]> GetRows = () => null;
+		[Desc("The tops of the groups' headings and of the columns' names.")]
+		public readonly int GroupY = 315;
+		public readonly int HeadingY = 335;
+
+		[Desc("The first row's top, from one row to the next, and a row's height.")]
+		public readonly int RowY = 356;
+		public readonly int RowStep = 26;
+		public readonly int RowHeight = 24;
+
+		[Desc("The players' names, from the left at this x; none if negative.")]
+		public readonly int PlayerX = -1;
+
+		[Desc("The sides' names: centred in this width from SideX, or from the left at SideX if it is 0.")]
+		public readonly int SideX = 52;
+		public readonly int SideWidth = 104;
+
+		[Desc("The first figure's left, from one column to the next, a column's width and a group's.")]
+		public readonly int CellX = 157;
+		public readonly int CellStep = 53;
+		public readonly int CellWidth = 52;
+		public readonly int GroupWidth = 105;
+
+		public Func<(string Player, int Side, int[] Figures)[]> GetRows = () => null;
 
 		public override void Draw()
 		{
@@ -98,32 +112,38 @@ namespace OpenRA.Mods.Dr.Widgets
 			if (rows == null)
 				return;
 
+			// The headings are plain text, drawn from the top; the rest is centred in its row.
 			var font = Shell.Art.GetFont(Font);
-			void Text(string text, int x, int y, int width, int height) =>
-				DrShellLabelWidget.DrawAligned(Shell, font, text, new Rectangle(x, y, width, height), TextAlign.Center);
+			void Text(string text, int x, int y, int width, int height, TextAlign align = TextAlign.Center, bool top = false) =>
+				DrShellLabelWidget.DrawAligned(Shell, font, text, new Rectangle(x, y, width, height), align, top: top);
 
 			string[] groups = [Collected, Created, Lost, Destroyed];
 			for (var i = 0; i < groups.Length; i++)
-				Text(FluentProvider.GetMessage(groups[i]), CellX + 2 * i * CellStep, GroupY, 2 * CellWidth + 1, HeadingHeight);
+				Text(FluentProvider.GetMessage(groups[i]), CellX + 2 * i * CellStep, GroupY, GroupWidth, 0, top: true);
 
-			Text(FluentProvider.GetMessage(Side), SideX, HeadingY, SideWidth, HeadingHeight);
+			var sideAlign = SideWidth > 0 ? TextAlign.Center : TextAlign.Left;
+			if (PlayerX >= 0)
+				Text(FluentProvider.GetMessage(Player), PlayerX, HeadingY, 0, 0, TextAlign.Left, true);
+
+			Text(FluentProvider.GetMessage(Side), SideX, HeadingY, SideWidth, 0, sideAlign, true);
 			string[] columns = [Water, Taelon, Units, Buildings, Units, Buildings, Units, Buildings];
 			for (var i = 0; i < columns.Length; i++)
-				Text(FluentProvider.GetMessage(columns[i]), CellX + i * CellStep, HeadingY, CellWidth, HeadingHeight);
+				Text(FluentProvider.GetMessage(columns[i]), CellX + i * CellStep, HeadingY, CellWidth, 0, top: true);
 
-			var highest = Enumerable.Range(0, columns.Length).Select(c => rows.Max(r => r.Figures[c])).ToArray();
+			var highest = Enumerable.Range(0, columns.Length).Select(c => rows.Length > 0 ? rows.Max(r => r.Figures[c]) : 0).ToArray();
 			for (var r = 0; r < rows.Length; r++)
 			{
 				var y = RowY + r * RowStep;
-				var side = rows[r].Side;
-				Text(side >= 0 && side < Sides.Length ? FluentProvider.GetMessage(Sides[side]) : "--", SideX, y, SideWidth, RowHeight);
+				var (player, side, figures) = rows[r];
+				if (PlayerX >= 0)
+					Text(player, PlayerX, y, 0, RowHeight, TextAlign.Left);
 
+				Text(side >= 0 && side < Sides.Length ? FluentProvider.GetMessage(Sides[side]) : "--", SideX, y, SideWidth, RowHeight, sideAlign);
 				for (var c = 0; c < columns.Length; c++)
 				{
 					var x = CellX + c * CellStep;
-					var figure = rows[r].Figures[c];
-					Text(figure.ToString(CultureInfo.InvariantCulture), x, y, CellWidth, RowHeight);
-					if (figure > 0 && figure == highest[c])
+					Text(figures[c].ToString(CultureInfo.InvariantCulture), x, y, CellWidth, RowHeight);
+					if (figures[c] > 0 && figures[c] == highest[c])
 						DrawFrame(new Rectangle(x, y, CellWidth, RowHeight));
 				}
 			}

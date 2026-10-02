@@ -97,20 +97,34 @@ OpenRA's menu, and the launcher offers to install again.
 |---|---|
 | Main menu | Single Player; Multi Player, Instant Action (a skirmish), Construction Kit (the map editor) and Replays open OpenRA's panels over the shell's art; Settings in the left corner, as the original's Darker sat there; Quit asks with the original's dialog. Replay Intro plays the intro; Credits rolls the original's |
 | Credits | The original's credits rolling up their box as it rolled them (`shell/USACREDT.TXT` and `AUSCREDT.TXT` side by side, Activision's centred at 220 and Auran's at 420, then `CREDITS.TXT`; `~T` a title in red, `~N` a name), starting after a pause at a pixel a tick; `<<` and `>>` change the speed a pixel at a time, to 30 either way, and the roll comes round again. The 1.8.2 patch's own credits head Activision's; the expansion's (`AddCredt.txt`) are left out, as the original leaves them out of its campaign. OpenDR and OpenRA close it |
-| Single Player | Continue Campaign, Start New Game (which asks before clearing progress), Load Game, Play Custom Mission (the mission browser) |
+| Single Player | Continue Campaign, Start New Game (which asks before clearing progress), Load Game, Play Custom Mission |
+| Load Game | The original's saved game selection (`loadsave`): the campaign's saved games, newest first; for the one chosen, where it was saved ("In Mission 5"), its mission, side and date, and its name below. Load Game, Delete (which asks first), Previous Menu. A loaded mission comes back to its debrief as a launched one does |
+| Play Custom Mission | The original's custom mission selection (`custom`): the missions that are not the campaign's (the expansion's, OpenDR's own, the player's), by folder name, and their saved games; for the one chosen, the player's number of enemies, the map's size and the player's side (its scenario's, as the original reads it). Load Game starts or loads it; Delete removes a saved game |
+| Results | After a custom mission: the original's results (`cdebrief`), a row for each team a human or the computer played, its side and the mission's statistics; Continue returns to the custom missions |
 | The cube: missions | The mission ring around the Encryption Key, read as a clock: mission N at N o'clock, the gate at the top is 12, the key itself 13. A disc lights its side's emblem once that side has won it; locked missions are dark. Click to select, again (or the arrow above) to open. Basic and Advanced Training on either side; the left arrow turns to Options, the right to the archive, the bottom arrow leaves |
 | Mission background | The briefing's setting (its `\0`); the Freedom Guard or Imperium emblem at the top picks the side |
 | Briefing | The orders (`\1`), Freedom Guard's or Imperium's screen; **Launch** starts the mission in the engine |
 | Debrief | After a win: the historical outcome (`\2`) and Togra's word (`\3`), the player's emblem, and the mission's statistics (below); up to the next mission, down to play it again, left to Options, right to the archive |
 | Training | The two Basic or Advanced missions (`t1`–`t4`), each to its briefing |
-| Options | Mission progression; Load Game and Settings (OpenRA's panels); OpenRA Menu, OpenRA's own main menu; Quit to Main Menu or to Windows |
+| Options | Mission progression; Load Game (the screen above) and Settings (OpenRA's panel); OpenRA Menu, OpenRA's own main menu (with its mission browser); Quit to Main Menu or to Windows |
 | Archive | The cube's right face: `shell/ARCHIVE.TXT`, Togra's final message, the history of the conflict, biographies, unit specifications and a journal, as menus of pages; Up One Level climbs. As in the original, the journal has an entry for each mission won and one more |
 
 As in the original, missions open in order: the first always, each next once
 the one before is won from either side, the Togran's once all twelve are.
 Progress is kept in `%APPDATA%\OpenRA\dr-campaign.yaml` (the missions won,
 by map name); the mission's own script records a win, so missions played
-from the mission browser count too. Escape goes back a screen.
+from OpenRA's mission browser count too. Escape goes back a screen.
+
+The shell's art has a screen the original never shows (`loadgame`); its Load
+Game and Custom Mission use `loadsave` and `custom`, and their layouts are
+`dkreign.exe`'s own (the load screen's entries in `shellCFG.h` are unused).
+Its plain text is drawn from the top of its area, and centred across it.
+
+Saving happens in a mission, from OpenRA's in-game menu, and a loaded game
+opens paused under that menu, as OpenRA's do. The original's saves also
+kept the campaign's progress, which its Load Game showed as the mission
+progression; OpenRA's keep a mission alone, so Load Game shows that
+mission's title, side and when it was saved instead.
 
 `shell.rli` lists the library's images (`ILR.`, 32-byte entries: name,
 type, offset, packed and unpacked size). Each is LZ packed: a flag byte per
@@ -184,9 +198,10 @@ filtered); the movies only filtered, or their dithering shows as blocks.
 
 Under the outcome the debrief has the original's grid: water and taelon
 collected, then units and buildings created, lost and destroyed, a row for
-the player's team and one for team 1, each named by its side. In each
-column the larger figure is framed in red. The layout and the counting are
-the original's, read from `dkreign.exe`:
+the player's team and one for team 1, each named by its side. The results
+after a custom mission have a row for every team a human or the computer
+played. In each column the highest figure is framed in red. The layout and
+the counting are the original's, read from `dkreign.exe`:
 
 - **Created**: every unit and building a team comes to have, those the
   mission starts with included (the original resets its counts before it
@@ -199,8 +214,8 @@ the original's, read from `dkreign.exe`:
 
 `Traits/World/DrMissionStatistics.cs` keeps the figures, which every unit
 and building reports through `Traits/DrCountsInStatistics.cs`; the mission's
-end hands the two rows to the shell (`DrCampaign.LastStatistics`), and
-`Widgets/DrShellStatisticsWidget.cs` draws them.
+end hands teams 0 to 7 to the shell (`DrCampaign.LastStatistics`), and
+`Widgets/DrShellStatisticsWidget.cs` draws them in either layout.
 
 Code: `FileFormats/DrShellLibrary.cs` (the files), `Graphics/DrShellArt.cs`
 (textures and fonts), `FileFormats/SmackerVideo.cs` (the videos),

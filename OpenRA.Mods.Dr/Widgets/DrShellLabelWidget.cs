@@ -17,7 +17,7 @@ using OpenRA.Widgets;
 
 namespace OpenRA.Mods.Dr.Widgets
 {
-	/// <summary>A line of text in one of the original shell's bitmap fonts, centred vertically in its area.</summary>
+	/// <summary>A line of text in one of the original shell's bitmap fonts, centred vertically in its area or at its top.</summary>
 	public class DrShellLabelWidget : DrShellAreaWidget
 	{
 		[FluentReference]
@@ -25,6 +25,9 @@ namespace OpenRA.Mods.Dr.Widgets
 
 		public readonly string Font = "font14";
 		public readonly TextAlign Align = TextAlign.Center;
+
+		[Desc("Draw from the area's top, as the original's plain text is, rather than centred in its height.")]
+		public readonly bool Top = false;
 
 		public Func<string> GetText;
 
@@ -39,14 +42,14 @@ namespace OpenRA.Mods.Dr.Widgets
 		{
 			var text = GetText();
 			if (!string.IsNullOrEmpty(text))
-				DrawAligned(Shell, Shell.Art.GetFont(Font), text, Area, Align);
+				DrawAligned(Shell, Shell.Art.GetFont(Font), text, Area, Align, top: Top);
 		}
 
-		/// <summary>Draws text, a line per '\n', aligned in an area of the shell and centred vertically in it.</summary>
-		public static void DrawAligned(DrShellWidget shell, DrShellFont font, string text, Rectangle area, TextAlign align, float alpha = 1f)
+		/// <summary>Draws text, a line per '\n', aligned in an area of the shell and centred vertically in it, or from its top.</summary>
+		public static void DrawAligned(DrShellWidget shell, DrShellFont font, string text, Rectangle area, TextAlign align, float alpha = 1f, bool top = false)
 		{
 			var lines = text.Split('\n');
-			var y = area.Y + (area.Height - lines.Length * font.Height) / 2f;
+			var y = top ? area.Y : area.Y + (area.Height - lines.Length * font.Height) / 2f;
 			foreach (var line in lines)
 			{
 				var width = font.Measure(line);

@@ -402,9 +402,9 @@ namespace OpenRA.Mods.Dr.Traits
 			if (!world.IsReplay)
 			{
 				var statistics = world.WorldActor.TraitOrDefault<DrMissionStatistics>();
-				DrCampaign.LastStatistics = statistics == null ? null : [.. new[] { 0, 1 }.Select(t => teams.TryGetValue(t, out var p)
-					? (SideOf(t), statistics[p].Columns)
-					: (-1, new int[8]))];
+				DrCampaign.LastStatistics = statistics == null ? null : [.. Enumerable.Range(0, 8).Select(t => teams.TryGetValue(t, out var p)
+					? (p.IsBot ? 2 : p.Playable ? 1 : 0, SideOf(t), statistics[p].Columns)
+					: (0, -1, new int[8]))];
 
 				var scn = world.Map.Package.Contents.First(f => f.EndsWith(".scn", StringComparison.OrdinalIgnoreCase));
 				DrCampaign.RecordResult(Path.GetFileNameWithoutExtension(scn).ToLowerInvariant(), won);

@@ -15,6 +15,7 @@ using System.Globalization;
 using System.Linq;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
+using OpenRA.Mods.Common.Widgets;
 using OpenRA.Mods.Dr.UtilityCommands;
 using OpenRA.Primitives;
 using OpenRA.Traits;
@@ -24,7 +25,7 @@ namespace OpenRA.Mods.Dr.Traits
 {
 	[TraitLocation(SystemActors.World)]
 	[Desc("Testing aid for converted campaign missions, idle unless the OPENDR_TEST environment variable is set:",
-		"semicolon-separated 'tick:command args' steps. Commands: shot; leave; cash TEAM AMOUNT; killunits TEAM;",
+		"semicolon-separated 'tick:command args' steps. Commands: shot; leave; save NAME; resume; cash TEAM AMOUNT; killunits TEAM;",
 		"killall TEAM; kill NAME; killtype TEAM ACTOR; steal INFILTRATOR TARGET; select NAME; teleport NAME X,Y; spawn TEAM ACTOR X,Y [NAME]; order NAME ORDER TARGETNAME; explore TEAM; camera X,Y.",
 		"Names are the map's actor names (u<id> for original units) or those given to spawn. OPENDR_SCREENSHOT_TICKS=t1,t2 adds shots.")]
 	public class DebugScreenshotsInfo : TraitInfo<DebugScreenshots> { }
@@ -108,6 +109,16 @@ namespace OpenRA.Mods.Dr.Traits
 			{
 				case "shot":
 					Game.TakeScreenshot();
+					break;
+
+				case "save":
+					// As the in-game menu's Save Game does.
+					w.RequestGameSave(c[1] + ".orasav", false);
+					break;
+
+				case "resume":
+					// A loaded game opens paused, under the in-game menu: its Resume, a second later in real time.
+					Game.RunAfterDelay(1000, () => Ui.Root.GetOrNull<ButtonWidget>("RESUME")?.OnClick());
 					break;
 
 				case "leave":

@@ -74,12 +74,52 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		[FluentReference]
 		const string MissionSuccessful = "label-dr-shell-mission-successful";
 
+		[FluentReference("number")]
+		const string InMission = "label-dr-shell-in-mission";
+
+		[FluentReference("number")]
+		const string InTraining = "label-dr-shell-in-training";
+
+		[FluentReference]
+		const string SideFreedomGuard = "label-dr-shell-side-freedom-guard";
+
+		[FluentReference]
+		const string SideImperium = "label-dr-shell-side-imperium";
+
+		[FluentReference]
+		const string SideCivilian = "label-dr-shell-side-civilian";
+
+		[FluentReference]
+		const string SideTogran = "label-dr-shell-side-togran";
+
+		[FluentReference]
+		const string SideXenite = "label-dr-shell-side-xenite";
+
+		[FluentReference]
+		const string SideShadowhand = "label-dr-shell-side-shadowhand";
+
+		[FluentReference]
+		const string Human = "label-dr-shell-human";
+
+		[FluentReference]
+		const string Computer = "label-dr-shell-computer";
+
+		[FluentReference]
+		const string DeleteSaveTitle = "dialog-dr-delete-save.title";
+
+		[FluentReference("save")]
+		const string DeleteSavePrompt = "dialog-dr-delete-save.prompt";
+
+		[FluentReference]
+		const string DeleteSaveConfirm = "dialog-dr-delete-save.confirm";
+
 		// In the original's order from Cube on (its screens 0x19-0x21), which picks the turn between two faces.
-		enum Screen { Main, Quit, Single, Credits, Cube, Options, Archive, Story, Training, Return, Briefing, Debrief }
+		enum Screen { Main, Quit, Single, Credits, LoadGame, Custom, Results, Cube, Options, Archive, Story, Training, Return, Briefing, Debrief }
 
 		static readonly Dictionary<Screen, string> Backgrounds = new()
 		{
-			{ Screen.Main, "main" }, { Screen.Quit, "main" }, { Screen.Single, "single" }, { Screen.Credits, "credits" }, { Screen.Cube, "missions" },
+			{ Screen.Main, "main" }, { Screen.Quit, "main" }, { Screen.Single, "single" }, { Screen.Credits, "credits" },
+			{ Screen.LoadGame, "loadsave" }, { Screen.Custom, "custom" }, { Screen.Results, "cdebrief" }, { Screen.Cube, "missions" },
 			{ Screen.Options, "options" }, { Screen.Archive, "archive" }, { Screen.Story, "story" },
 			{ Screen.Training, "training" }, { Screen.Return, "return" }, { Screen.Debrief, "debrief" }
 		};
@@ -187,6 +227,9 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			SetupArchive(widget.Get("ARCHIVE"));
 			SetupCredits(widget.Get("CREDITS_SCREEN"));
 			SetupDebrief(widget.Get("DEBRIEF"));
+			SetupLoadGame(widget.Get("LOADGAME"));
+			SetupCustom(widget.Get("CUSTOM"));
+			SetupResults(widget.Get("RESULTS"));
 
 			Ambience(Screen.Main);
 			ReturnFromMission();
@@ -309,6 +352,13 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			if (launched == null)
 				return;
 
+			// A custom mission comes back to its results, if it kept them, then the custom missions.
+			if (!DrCampaign.IsCampaignMission(launched))
+			{
+				Show(statistics != null ? Screen.Results : Screen.Custom);
+				return;
+			}
+
 			// The game comes back to a bare face of the cube, which turns to the next; the Togran's defeat
 			// plays the ending, then the credits roll, as in the original.
 			Show(Screen.Return);
@@ -341,6 +391,9 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			{
 				case Screen.Main: Show(Screen.Quit); break;
 				case Screen.Quit: case Screen.Single: case Screen.Credits: Show(Screen.Main); break;
+				case Screen.LoadGame: Show(loadGameReturn); break;
+				case Screen.Custom: Show(Screen.Single); break;
+				case Screen.Results: Show(Screen.Custom); break;
 				case Screen.Cube: Go(Screen.Single, CubeOut); break;
 				case Screen.Options: case Screen.Story: case Screen.Training: case Screen.Debrief: TurnTo(Screen.Cube); break;
 				case Screen.Briefing: BackFromBriefing(); break;
@@ -473,12 +526,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 					onCancel: () => panelOpen = false);
 			};
 
-			single.Get<DrShellButtonWidget>("LOAD_GAME").OnClick = OpenLoadGame;
-			single.Get<DrShellButtonWidget>("CUSTOM_MISSION").OnClick = () => OpenPanel("MISSIONBROWSER_PANEL", new WidgetArgs
-			{
-				{ "onStart", () => { } },
-				{ "initialMap", null }
-			}, Game.Disconnect);
+			single.Get<DrShellButtonWidget>("LOAD_GAME").OnClick = () => OpenLoadGame(Screen.Single);
+			single.Get<DrShellButtonWidget>("CUSTOM_MISSION").OnClick = () => Show(Screen.Custom);
 
 			single.Get<DrShellButtonWidget>("PREVIOUS_MENU").OnClick = () => Show(Screen.Main);
 		}
@@ -670,7 +719,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			var progress = options.Get<DrShellTextWidget>("PROGRESS");
 			onShow[Screen.Options] = () => progress.SetText(ProgressText());
 			SetupScroll(options, progress);
-			options.Get<DrShellButtonWidget>("LOAD_GAME").OnClick = OpenLoadGame;
+			options.Get<DrShellButtonWidget>("LOAD_GAME").OnClick = () => OpenLoadGame(Screen.Options);
 			options.Get<DrShellButtonWidget>("SETTINGS").OnClick = () => OpenPanel("SETTINGS_PANEL", new WidgetArgs());
 			options.Get<DrShellButtonWidget>("ENGINE_MENU").OnClick = () => Game.RunAfterTick(() =>
 			{
@@ -769,13 +818,14 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 		// The debrief after a won mission: the historical outcome, and the mission's statistics
 
-		(int Side, int[] Figures)[] statistics;
+		(int Kind, int Side, int[] Figures)[] statistics;
 
 		void SetupDebrief(Widget debrief)
 		{
 			debrief.IsVisible = Visible(Screen.Debrief);
 			debrief.Get<DrShellLabelWidget>("TITLE").GetText = () => briefingMission != null ? Map(briefingMission)?.Title.ToUpperInvariant() : null;
-			debrief.Get<DrShellStatisticsWidget>("STATISTICS").GetRows = () => statistics;
+			debrief.Get<DrShellStatisticsWidget>("STATISTICS").GetRows = () =>
+				statistics?.Take(2).Select(r => ((string)null, r.Side, r.Figures)).ToArray();
 
 			// The player's side's emblem: the Freedom Guard's left of the title, any other's right of it.
 			debrief.Get<DrShellImageWidget>("FG_LOGO").GetFrame = () => statistics != null && statistics[0].Side == 0 ? 0 : -1;
@@ -808,6 +858,273 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			var right = debrief.Get<DrShellButtonWidget>("RIGHT");
 			right.IsDisabled = () => archive == null;
 			right.OnClick = () => TurnTo(Screen.Archive);
+		}
+
+		// Saved games, as the Load Game and Custom Mission screens list them
+
+		sealed record SavedGame(string Path, string Name, string Mission, MapPreview Map, DateTime Saved);
+
+		/// <summary>The saved games of the campaign's missions, or of the others; newest first.</summary>
+		List<SavedGame> SavedGames(bool campaign)
+		{
+			var folder = Path.Combine(Platform.SupportDir, "Saves", modData.Manifest.Id, modData.Manifest.Metadata.Version);
+			var saves = new List<SavedGame>();
+			if (!Directory.Exists(folder))
+				return saves;
+
+			foreach (var path in Directory.GetFiles(folder, "*.orasav", SearchOption.AllDirectories).OrderByDescending(File.GetLastWriteTime))
+			{
+				try
+				{
+					var map = modData.MapCache[new GameSave(path).GlobalSettings.Map];
+					var mission = map.Status == MapStatus.Available && map.Path != null ? Path.GetFileName(map.Path.TrimEnd('/', '\\')) : null;
+					if (DrCampaign.IsCampaignMission(mission) == campaign)
+						saves.Add(new SavedGame(path, Path.GetFileNameWithoutExtension(path), mission, map, File.GetLastWriteTime(path)));
+				}
+				catch (Exception e)
+				{
+					Log.Write("debug", $"Could not read the saved game {path}: {e.Message}");
+				}
+			}
+
+			return saves;
+		}
+
+		void LoadSavedGame(SavedGame save)
+		{
+			if (launching || save.Map.Status != MapStatus.Available)
+				return;
+
+			launching = true;
+			DrCampaign.Launched = save.Mission;
+			DrCampaign.LastResult = null;
+			Game.CreateAndStartLocalServer(save.Map.Uid,
+			[
+				Order.FromTargetString("LoadGameSave", Path.GetFileName(save.Path), true),
+				Order.Command($"state {Session.ClientState.Ready}")
+			]);
+		}
+
+		void DeleteSavedGame(SavedGame save, Action deleted)
+		{
+			panelOpen = true;
+			ConfirmationDialogs.ButtonPrompt(modData,
+				title: DeleteSaveTitle,
+				text: DeleteSavePrompt,
+				textArguments: ["save", save.Name],
+				onConfirm: () =>
+				{
+					panelOpen = false;
+					try
+					{
+						File.Delete(save.Path);
+					}
+					catch (Exception e)
+					{
+						Log.Write("debug", $"Could not delete the saved game {save.Path}: {e.Message}");
+					}
+
+					deleted();
+				},
+				confirmText: DeleteSaveConfirm,
+				onCancel: () => panelOpen = false);
+		}
+
+		readonly Dictionary<string, int?> scenarioSides = [];
+
+		/// <summary>
+		/// The side the player takes in a mission: team 0's in its scenario (SetTeamSide), as the original reads
+		/// it, else the faction of the map's first playable player.
+		/// </summary>
+		string SideOf(MapPreview map)
+		{
+			string[] sides = [SideFreedomGuard, SideImperium, SideCivilian, SideTogran, SideXenite, SideShadowhand];
+			if (ScenarioSide(map) is int side && side >= 0 && side < sides.Length)
+				return FluentProvider.GetMessage(sides[side]);
+
+			var faction = map?.Players.Players.Values.FirstOrDefault(p => p.Playable)?.Faction;
+			return faction switch
+			{
+				null => "--",
+				"fguard" => FluentProvider.GetMessage(SideFreedomGuard),
+				"imperium" => FluentProvider.GetMessage(SideImperium),
+				"togran" => FluentProvider.GetMessage(SideTogran),
+				_ => faction.ToUpperInvariant()
+			};
+		}
+
+		/// <summary>Team 0's side in a converted mission's scenario; null for a map without one.</summary>
+		int? ScenarioSide(MapPreview map)
+		{
+			if (map?.Path == null)
+				return null;
+
+			if (!scenarioSides.TryGetValue(map.Path, out var side))
+			{
+				try
+				{
+					var scn = Directory.Exists(map.Path) ? Directory.GetFiles(map.Path, "*.scn").FirstOrDefault() : null;
+					if (scn != null)
+					{
+						using var stream = File.OpenRead(scn);
+						side = new DrScenario(stream).Teams.TryGetValue(0, out var team) ? team.Side : null;
+					}
+				}
+				catch (Exception e)
+				{
+					Log.Write("debug", $"Could not read the scenario of {map.Path}: {e.Message}");
+				}
+
+				scenarioSides[map.Path] = side;
+			}
+
+			return side;
+		}
+
+		// Load Game, the original's saved game selection: the campaign's saved games
+
+		Screen loadGameReturn = Screen.Single;
+		List<SavedGame> campaignSaves = [];
+		int campaignSave = -1;
+
+		void OpenLoadGame(Screen from)
+		{
+			loadGameReturn = from;
+			Show(Screen.LoadGame);
+		}
+
+		void SetupLoadGame(Widget load)
+		{
+			load.IsVisible = Visible(Screen.LoadGame);
+			SavedGame Selected() => campaignSave >= 0 && campaignSave < campaignSaves.Count ? campaignSaves[campaignSave] : null;
+			string Field(Func<SavedGame, string> f) => Selected() is { } s ? f(s) : "--";
+
+			var list = load.Get<DrShellMenuWidget>("SAVES");
+			list.GetItems = () => campaignSaves.Select(s => s.Name).ToList();
+			list.GetSelected = () => campaignSave;
+			list.OnSelect = i => campaignSave = i;
+
+			// Where it was saved, and its mission, side and date: an OpenRA save is always in a mission.
+			load.Get<DrShellLabelWidget>("LOCATION").GetText = () => Field(s => s.Mission.StartsWith('t')
+				? FluentProvider.GetMessage(InTraining, "number", s.Mission[1..])
+				: FluentProvider.GetMessage(InMission, "number", int.Parse(s.Mission.AsSpan(1, 2), CultureInfo.InvariantCulture)));
+			load.Get<DrShellLabelWidget>("PROGRESSION_1").GetText = () => Field(s => s.Map.Title);
+			load.Get<DrShellLabelWidget>("PROGRESSION_2").GetText = () => Field(s => SideOf(s.Map));
+			load.Get<DrShellLabelWidget>("PROGRESSION_3").GetText = () => Field(s => s.Saved.ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture));
+			load.Get<DrShellLabelWidget>("NAME").GetText = () => Field(s => s.Name);
+
+			var launch = load.Get<DrShellButtonWidget>("LOAD");
+			launch.IsDisabled = () => Selected() == null || launching;
+			launch.OnClick = () => LoadSavedGame(Selected());
+
+			var delete = load.Get<DrShellButtonWidget>("DELETE");
+			delete.IsDisabled = () => Selected() == null;
+			delete.OnClick = () => DeleteSavedGame(Selected(), Refresh);
+
+			load.Get<DrShellButtonWidget>("PREVIOUS_MENU").OnClick = () => Show(loadGameReturn);
+
+			void Refresh()
+			{
+				campaignSaves = SavedGames(true);
+				campaignSave = -1;
+			}
+
+			onShow[Screen.LoadGame] = () =>
+			{
+				Refresh();
+				list.ScrollToTop();
+			};
+		}
+
+		// Custom missions: the missions that are not the campaign's, and their saved games
+
+		List<string> customMissions = [];
+		List<SavedGame> customSaves = [];
+		int customMission = -1;
+		int customSave = -1;
+
+		void SetupCustom(Widget custom)
+		{
+			custom.IsVisible = Visible(Screen.Custom);
+			string Mission() => customMission >= 0 && customMission < customMissions.Count ? customMissions[customMission] : null;
+			SavedGame Save() => customSave >= 0 && customSave < customSaves.Count ? customSaves[customSave] : null;
+			// A saved game whose mission has gone shows nothing and cannot be loaded, only deleted.
+			MapPreview Selected() => Mission() is { } m ? Map(m) : Save()?.Map is { Status: MapStatus.Available } map ? map : null;
+			string Field(Func<MapPreview, string> f) => Selected() is { } m ? f(m) : "--";
+
+			// The missions by their folders' names, as the original lists its scenario folders; choosing in one
+			// list clears the other, as in the original.
+			var missions = custom.Get<DrShellMenuWidget>("MISSIONS");
+			missions.GetItems = () => customMissions.Select(m => Map(m).Title).ToList();
+			missions.GetSelected = () => customMission;
+			missions.OnSelect = i => { customMission = i; customSave = -1; };
+
+			var saves = custom.Get<DrShellMenuWidget>("SAVES");
+			saves.GetItems = () => customSaves.Select(s => s.Name).ToList();
+			saves.GetSelected = () => customSave;
+			saves.OnSelect = i => { customSave = i; customMission = -1; };
+
+			foreach (var (list, id) in new[] { (missions, "MISSIONS"), (saves, "SAVES") })
+			{
+				var up = custom.Get<DrShellButtonWidget>(id + "_UP");
+				up.IsDisabled = () => !list.CanScrollUp;
+				up.OnClick = () => list.Scroll(-1);
+				var down = custom.Get<DrShellButtonWidget>(id + "_DOWN");
+				down.IsDisabled = () => !list.CanScrollDown;
+				down.OnClick = () => list.Scroll(1);
+			}
+
+			// The mission's enemies, its size in cells, as the original's map was, and the player's side.
+			custom.Get<DrShellLabelWidget>("ENEMIES").GetText = () =>
+				Field(m => (m.Players.Players.Values.FirstOrDefault(p => p.Playable)?.Enemies.Length ?? 0).ToString(CultureInfo.InvariantCulture));
+			custom.Get<DrShellLabelWidget>("SIZE").GetText = () => Field(m => $"{m.Bounds.Width}, {m.Bounds.Height}");
+			custom.Get<DrShellLabelWidget>("SIDE").GetText = () => Field(SideOf);
+
+			var launch = custom.Get<DrShellButtonWidget>("LOAD");
+			launch.IsDisabled = () => Selected() == null || launching;
+			launch.OnClick = () =>
+			{
+				if (Mission() is { } m)
+					Launch(m);
+				else if (Save() is { } s)
+					LoadSavedGame(s);
+			};
+
+			var delete = custom.Get<DrShellButtonWidget>("DELETE");
+			delete.IsDisabled = () => Save() == null;
+			delete.OnClick = () => DeleteSavedGame(Save(), Refresh);
+
+			custom.Get<DrShellButtonWidget>("PREVIOUS_MENU").OnClick = () => Show(Screen.Single);
+
+			void Refresh()
+			{
+				customMissions = maps
+					.Where(kv => !DrCampaign.IsCampaignMission(kv.Key) && kv.Value.Visibility.HasFlag(MapVisibility.MissionSelector))
+					.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+					.Select(kv => kv.Key).ToList();
+				customSaves = SavedGames(false);
+				customMission = customSave = -1;
+			}
+
+			onShow[Screen.Custom] = () =>
+			{
+				Refresh();
+				missions.ScrollToTop();
+				saves.ScrollToTop();
+			};
+		}
+
+		// The results after a custom mission: every team a human or the computer played
+
+		void SetupResults(Widget results)
+		{
+			results.IsVisible = Visible(Screen.Results);
+			results.Get<DrShellStatisticsWidget>("STATISTICS").GetRows = () => statistics?
+				.Where(r => r.Kind != 0)
+				.Select(r => (FluentProvider.GetMessage(r.Kind == 1 ? Human : Computer), r.Side, r.Figures))
+				.ToArray();
+
+			results.Get<DrShellButtonWidget>("CONTINUE").OnClick = () => Show(Screen.Custom);
 		}
 
 		void SetupScroll(Widget parent, DrShellTextWidget text)
@@ -898,16 +1215,6 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			};
 
 			Game.OpenWindow(id, args);
-		}
-
-		void OpenLoadGame()
-		{
-			OpenPanel("GAMESAVE_BROWSER_PANEL", new WidgetArgs
-			{
-				{ "onStart", () => { } },
-				{ "isSavePanel", false },
-				{ "world", null }
-			});
 		}
 
 		void OpenMultiplayer()

@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace OpenRA.Mods.Dr
 {
@@ -33,15 +34,20 @@ namespace OpenRA.Mods.Dr
 		public static bool? LastResult;
 
 		/// <summary>
-		/// The debrief's rows, as the original shows them: the player's team and team 1, each its side (the
-		/// scenario's: 0 Freedom Guard, 1 Imperium, 2 civilian, 3 Togran; -1 for no such team) and figures.
+		/// The last mission's statistics, as the original keeps them: teams 0 to 7, each who played it (0 no one,
+		/// 1 a human, 2 the computer), its side (the scenario's: 0 Freedom Guard, 1 Imperium, 2 civilian,
+		/// 3 Togran; -1 for no such team) and figures. The debrief shows teams 0 and 1, the results all played.
 		/// </summary>
-		public static (int Side, int[] Figures)[] LastStatistics;
+		public static (int Kind, int Side, int[] Figures)[] LastStatistics;
 
 		static string FilePath => Path.Combine(Platform.SupportDir, "dr-campaign.yaml");
 
 		public static string MissionName(int number, char side) =>
 			number == Togran ? "m13t" : $"m{number:D2}{side}";
+
+		/// <summary>One of the original campaign's missions or trainings, as against a custom mission.</summary>
+		public static bool IsCampaignMission(string name) =>
+			name != null && Regex.IsMatch(name, @"^(m(0[1-9]|1[0-2])[fi]|m13t|t[1-4])$", RegexOptions.IgnoreCase);
 
 		static HashSet<string> Won
 		{

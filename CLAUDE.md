@@ -66,13 +66,17 @@ background. Their output goes to `tools/campaign/out/`.
 `select NAME`, `explore TEAM`, `camera X,Y`. Names are map actor names (`u<id>`,
 the original unit id) or those given to `spawn`. `order` exists, but its
 orders never reached units; use `teleport` and `steal` instead. `leave`
-returns to the menus, as the in-game Leave does. The game pauses when it
-ends, so steps still to come then run a second apart in real time.
+returns to the menus, as the in-game Leave does. `save NAME` saves the game
+(NAME without spaces); a loaded game opens paused under the in-game menu,
+and `resume` presses its Resume a second later (give it the save's tick).
+The game pauses when it ends, so steps still to come then run a second apart
+in real time. Saves go to the player's own `Saves` folder: delete test saves.
 
 The menus have their own script. Without `-Mission`, `run-game.ps1 -Shell`
 sets `OPENDR_SHELL`: steps 40 ticks apart, each screenshotted 30 ticks in.
 A step is a screen (`main`, `quit`, `single`, `credits`, `cube`, `story`,
-`briefingf`, `briefingi`, `training`, `options`, `archive`, `debrief`), optionally with a mission
+`briefingf`, `briefingi`, `training`, `options`, `archive`, `debrief`,
+`loadgame`, `custom`, `results`), optionally with a mission
 and side (`story:3`, `briefingi:7:i`; locks are ignored), or
 `click:X:Y`, a click at a point of the 640×480 screen through the real input
 path. Clicks play the videos between screens (a cube turn is 2.5 seconds
@@ -188,10 +192,14 @@ killing teams the player must protect, as alliances change at cycle 0.
   units added to OpenDR.
 - **The rest of the menus.** The original menus, their videos and sounds,
   the archive and the credits are in
-  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)), the debrief's statistics
-  included. Still to come: the original's own Load Game and Custom Mission
-  screens (`loadgame`, `custom`; their positions are in `shell/shellCFG.h`). The expansion's movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) and
-  credits (`AddCredt.txt`) wait for its campaigns. `dkreign-exe.py` answers
+  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)), with the debrief's
+  statistics, Load Game, Custom Mission and the results. Still to come: in a
+  mission, saving and loading are OpenRA's menu and panels, where the
+  original opened its `loadsave` screen with Save Game (button 0xe3 at
+  353,413 and a name field, in `dkreign.exe` at 0x57cd60); Multi Player and
+  Instant Action are OpenRA's panels over the shell's art. The expansion's
+  movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) and credits (`AddCredt.txt`)
+  wait for its campaigns. `dkreign-exe.py` answers
   how the original did each. The goal is a remaster: the original menus with
   the game on the new engine.
 - **Distribution polish**: the package is a zip. An installer (Start menu,

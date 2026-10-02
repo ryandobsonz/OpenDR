@@ -285,3 +285,155 @@ DrShell@DR_SHELL:
 					Image: d_logoi
 				DrShellStatistics@STATISTICS:
 					Area: 52,315,528,91
+		Container@LOADGAME:
+			Children:
+				DrShellLabel@TITLE:
+					Area: 0,0,640,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-saved-game-selection
+				DrShellLabel@LIST_TITLE:
+					Area: 125,105,200,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-saved-games
+				DrShellMenu@SAVES:
+					Area: 43,125,363,190
+					Font: font12n
+					HoverFont: font12o
+					SelectedFont: font12s
+					LineHeight: 19
+				DrShellLabel@LOCATION_TITLE:
+					Area: 430,105,180,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-save-location
+				DrShellLabel@LOCATION:
+					Area: 430,135,180,30
+					Font: font14r
+					Top: true
+				DrShellLabel@PROGRESSION_TITLE:
+					Area: 430,185,180,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-mission-progression
+				DrShellLabel@PROGRESSION_1:
+					Area: 430,215,180,20
+					Font: font14r
+					Top: true
+				DrShellLabel@PROGRESSION_2:
+					Area: 430,235,180,20
+					Font: font14r
+					Top: true
+				DrShellLabel@PROGRESSION_3:
+					Area: 430,255,180,20
+					Font: font14r
+					Top: true
+				DrShellLabel@NAME:
+					Area: 320,360,0,30
+					Font: font14r
+					Top: true
+				DrShellButton@PREVIOUS_MENU:
+					Area: 75,413,100,30
+					Text: button-dr-shell-previous-menu
+				DrShellButton@LOAD:
+					Area: 189,413,100,30
+					Text: button-dr-shell-load-game
+				DrShellButton@DELETE:
+					Area: 465,413,100,30
+					Text: button-dr-shell-delete
+		Container@CUSTOM:
+			Children:
+				DrShellLabel@TITLE:
+					Area: 0,0,640,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-custom-mission-selection
+				DrShellLabel@MISSIONS_TITLE:
+					Area: 62,80,320,30
+					Font: font12
+					Top: true
+					Align: Left
+					Text: label-dr-shell-custom-missions
+				DrShellMenu@MISSIONS:
+					Area: 64,104,322,114
+					Font: font12n
+					HoverFont: font12o
+					SelectedFont: font12s
+					LineHeight: 19
+				DrShellButton@MISSIONS_UP:
+					Area: 390,104,16,14
+				DrShellButton@MISSIONS_DOWN:
+					Area: 390,204,16,14
+				DrShellLabel@SAVES_TITLE:
+					Area: 62,230,320,30
+					Font: font12
+					Top: true
+					Align: Left
+					Text: label-dr-shell-saved-custom-missions
+				DrShellMenu@SAVES:
+					Area: 64,256,322,114
+					Font: font12n
+					HoverFont: font12o
+					SelectedFont: font12s
+					LineHeight: 19
+				DrShellButton@SAVES_UP:
+					Area: 390,255,16,14
+				DrShellButton@SAVES_DOWN:
+					Area: 390,373,16,14
+				DrShellLabel@ENEMIES_TITLE:
+					Area: 470,84,0,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-number-of-enemies
+				DrShellLabel@ENEMIES:
+					Area: 470,103,0,30
+					Font: font14r
+					Top: true
+				DrShellLabel@SIZE_TITLE:
+					Area: 555,84,0,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-map-size
+				DrShellLabel@SIZE:
+					Area: 555,103,0,30
+					Font: font14r
+					Top: true
+				DrShellLabel@SIDE_TITLE:
+					Area: 515,141,0,30
+					Font: font12
+					Top: true
+					Text: label-dr-shell-side
+				DrShellLabel@SIDE:
+					Area: 515,163,0,30
+					Font: font14r
+					Top: true
+				DrShellButton@PREVIOUS_MENU:
+					Area: 30,415,100,30
+					Text: button-dr-shell-previous-menu
+				DrShellButton@DELETE:
+					Area: 145,415,100,30
+					Text: button-dr-shell-delete
+				DrShellButton@LOAD:
+					Area: 270,411,100,30
+					Text: button-dr-shell-load-game
+		Container@RESULTS:
+			Children:
+				DrShellStatistics@STATISTICS:
+					Area: 25,38,590,350
+					Font: font12n
+					GroupY: 38
+					HeadingY: 58
+					RowY: 76
+					RowStep: 39
+					RowHeight: 34
+					PlayerX: 50
+					SideX: 168
+					SideWidth: 0
+					CellX: 271
+					CellStep: 43
+					CellWidth: 35
+					GroupWidth: 78
+				DrShellButton@CONTINUE:
+					Area: 240,411,160,30
+					Text: button-dr-shell-results-continue

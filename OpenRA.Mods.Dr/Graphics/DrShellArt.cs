@@ -120,14 +120,16 @@ namespace OpenRA.Mods.Dr.Graphics
 			}
 		}
 
-		/// <summary>Draws a sprite into a screen rectangle.</summary>
+		/// <summary>Draws a sprite into a screen rectangle, faded by alpha.</summary>
 		public static void DrawQuad(Sprite sprite, float2 topLeft, float2 size, float alpha = 1f)
 		{
 			var a = new float3(topLeft, 0);
 			var b = new float3(topLeft.X + size.X, topLeft.Y, 0);
 			var c = new float3(topLeft + size, 0);
 			var d = new float3(topLeft.X, topLeft.Y + size.Y, 0);
-			Game.Renderer.RgbaSpriteRenderer.DrawSprite(sprite, a, b, c, d, new float3(1, 1, 1), alpha);
+
+			// The renderer blends premultiplied colours, so the colour fades with the alpha.
+			Game.Renderer.RgbaSpriteRenderer.DrawSprite(sprite, a, b, c, d, new float3(alpha, alpha, alpha), alpha);
 		}
 
 		internal static void Commit(Sheet sheet)
