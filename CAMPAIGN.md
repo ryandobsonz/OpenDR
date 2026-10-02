@@ -310,8 +310,15 @@ beacons, the production palette and tabs) are off the list.
 Controls not working yet are drawn as the original drew a disabled button:
 red. Tips appear in
 the original's strip (`PT.BMP`) after 800 ms, as `TACTICS.CFG`'s
-`InfoDelay`. The game's end still opens OpenRA's in-game menu, whose Leave
-returns to the menus.
+`InfoDelay`.
+
+**A mission ends as the original's did** (zone 14, set up by 0x4ad130):
+"Mission Successful" or "Mission Failed" (`MLS_EVNT_MSUCCESS`, `MFAILURE`)
+in the "Are You Sure?" box over the map, and Continue (Enter), which
+returns to the menus: the debrief after a campaign win, else the mission
+ring. `DrLoadIngameUILogic` (`chrome/ingame.yaml`) stands in for OpenRA's
+loader so the game's end keeps this interface and leaves OpenRA's in-game
+menu shut; in multiplayer a beaten player still becomes an observer.
 
 Code: `FileFormats/DrIgiLibrary.cs` (the bitmaps, PCX fonts and strings),
 `Widgets/DrIgiWidget.cs` (the frame's scaling, and its buttons, bars,

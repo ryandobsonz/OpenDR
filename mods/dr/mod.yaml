@@ -125,7 +125,7 @@ Chrome:
 Assemblies: OpenRA.Mods.Dr.dll, OpenRA.Mods.Common.dll, OpenRA.Mods.Cnc.dll
 
 ChromeLayout:
-	common|chrome/ingame.yaml
+	dr|chrome/ingame.yaml
 	common|chrome/ingame-chat.yaml
 	common|chrome/ingame-transients.yaml
 	common|chrome/ingame-fmvplayer.yaml

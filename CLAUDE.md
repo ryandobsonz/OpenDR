@@ -76,7 +76,8 @@ Names are map actor names (`u<id>`, the original unit id) or those given to
 orders never reached units; use `teleport` and `steal` instead. `leave`
 returns to the menus, as the in-game Leave does. `save NAME` saves the game
 (NAME without spaces); a loaded game opens paused under the in-game menu,
-and `resume` presses its Resume a second later (give it the save's tick).
+and `resume` presses its Resume a second later (give it the save's tick). A mission's end shows its "Mission Successful"
+or "Failed" popup; `press MISSION_END_CONTINUE` leaves as its Continue does.
 The game pauses when it ends, or when a step opens a window that pauses it
 (the settings, the in-game menu), so steps still to come then run a second
 apart in real time. Saves go to the player's own `Saves` folder: delete test saves.
@@ -191,8 +192,11 @@ killing teams the player must protect, as alliances change at cycle 0.
   addresses. The manual's screenshots (`DrData/manuals/Dark Reign/Dark Reign
   Manual.pdf`, pip `pymupdf` to extract) confirm the arrangement.
 - **Python on Windows writes CRLF** in text mode: open files with
-  `newline=''` when editing sources from a script (most are LF; some, like
-  `launcher/MainWindow.xaml.cs`, are CRLF; keep each as it is).
+  `newline=''` and `encoding='utf-8'` when editing sources from a script
+  (without it, cp1252 fails on `−` or `→` halfway through a write and leaves
+  the file truncated). Working copies are CRLF or LF as git's autocrlf
+  checked them out; keep each as it is. The Edit tool can join lines when it
+  removes a whole line from a CRLF file: check `git diff` after.
 - **Test clicks must run unsynced**: `Game.RunAfterTick` runs inside the
   world's synced tick, where changing the order generator throws; wrap UI
   actions in `Sync.RunUnsynced`.
@@ -211,9 +215,6 @@ comes first; a human playthrough then decides what matters next.
 
 1. **The in-game interface on the campaign's path**
    ([CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface) says what works):
-   - The original's end of a mission: "Mission Successful"/"Mission Failed"
-     (`MLS_EVNT_MSUCCESS`, `MFAILURE`) straight to the debrief, instead of
-     OpenRA's in-game menu.
    - Load/Save Game: the original's popup over the map (zones 3–12: a list at
      330,98–436,228, a name field at 330,74, Load/Save/Delete at 330,259/284/309,
      its box from `TEXTBRDR.BMP`), instead of OpenRA's menu. Restate Objective

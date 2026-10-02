@@ -501,3 +501,16 @@ Container@PLAYER_WIDGETS:
 							Anchor: Center
 							Size: Small
 							Label: IGI_CFBUTN
+				# The original's end of a mission (zone 14, set by 0x4ad130): "Mission Successful" or "Mission
+				# Failed" in the same box, and Continue, which leaves for the debrief or the mission ring.
+				Container@MISSION_END:
+					Children:
+						DrIgiBox@MISSION_END_BOX:
+							Area: 134, 130, 180, 100
+							Anchor: Center
+							TextTop: 24
+						DrIgiButton@MISSION_END_CONTINUE:
+							Area: 174, 200, 0, 0
+							Anchor: Center
+							Size: Medium
+							Label: IGI_OKBUTT

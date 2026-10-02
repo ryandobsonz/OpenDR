@@ -22,8 +22,9 @@ $env:OPENDR_TEST = $Test
 # Test wins stay out of the player's campaign progress (dr-campaign.yaml).
 $env:OPENDR_SCRIPTED = "1"
 $env:OPENDR_SHELL = $Shell
+# No edge scrolling: the test window's cursor sits at its top edge and would scroll the view off the base.
 $launchArgs = @("Game.Mod=dr", "Engine.EngineDir=..", "Engine.ModSearchPaths=$root\mods",
-    "Graphics.Mode=Windowed", "Graphics.WindowedSize=1600,900")
+    "Graphics.Mode=Windowed", "Graphics.WindowedSize=1600,900", "Game.ViewportEdgeScroll=False")
 if ($Map) { $launchArgs += "Launch.Map=$Map" }
 # The engine saves its command-line settings into settings.yaml as it loads, which would leave the
 # player's own game windowed at 1600x900; put their file back once the test game has loaded.

@@ -42,7 +42,9 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		bool advancedPaths;
 		bool advancedMenu;
 		bool windowOpen;
+		Action closeWindow;
 		Action confirmed;
+		string missionEnd;
 
 		[ObjectCreator.UseCtor]
 		public DrIgiLogic(Widget widget, World world, ModData modData)
@@ -81,12 +83,22 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			};
 			widget.Get<DrIgiButtonWidget>("CONFIRM_NO").OnClick = () => confirmed = null;
 
+			BindMissionEnd(player);
+
 			// Escape cancels a pending order (a building to place, a target to pick), else opens the menu; the
 			// rest are the original's keyboard commands (BindHotkeys).
 			widget.Get<LogicKeyListenerWidget>("IGI_KEYS").AddHandler(e =>
 			{
 				if (e.Event != KeyInputEvent.Down)
 					return false;
+
+				if (missionEnd != null)
+				{
+					if (e.Key == Keycode.RETURN || e.Key == Keycode.KP_ENTER)
+						Leave();
+
+					return true;
+				}
 
 				if (e.Key == Keycode.ESCAPE && e.Modifiers == Modifiers.None)
 				{
@@ -117,6 +129,37 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		}
 
 		DrIgiButtonWidget Button(string name) => widget.Get<DrIgiButtonWidget>(name);
+
+		/// <summary>
+		/// The original's end of a mission: "Mission Successful" or "Mission Failed" over the map, and Continue,
+		/// which leaves for the menus (the debrief after a win, else the mission ring). DrLoadIngameUILogic
+		/// leaves OpenRA's in-game menu shut when this is here.
+		/// </summary>
+		void BindMissionEnd(Player player)
+		{
+			widget.Get("MISSION_END").IsVisible = () => missionEnd != null;
+			widget.Get<DrIgiBoxWidget>("MISSION_END_BOX").GetText = () => missionEnd;
+			Button("MISSION_END_CONTINUE").OnClick = Leave;
+
+			// The game's end comes from synced code; it closes any window open over the battlefield.
+			world.GameOver += () => Sync.RunUnsynced(world, () =>
+			{
+				closeWindow?.Invoke();
+				confirmed = null;
+				world.CancelInputMode();
+				var won = player != null && player.WinState == WinState.Won;
+				missionEnd = igi.Library?.GetString(won ? "MLS_EVNT_MSUCCESS" : "MLS_EVNT_MFAILURE")
+					?? (won ? "Mission Successful" : "Mission Failed");
+			});
+		}
+
+		/// <summary>Back to the menus, as OpenRA's Leave does; the shell then shows what follows the mission.</summary>
+		static void Leave() => Game.RunAfterTick(() =>
+		{
+			Game.Disconnect();
+			Ui.ResetAll();
+			Game.LoadShellMap();
+		});
 
 		/// <summary>
 		/// Dark Reign's keyboard commands (its F1 list, dark/local/HELP.TXT), as rebindable hotkeys
@@ -333,12 +376,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			Button("RELINQUISH").IsVisible = () => !singlePlayer;
 			Button("RELINQUISH").IsDisabled = () => true;
 
-			Button("ABORT").OnClick = () => confirmed = () => Game.RunAfterTick(() =>
-			{
-				Game.Disconnect();
-				Ui.ResetAll();
-				Game.LoadShellMap();
-			});
+			Button("ABORT").OnClick = () => confirmed = Leave;
 
 			Button("EXIT").OnClick = () => confirmed = Game.Exit;
 
@@ -419,20 +457,18 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				world.SetPauseState(true);
 
 			windowOpen = true;
-			var window = Game.OpenWindow(id, new WidgetArgs
+			closeWindow = () =>
 			{
-				{
-					"onExit", () =>
-					{
-						worldRoot.IsVisible = () => true;
-						Game.Sound.DisableWorldSounds = sounds;
-						if (pause)
-							world.SetPauseState(paused);
+				worldRoot.IsVisible = () => true;
+				Game.Sound.DisableWorldSounds = sounds;
+				if (pause)
+					world.SetPauseState(paused);
 
-						windowOpen = false;
-					}
-				}
-			});
+				windowOpen = false;
+				closeWindow = null;
+			};
+
+			var window = Game.OpenWindow(id, new WidgetArgs { { "onExit", closeWindow } });
 
 			opened?.Invoke(window);
 			Game.RunAfterTick(Ui.ResetTooltips);

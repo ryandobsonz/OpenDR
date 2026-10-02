@@ -56,7 +56,6 @@ namespace OpenRA.Mods.Dr.FileFormats
 			return fileSystem.Exists("content|igi/TOPBTNS.BMP") ? new DrIgiLibrary(fileSystem) : null;
 		}
 
-		/// <summary>The game's text for a string name, or the fallback when MLSTRING.CFG lacks it.</summary>
 		/// <summary>The game's string by its name, else the mod's own (Fluent, for what the remaster adds), else the name.</summary>
 		public string GetString(string name, string fallback = null)
 		{
