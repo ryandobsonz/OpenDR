@@ -10,17 +10,22 @@ Power:
 	ProvidesPrerequisite:
 		Prerequisite: anypower
 	Power:
-		Amount: 500
+		Amount: 1000
 	ScalePowerWithHealth:
-	#DrRefinery:
-	#	DockAngle: 32
-	#	DockOffset: 0,2
-	#StoresResources:
-	#	Capacity: 3000
-	#FreeActor:
-	#	Actor: Freighter
-	#	SpawnOffset: 0,2
-	#	Facing: 64
+	DrRefinery:
+		Resource: Taelon
+		Capacity: 1000
+		Initial: 500
+		ScalesPower: true
+		BarColor: E8B820
+	DockHost:
+		Type: Unload
+		DockAngle: 0
+		DockOffset: 0,1c512,0
+	FreeActor:
+		Actor: Freighter
+		SpawnOffset: 1,3
+		Facing: 256
 	WithIdleOverlay@LAYER1:
 		Palette: terrain
 		Sequence: underlay
@@ -31,10 +36,6 @@ Power:
 		Sequence: shadow
 	WithIdleOverlay@LAYER4:
 		Sequence: top2
-	WithResourceStoragePipsDecoration:
-		Position: BottomLeft
-		RequiresSelection: true
-		PipCount: 12
 
 WaterLaunchPad:
 	Inherits: WaterLaunchPad.Constructing
@@ -57,13 +58,14 @@ WaterLaunchPad:
 	Power:
 		Amount: -100
 	DrRefinery:
-		UseStorage: false
+		Resource: Water
+		Capacity: 3000
+		SalePercent: 100
+		ForcedSaleFee: 500
 	DockHost:
 		Type: Unload
 		DockAngle: 0 # 32
 		DockOffset: -1c0,1c0,0
-	StoresResources:
-		Capacity: 3000
 	FreeActor:
 		Actor: Freighter
 		SpawnOffset: 1,2
@@ -76,11 +78,6 @@ WaterLaunchPad:
 	WithIdleOverlay@LAYER3:
 		Palette: shadow
 		Sequence: shadow
-	WithResourceStoragePipsDecoration:
-		Position: BottomLeft
-		RequiresSelection: true
-		PipCount: 18
-		FullSequence: pip-blue
 
 HQ.human:
 	Inherits: HQ.human.Constructing

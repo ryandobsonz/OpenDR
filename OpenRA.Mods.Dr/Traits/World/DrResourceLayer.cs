@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System.Collections.Generic;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Traits;
@@ -16,40 +17,56 @@ using OpenRA.Traits;
 namespace OpenRA.Mods.Dr.Traits
 {
 	[TraitLocation(SystemActors.World)]
-	[Desc("Attach this to the world actor.")]
+	[Desc("Attach this to the world actor. Each resource cell is a spring (the original's impww and impmn):",
+		"it starts with an amount and regrows to its MaxDensity, as the original's SetResource gives them.")]
 	public class DrResourceLayerInfo : ResourceLayerInfo
 	{
-		[Desc("Resource value multiplier.")]
-		public readonly int ResourceValueMultiplier = 1000;
+		[Desc("Bales a spring of each resource type starts with. Types not listed start full.")]
+		public readonly Dictionary<string, int> InitialDensity = new();
+
+		[Desc("Ticks for a spring of each resource type to regrow a bale. Types not listed never regrow.")]
+		public readonly Dictionary<string, int> RegrowTicks = new();
 
 		public override object Create(ActorInitializer init) { return new DrResourceLayer(init.Self, this); }
 	}
 
-	public class DrResourceLayer : ResourceLayer
+	public class DrResourceLayer : ResourceLayer, ITick
 	{
 		readonly DrResourceLayerInfo info;
-		readonly World world;
+		readonly List<(CPos Cell, string Type, int Interval)> springs = new();
+		int ticks;
 
 		public DrResourceLayer(Actor self, DrResourceLayerInfo info)
 			: base(self, info)
 		{
 			this.info = info;
-			world = self.World;
 		}
 
 		protected override void WorldLoaded(World w, WorldRenderer wr)
 		{
+			base.WorldLoaded(w, wr);
+
 			foreach (var cell in w.Map.AllCells)
 			{
-				var resource = world.Map.Resources[cell];
-				if (!ResourceTypesByIndex.TryGetValue(resource.Type, out var resourceType))
+				var content = Content[cell];
+				if (content.Type == null)
 					continue;
 
-				if (!AllowResourceAt(resourceType, cell))
-					continue;
+				if (info.InitialDensity.TryGetValue(content.Type, out var initial))
+					Content[cell] = new ResourceLayerContents(content.Type, (byte)initial.Clamp(1, info.ResourceTypes[content.Type].MaxDensity));
 
-				Content[cell] = new ResourceLayerContents(resourceType, 255); // resource.Index * info.ResourceValueMultiplier);
+				if (info.RegrowTicks.TryGetValue(content.Type, out var interval) && interval > 0)
+					springs.Add((cell, content.Type, interval));
 			}
+		}
+
+		void ITick.Tick(Actor self)
+		{
+			ticks++;
+			IResourceLayer layer = this;
+			foreach (var (cell, type, interval) in springs)
+				if (ticks % interval == 0 && layer.CanAddResource(type, cell, 1))
+					layer.AddResource(type, cell, 1);
 		}
 	}
 }

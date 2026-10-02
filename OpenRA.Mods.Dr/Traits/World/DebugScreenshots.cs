@@ -265,6 +265,21 @@ namespace OpenRA.Mods.Dr.Traits
 					Team(w, c[1]).Shroud.ExploreAll();
 					break;
 
+				case "resources":
+				{
+					// A team's economy: credits, power, what each store holds, each freighter's cargo, the totals delivered.
+					var p = Team(w, c[1]);
+					var power = p.PlayerActor.TraitOrDefault<PowerManager>();
+					var stats = w.WorldActor.TraitOrDefault<DrMissionStatistics>()?[p];
+					var stores = w.ActorsWithTrait<DrRefinery>().Where(r => r.Actor.Owner == p && !r.Actor.IsDead)
+						.Select(r => $"{r.Actor.Info.Name}#{r.Actor.ActorID} {r.Trait.Info.Resource} {r.Trait.Stored}/{r.Trait.Info.Capacity}");
+					var freighters = w.ActorsWithTrait<DrFreighter>().Where(f => f.Actor.Owner == p && !f.Actor.IsDead)
+						.Select(f => $"#{f.Actor.ActorID} at {f.Actor.Location} cargo {f.Trait.Cargo} carrying {f.Trait.Carrying ?? "-"} {f.Trait.Fullness}% {f.Actor.CurrentActivity?.GetType().Name}");
+					Log.Write("debug", $"resources {c[1]}: cash {p.PlayerActor.Trait<PlayerResources>().Cash}, power {power?.PowerProvided}/{power?.PowerDrained}, "
+						+ $"collected water {stats?.WaterCollected} taelon {stats?.TaelonCollected}; stores: {string.Join("; ", stores)}; freighters: {string.Join("; ", freighters)}");
+					break;
+				}
+
 				case "camera":
 					worldRenderer?.Viewport.Center(w.Map.CenterOfCell(Cell(c[1])));
 					break;

@@ -9,4 +9,5 @@ hotkey-description-igi-exit-to-main-menu = Exit to main menu
 hotkey-description-igi-attack = Attack mode
 hotkey-description-igi-attack-in-place = Attack without moving
 hotkey-description-igi-set-exit-point = Set exit point for building
+hotkey-description-igi-sell-water = Sell water
 hotkey-description-powerdown = Power-down mode

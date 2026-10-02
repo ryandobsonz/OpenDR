@@ -143,18 +143,24 @@ World:
 	LoadWidgetAtGameStart:
 		ShellmapRoot: DR_SHELL
 	DrResourceLayer:
-		ResourceValueMultiplier: 1000
+		# The original's springs (SetResource in BUILD.TXT), in bales of 75 water or 5 taelon: a water spring
+		# holds 10000 and regrows 20 a second, a taelon site holds 500, starts with 40 and regrows 1 a second.
 		ResourceTypes:
 			Water:
 				ResourceIndex: 1
 				TerrainType: Clear
 				AllowedTerrainTypes: Clear, Normal2, Normal3, Muddy1, Muddy2, Rough1, Rough2, Road, RoadBase
-				MaxDensity: 255 # 9000000
+				MaxDensity: 133
 			Taelon:
 				ResourceIndex: 2
 				TerrainType: Clear
 				AllowedTerrainTypes: Clear, Normal2, Normal3, Muddy1, Muddy2, Rough1, Rough2, Road, RoadBase
-				MaxDensity: 255 # 9000000
+				MaxDensity: 100
+		InitialDensity:
+			Taelon: 8
+		RegrowTicks:
+			Water: 94
+			Taelon: 125
 	ColorPickerManager:
 		PreviewActor: freighter.colorpicker
 		PresetColors: F21818, F2BC18, DAF218, 18F26F, 18BEF2, 1821F2, BA18F2, F218BC, F29191, F2DF79, CDF291, 79F2BF, 91DBF2, 7997F2, CD91F2, F279E6

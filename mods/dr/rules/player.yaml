@@ -2,8 +2,8 @@
 	Shroud:
 	PlayerResources:
 		ResourceValues:
-			Water: 120 # 25 in RA
-			Taelon: 120
+			Water: 75 # a freighter carries 10 bales: 750 water or 50 taelon
+			Taelon: 5
 
 EditorPlayer:
 	Inherits: ^BasePlayer

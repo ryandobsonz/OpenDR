@@ -39,7 +39,7 @@ namespace OpenRA.Mods.Dr.Traits
 	/// <summary>
 	/// The original (dkreign.exe) keeps these per team: a unit or building counts as created when it comes into
 	/// being, the mission's own included, as lost when it dies, and as destroyed for the team that killed it,
-	/// unless that was its own. Resources count as they are delivered, in credits, water and taelon apart.
+	/// unless that was its own. Resources count as they are delivered, water and taelon apart, in their own units.
 	/// </summary>
 	public class DrMissionStatistics : INotifyResourceAccepted
 	{

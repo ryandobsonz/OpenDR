@@ -579,8 +579,15 @@ namespace OpenRA.Mods.Dr.Traits
 
 				case "critcollectwater":
 				case "critcollectmineral":
-					// Resources sell straight to credits here, so earnings stand in for what was mined.
-					return player != null && player.PlayerActor.Trait<PlayerResources>().Earned >= n.IntArg(0);
+				{
+					// What the team's freighters delivered: water to launch pads, taelon to generators.
+					var statistics = world.WorldActor.TraitOrDefault<DrMissionStatistics>();
+					if (player == null || statistics == null)
+						return false;
+
+					var s = statistics[player];
+					return (c.Name == "critcollectwater" ? s.WaterCollected : s.TaelonCollected) >= n.IntArg(0);
+				}
 
 				case "critstealplan":
 				{

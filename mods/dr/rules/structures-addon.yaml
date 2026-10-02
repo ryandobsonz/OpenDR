@@ -74,6 +74,11 @@ Power.terrorist.Constructing:
 
 Power.terrorist:
 	Inherits: Power
+	-DrRefinery:
+	-DockHost:
+	-FreeActor:
+	Power:
+		Amount: 500
 	RenderSprites:
 		Image: ntwpf1l0
 	Tooltip:

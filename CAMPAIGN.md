@@ -209,8 +209,8 @@ the counting are the original's, read from `dkreign.exe`:
   construction rig that becomes it is not lost.
 - **Lost**: every one that dies, whoever killed it. **Destroyed**: those a
   team kills of another team's (its own don't count).
-- **Collected**: what refineries take in, water and taelon apart, in
-  credits.
+- **Collected**: what freighters deliver, water to launch pads and taelon
+  to generators, each in its own units.
 
 `Traits/World/DrMissionStatistics.cs` keeps the figures, which every unit
 and building reports through `Traits/DrCountsInStatistics.cs`; the mission's
@@ -270,7 +270,7 @@ and 32 paths, 64 comms, 128 menu, 256 special.
 | MENU | Sliders for effects, music, game speed and scroll speed (`MEICON.BMP`, `MESLIDE.BMP`); Load/Save Game, Restate Objective, Start Again (Relinquish Control in multiplayer), Abort, Exit To System, the last three behind the original "Are You Sure?" | All but game speed, which OpenRA fixes once a game starts, and Relinquish Control |
 | ORDERS | Basic: Scout, Harass, Search & Destroy; Guard, Pursue, Default. Advanced adds Pursuit Range, Damage Tolerance and Independence (LOW/MED/HIGH, `ORLMH.BMP`) and Set Default | Guard |
 | PATHS | Basic: Add Waypoints, Clear All, Delete, Go. Advanced adds the path direction (one way, patrol, loop: `TRAILMDE.BMP`), the current and saved paths, De-Select, Save Path | None yet |
-| SPECIAL | Morph, Unmorph, Phase, Unphase, Self Destruct, Formation Move, Sell Water, Packup/UnPack, Set Exit Point | Set Exit Point (the building's rally point) |
+| SPECIAL | Morph, Unmorph, Phase, Unphase, Self Destruct, Formation Move, Sell Water, Packup/UnPack, Set Exit Point | Set Exit Point (the building's rally point), Sell Water |
 | COMMS | The players with their alliances, giving units or credits, messages to all, none, allies, neutral or enemies | None yet |
 
 **What the remaster adds to the original's menu** sits behind the MENU
@@ -303,7 +303,7 @@ screenshot (Ctrl+P), mute (M), select by type (W), the status bars (comma).
 Repair, Power and Jump To Selection lost theirs to the original's C, X and
 Home, and can be given one. The original's keys for what OpenDR lacks (M
 move, F formation, T turn, R repair, W rearm, D decoy, N next unit, End,
-Shift+L water sale, Shift+D self destruct) wait for it. OpenRA's hotkeys
+Shift+D self destruct) wait for it; Shift+L sells water. OpenRA's hotkeys
 with nothing behind them under this interface (attack move, stances,
 beacons, the production palette and tabs) are off the list.
 
@@ -371,11 +371,43 @@ sharper and larger, not more detailed.
 | Enemy AI | `Traits/BotModules/DrAipBotModule.cs` | Each AI team builds through its AIP's accounts and sends troops by its priorities |
 | Menus | `Widgets/Logic/DrShellLogic.cs` | The original menus and mission ring, from the game's shell art; see [The original menus](#the-original-menus) |
 | Interface | `Widgets/Logic/Ingame/DrIgiLogic.cs` | The original in-game interface over a mission; see [The in-game interface](#the-in-game-interface) |
+| Economy | `Traits/DrFreighter.cs`, `Traits/Buildings/DrRefinery.cs`, `Traits/World/DrResourceLayer.cs` | Water and taelon, as below |
 
 The behaviour follows the game's own AIP manual (the *AIP and Scenario End
 Conditions Guide*), shipped with the game. Its one undocumented criterion,
 `CritONCE`, fires the first time its inner criterion is met and never again:
 the missions loop through states that a latch would re-trigger forever.
+
+### Water and taelon
+
+The numbers are the original's, from `deftxt/BUILD.TXT` and `UNITS.TXT`:
+
+- **A freighter carries one resource at a time** (`DrFreighter`): 750
+  water or 50 taelon, a load of 10 bales (`ResourceValues` in
+  `rules/player.yaml`: 75 water or 5 taelon a bale). It takes water to launch
+  pads and taelon to generators. One that a pad or generator brings fetches
+  that building's resource; a harvest order on a spring changes it. When
+  nothing will take its resource (every generator full, or none) but
+  something takes the other, it turns to that and throws away a load nothing
+  will take. Its search and harvest are mod copies of the engine's
+  (`Activities/DrFindAndDeliverResources.cs`, `DrHarvestResource.cs`), as
+  the engine's would haul either.
+- **The Water Launch Pad** (`DrRefinery`) holds 3000 water and launches it
+  for its worth in credits when full: "You received N credits". Sell Water
+  (the SPECIAL tab, Shift+L, or a double click on the credits) launches every
+  pad holding more than the 500 fee, less the fee; meanwhile the credits'
+  tooltip gives the cost. The water bar right of the minimap is all pads'
+  water against their room.
+- **The Taelon Power Generator** holds 1000 taelon, starts with 500, and
+  makes as much power as it holds (`SupplyResource(1 0 2 100)`), so 500 to
+  1000; damage scales it as before. Taelon is not used up.
+- **Springs** (`DrResourceLayer`): a water spring holds 10000 and regrows 20
+  a second; a taelon site holds 500, starts with 40 and regrows 1 a second.
+  The original's rates have no unit; a second is a guess.
+- **Selected, a pad or generator shows its store** as a bar under its health:
+  blue water, gold taelon.
+- `CritCollectWater` and `CritCollectMineral` count what the team's
+  freighters delivered, as does the debrief.
 
 **Team 0 is the player** in every original mission. A team's end tree reaching
 state 0 wins for it and its mutual allies; any other team winning is a loss.
@@ -397,10 +429,8 @@ changes the rate.
   with the plans of what that facility makes in the original tables, and
   they are stolen once it is back beside its own headquarters, which is what
   mission 6's goals check. The stolen designs do not yet become buildable.
-- **Not yet in OpenDR:** phasing, the water contaminator, water and taelon
-  as separate resources (collected resources count as credits;
-  `CritCollectWater` and `CritCollectMineral` use credits earned), decoys,
-  morphing, self destruct, formation moves, forced water sales and packing
+- **Not yet in OpenDR:** phasing, the water contaminator, decoys,
+  morphing, self destruct, formation moves and packing
   up Freedom Guard buildings. No original campaign mission needs them to be
   won, but the interface has buttons for them (see above) and they are owed.
 - **Units' tactical settings** (`SetTactAI`: pursuit, damage tolerance,
@@ -409,8 +439,14 @@ changes the rate.
   pursuit medium or high, which OpenRA's default stance already is.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
-- **The debrief's water and taelon** are the credits each brought in: OpenDR
-  pays for resources in credits.
+- **A freighter that has nowhere to take its resource turns to the other**
+  on its own, where the manual has the player divert it. **A pad or generator
+  placed by a mission brings a freighter**, as one built does; whether the
+  original did is not confirmed (its `AssociatedUnit` is read at 0x43b642 and
+  stored at offset 0x138 of the building type; 0x451786 and 0x451c77 read it).
+  Without it, mission 1 could leave the player no income.
+- **The launch pad's launch animation** (`SetResourceSaleAnimation(3)`) is
+  not played.
 
 ## Working on it
 

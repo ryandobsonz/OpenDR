@@ -13,102 +13,139 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Mods.Common.Effects;
-using OpenRA.Mods.Common.Traits.Render;
-using OpenRA.Mods.Dr.Traits;
+using OpenRA.Mods.Common.Traits;
+using OpenRA.Primitives;
 using OpenRA.Traits;
 
-namespace OpenRA.Mods.Common.Traits
+namespace OpenRA.Mods.Dr.Traits
 {
-	public class DrRefineryInfo : TraitInfo, Requires<WithSpriteBodyInfo>, Requires<IDockHostInfo>
+	[Desc("A building freighters deliver one resource to, which it stores: the original's SetResource.",
+		"The Water Launch Pad sells its water when the tank is full (SetResourceSale); the Taelon Power Generator's",
+		"power follows its taelon (SupplyResource). Amounts are in the resource's own units, which",
+		"PlayerResources.ResourceValues gives per bale.")]
+	public class DrRefineryInfo : TraitInfo, Requires<IDockHostInfo>
 	{
-		[Desc("Store resources in silos. Adds cash directly without storing if set to false.")]
-		public readonly bool UseStorage = true;
+		[FieldLoader.Require]
+		[Desc("The resource this building takes.")]
+		public readonly string Resource = null;
 
-		[Desc("Discard resources once silo capacity has been reached.")]
-		public readonly bool DiscardExcessResources = false;
+		[Desc("How much it holds.")]
+		public readonly int Capacity = 3000;
 
-		public readonly bool ShowTicks = true;
-		public readonly int TickRate = 10;
+		[Desc("How much it holds when built.")]
+		public readonly int Initial = 0;
+
+		[Desc("Sell the store when it is full, at this percentage of its amount in credits. 0 never sells.")]
+		public readonly int SalePercent = 0;
+
+		[Desc("What a forced sale costs.")]
+		public readonly int ForcedSaleFee = 500;
+
+		[Desc("Scale the building's Power by how full the store is.")]
+		public readonly bool ScalesPower = false;
+
+		[Desc("Colour of the store's bar under the selection box.")]
+		public readonly Color BarColor = Color.FromArgb(255, 56, 120, 232);
+
+		[NotificationReference("Sounds")]
+		public readonly string SaleNotification = "CreditsReceived";
+
+		[FluentReference("amount")]
+		public readonly string SaleTextNotification = "notification-water-launched";
 
 		public override object Create(ActorInitializer init) { return new DrRefinery(init.Self, this); }
 	}
 
-	public class DrRefinery : IAcceptResources, INotifyCreated, ITick, INotifyOwnerChanged
+	public class DrRefinery : IAcceptResources, IPowerModifier, ISelectionBar, INotifyOwnerChanged, ISync
 	{
-		readonly DrRefineryInfo info;
+		public readonly DrRefineryInfo Info;
+		readonly Actor self;
 		PlayerResources playerResources;
-		IEnumerable<int> resourceValueModifiers;
-		DrPlayerResources drPlayerResources;
+		PowerManager power;
 
-		int currentDisplayTick = 0;
-		int currentDisplayValue = 0;
+		[VerifySync]
+		public int Stored { get; private set; }
+
 		public DrRefinery(Actor self, DrRefineryInfo info)
 		{
-			this.info = info;
+			Info = info;
+			this.self = self;
+			Stored = Math.Min(info.Initial, info.Capacity);
 			playerResources = self.Owner.PlayerActor.Trait<PlayerResources>();
-			currentDisplayTick = info.TickRate;
-			drPlayerResources = self.Owner.PlayerActor.Trait<DrPlayerResources>();
+			power = self.Owner.PlayerActor.TraitOrDefault<PowerManager>();
 		}
 
-		void INotifyCreated.Created(Actor self)
-		{
-			resourceValueModifiers = self.TraitsImplementing<IResourceValueModifier>().ToArray().Select(m => m.GetResourceValueModifier());
-		}
+		public bool IsFull => Stored >= Info.Capacity;
+
+		int ValuePerBale => playerResources.Info.ResourceValues.GetValueOrDefault(Info.Resource, 1);
+
+		/// <summary>Whether a freighter carrying <paramref name="resourceType"/> can unload here now.</summary>
+		public bool CanAccept(string resourceType) => resourceType == Info.Resource && Info.Capacity - Stored >= ValuePerBale;
 
 		int IAcceptResources.AcceptResources(Actor self, string resourceType, int count)
 		{
-			if (!playerResources.Info.ResourceValues.TryGetValue(resourceType, out var resourceValue))
+			if (resourceType != Info.Resource)
 				return 0;
 
-			var value = Util.ApplyPercentageModifiers(count * resourceValue, resourceValueModifiers);
+			count = Math.Min(count, (Info.Capacity - Stored) / ValuePerBale);
+			if (count <= 0)
+				return 0;
 
-			if (info.UseStorage)
-			{
-				var storageLimit = Math.Max(playerResources.ResourceCapacity - playerResources.Resources, 0);
-				if (!info.DiscardExcessResources)
-				{
-					// Reduce amount if needed until it will fit the available storage
-					while (value > storageLimit)
-						value = Util.ApplyPercentageModifiers(--count * resourceValue, resourceValueModifiers);
-				}
-				else
-					value = Math.Min(value, playerResources.ResourceCapacity - playerResources.Resources);
-
-				drPlayerResources.AddWater(value);
-			}
-			else
-				drPlayerResources.AddWater(value);
+			var amount = count * ValuePerBale;
+			Stored += amount;
 
 			foreach (var notify in self.World.ActorsWithTrait<INotifyResourceAccepted>())
-			{
-				if (notify.Actor.Owner != self.Owner)
-					continue;
+				if (notify.Actor.Owner == self.Owner || notify.Actor == self.World.WorldActor)
+					notify.Trait.OnResourceAccepted(notify.Actor, self, resourceType, count, amount);
 
-				notify.Trait.OnResourceAccepted(notify.Actor, self, resourceType, count, value);
-			}
+			if (Info.ScalesPower)
+				power?.UpdateActor(self);
 
-			if (info.ShowTicks)
-				currentDisplayValue += value;
+			if (Info.SalePercent > 0 && IsFull)
+				Sell(0);
 
 			return count;
 		}
 
-		void ITick.Tick(Actor self)
+		/// <summary>Launches the store for credits, less <paramref name="fee"/>; what it brought in.</summary>
+		public int Sell(int fee)
 		{
-			if (info.ShowTicks && currentDisplayValue > 0 && --currentDisplayTick <= 0)
-			{
-				var temp = currentDisplayValue;
-				if (self.Owner.IsAlliedWith(self.World.RenderPlayer))
-					self.World.AddFrameEndTask(w => w.Add(new FloatingText(self.CenterPosition, self.OwnerColor(), FloatingText.FormatCashTick(temp), 30)));
-				currentDisplayTick = info.TickRate;
-				currentDisplayValue = 0;
-			}
+			var credits = Stored * Info.SalePercent / 100 - fee;
+			if (credits <= 0)
+				return 0;
+
+			Stored = 0;
+			playerResources.GiveCash(credits);
+
+			var owner = self.Owner;
+			Game.Sound.PlayNotification(self.World.Map.Rules, owner, "Sounds", Info.SaleNotification, null);
+			TextNotificationsManager.AddTransientLine(owner, FluentProvider.GetMessage(Info.SaleTextNotification, "amount", credits));
+			if (owner.IsAlliedWith(self.World.RenderPlayer))
+				self.World.AddFrameEndTask(w => w.Add(new FloatingText(self.CenterPosition, self.OwnerColor(), FloatingText.FormatCashTick(credits), 30)));
+
+			return credits;
 		}
+
+		int IPowerModifier.GetPowerModifier() => Info.ScalesPower ? 100 * Stored / Info.Capacity : 100;
+
+		float ISelectionBar.GetValue() => (float)Stored / Info.Capacity;
+		Color ISelectionBar.GetColor() => Info.BarColor;
+		bool ISelectionBar.DisplayWhenEmpty => true;
 
 		void INotifyOwnerChanged.OnOwnerChanged(Actor self, Player oldOwner, Player newOwner)
 		{
 			playerResources = newOwner.PlayerActor.Trait<PlayerResources>();
-			drPlayerResources = newOwner.PlayerActor.Trait<DrPlayerResources>();
+			power = newOwner.PlayerActor.TraitOrDefault<PowerManager>();
+		}
+	}
+
+	public static class DrRefineryExts
+	{
+		/// <summary>The player's buildings that store <paramref name="resource"/>.</summary>
+		public static IEnumerable<TraitPair<DrRefinery>> Refineries(this Player player, string resource)
+		{
+			return player.World.ActorsWithTrait<DrRefinery>()
+				.Where(p => p.Actor.Owner == player && !p.Actor.IsDead && p.Actor.IsInWorld && p.Trait.Info.Resource == resource);
 		}
 	}
 }

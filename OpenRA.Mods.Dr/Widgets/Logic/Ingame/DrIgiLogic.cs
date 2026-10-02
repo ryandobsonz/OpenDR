@@ -210,6 +210,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			Press("Repair", "REPAIR");
 			Press("PowerDown", "POWER");
 			Press("IgiSetExitPoint", "SET_EXIT_POINT");
+			Press("IgiSellWater", "SELL_WATER");
 
 			// As OpenRA's command bar orders them.
 			Bind("Scatter", () => IssueOrders(Selected.Where(a => a.Info.HasTraitInfo<IMoveInfo>()).Select(a => new Order("Scatter", a, false))));
@@ -277,6 +278,17 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			var resources = player.PlayerActor.Trait<PlayerResources>();
 			var topBar = widget.Get<DrIgiTopBarWidget>("TOP_BAR");
 			topBar.GetCredits = () => (resources.Cash + resources.Resources).ToString(CultureInfo.InvariantCulture);
+
+			// A double click on the credits forces a water sale, whose cost the credits' tooltip gives meanwhile.
+			var water = player.PlayerActor.TraitOrDefault<DrPlayerResources>();
+			var creditTooltip = topBar.GetTooltip;
+			var saleTooltip = igi.Library?.GetString("MLS_DISP_WATERSALE");
+			topBar.OnCreditsDoubleClick = () => SellWater(player);
+			topBar.GetTooltip = () =>
+			{
+				var cost = water?.ForcedSaleCost ?? 0;
+				return cost > 0 && saleTooltip != null ? saleTooltip.Replace("%d", cost.ToString(CultureInfo.InvariantCulture)) : creditTooltip?.Invoke();
+			};
 		}
 
 		void BindBuild(Player player)
@@ -700,8 +712,21 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			exit.IsDisabled = () => !DrTargetOrderGenerator.Any(world, HasRallyPoint);
 			exit.OnClick = () => world.OrderGenerator = new DrTargetOrderGenerator(world, "SetRallyPoint", "ability", false, HasRallyPoint);
 
-			foreach (var name in new[] { "MORPH", "UNMORPH", "PHASE", "UNPHASE", "SELF_DESTRUCT", "FORMATION_MOVE", "SELL_WATER", "PACK" })
+			var water = world.LocalPlayer?.PlayerActor.TraitOrDefault<DrPlayerResources>();
+			var sellWater = Button("SELL_WATER");
+			sellWater.IsDisabled = () => water == null || water.ForcedSaleCost == 0;
+			sellWater.OnClick = () => SellWater(world.LocalPlayer);
+
+			foreach (var name in new[] { "MORPH", "UNMORPH", "PHASE", "UNPHASE", "SELF_DESTRUCT", "FORMATION_MOVE", "PACK" })
 				Button(name).IsDisabled = () => true;
+		}
+
+		/// <summary>Launches whatever water the pads hold, less a fee for each: the original's forced sale.</summary>
+		void SellWater(Player player)
+		{
+			var water = player?.PlayerActor.TraitOrDefault<DrPlayerResources>();
+			if (water != null && water.ForcedSaleCost > 0)
+				world.IssueOrder(new Order(DrPlayerResources.SellWaterOrder, player.PlayerActor, false));
 		}
 
 		void BindMinimap(Player player)
@@ -718,7 +743,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			bars.GetPower = () => power == null ? 0 : power.PowerProvided / Scale();
 			bars.GetPowerUsed = () => power == null ? 0 : power.PowerDrained / Scale();
 			bars.IsLowPower = () => power != null && power.PowerState != PowerState.Normal;
-			bars.GetWater = () => water == null ? 0 : water.WaterPercentage / 100f;
+			bars.GetWater = () => water == null ? 0 : water.WaterFraction;
 			bars.GetTooltip = () => power == null ? null : $"{power.PowerDrained}/{power.PowerProvided}";
 
 			// A light for each of the original's eight teams, in its colour: the player's own brightest, mutual

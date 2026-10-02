@@ -65,6 +65,11 @@ IgiSetExitPoint: HOME
 	Types: OrderGenerator
 	Contexts: player
 
+IgiSellWater: L Shift
+	Description: hotkey-description-igi-sell-water
+	Types: OrderGenerator
+	Contexts: player
+
 # HOME was the exit point's, C the comms', in the original: no key, as OpenRA leaves some.
 ToSelection: UNKNOWN
 

@@ -12,6 +12,8 @@ notification-cannot-deploy-here = Cannot deploy here.
 notification-low-power = Low power.
 notification-base-under-attack = Base under attack.
 notification-ally-under-attack = Our ally is under attack.
+notification-water-launched = You received { $amount } credits
+notification-forced-sale-cost = Forced sale cost of { $amount } credits
 
 ## world.yaml
 notification-game-saved = Game saved.

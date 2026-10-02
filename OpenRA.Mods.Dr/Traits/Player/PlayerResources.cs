@@ -9,74 +9,60 @@
  */
 #endregion
 
-using System;
-using OpenRA.Mods.Common.Traits;
+using System.Linq;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Dr.Traits
 {
+	[Desc("The player's water: what the launch pads hold, and the forced sale",
+		"(the Sell Water button, or a double click on the credits).")]
 	public class DrPlayerResourcesInfo : TraitInfo
 	{
-		[Desc("Maximum holding capacity of the water refinery before it is sold automatically.")]
-		public readonly int WaterCapacity = 3000;
-
-		[Desc("Maximum holding capacity of taelon before it is discarded.")]
-		public readonly int TaelonCapacity = 1000;
-
-		[Desc("Multiplier from sale of water to credits.")]
-		public readonly float WaterSaleMultiplier = 1f;
-
-		[Desc("Ticks to wait before stored credits will be sold automatically.")]
-		public readonly long WaterSaleTimeoutTicks = 10000;
+		[Desc("The resource the launch pads sell.")]
+		public readonly string Water = "Water";
 
 		public override object Create(ActorInitializer init) { return new DrPlayerResources(init.Self, this); }
 	}
 
-	public class DrPlayerResources : ISync
+	public class DrPlayerResources : IResolveOrder
 	{
+		public const string SellWaterOrder = "DrSellWater";
+
 		readonly DrPlayerResourcesInfo info;
-		readonly PlayerResources resources;
 		readonly Player owner;
 
 		public DrPlayerResources(Actor self, DrPlayerResourcesInfo info)
 		{
 			this.info = info;
 			owner = self.Owner;
-			resources = self.Trait<PlayerResources>();
 		}
 
-		[VerifySync]
-		public int Water;
-
-		public int WaterPercentage => (int)((float)Water / info.WaterCapacity * 100f);
-
-		public int AddWater(int amount)
+		/// <summary>How full the player's launch pads are, together: the water bar.</summary>
+		public float WaterFraction
 		{
-			if (amount >= 0 && Water < int.MaxValue)
+			get
 			{
-				try
-				{
-					checked
-					{
-						Water += amount;
-					}
-				}
-				catch (OverflowException)
-				{
-					Water = int.MaxValue;
-				}
+				var pads = owner.Refineries(info.Water).ToList();
+				var capacity = pads.Sum(p => p.Trait.Info.Capacity);
+				return capacity == 0 ? 0 : (float)pads.Sum(p => p.Trait.Stored) / capacity;
 			}
+		}
 
-			if (Water >= info.WaterCapacity)
-			{
-				var total = (int)(Water * info.WaterSaleMultiplier);
-				Water = 0;
-				resources.GiveCash(total);
-				Game.Sound.PlayNotification(owner.World.Map.Rules, owner, "Sounds", "CreditsReceived", null);
-				TextNotificationsManager.AddTransientLine(owner, $"Sold credits: ${total}");
-			}
+		/// <summary>What a forced sale would cost now: a fee for each pad that has enough water to launch.</summary>
+		public int ForcedSaleCost => owner.Refineries(info.Water)
+			.Where(p => p.Trait.Stored * p.Trait.Info.SalePercent / 100 > p.Trait.Info.ForcedSaleFee)
+			.Sum(p => p.Trait.Info.ForcedSaleFee);
 
-			return amount;
+		void IResolveOrder.ResolveOrder(Actor self, Order order)
+		{
+			if (order.OrderString != SellWaterOrder)
+				return;
+
+			var credits = 0;
+			foreach (var p in owner.Refineries(info.Water).ToList())
+				credits += p.Trait.Sell(p.Trait.Info.ForcedSaleFee);
+
+			Log.Write("debug", $"{owner.InternalName}: forced water sale for {credits} credits");
 		}
 	}
 }

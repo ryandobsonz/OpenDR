@@ -63,7 +63,8 @@ background. Their output goes to `tools/campaign/out/`.
 `Traits/World/DebugScreenshots.cs`. Commands: `shot`, `cash TEAM N`,
 `killunits TEAM`, `killall TEAM`, `kill NAME`, `killtype TEAM ACTOR`,
 `spawn TEAM ACTOR X,Y [NAME]`, `teleport NAME X,Y`, `steal INFILTRATOR TARGET`,
-`select NAME`, `explore TEAM`, `camera X,Y`, `press WIDGET` (an in-game
+`select NAME`, `explore TEAM`, `resources TEAM` (logs its credits, power,
+every store and freighter, and what it collected), `camera X,Y`, `press WIDGET` (an in-game
 interface button by its id in `ingame-player.yaml`, e.g. `TAB_MENU`, or a
 button of an OpenRA window, e.g. the settings' `BACK_BUTTON`), `key KEY
 [MODIFIERS]` (a key through the real input path, by OpenRA's key names:
@@ -228,9 +229,8 @@ comes first; a human playthrough then decides what matters next.
 3. **The gameplay behind the interface's buttons**, owed even though no
    campaign mission needs them, roughly by how much a player feels it. Each
    lands with its button: enable it in `DrIgiLogic`.
-   - Water and taelon as separate resources, and forced water sales
-     (`MLS_DISP_WATERSALE`, a double click on the credits); the debrief and
-     `CritCollectWater`/`CritCollectMineral` then count them properly.
+   - Water and taelon: done ([CAMPAIGN.md](CAMPAIGN.md#water-and-taelon)),
+     but for the launch pad's launch animation.
    - The units' tactics (pursuit, damage tolerance, independence; `SetTactAI`
      in the scenarios) and the orders (Scout, Harass, Search & Destroy,
      Pursue, Default, Set Default).
@@ -256,15 +256,18 @@ comes first; a human playthrough then decides what matters next.
    code-signing certificate (unsigned, Windows SmartScreen warns on first
    run). The GOG install lookup has never met a real GOG install.
 
-**Where the last session stopped (2026-10-03):** item 1 is done but for its
-two small leftovers: the mission end, Load/Save, Restate Objective, the
-original's cursors and the team lights are in, and the MENU tab's Advanced
-page is one Settings button. `wintest.ps1` matched the table above after it,
-and the package was rebuilt from it (`build/DarkReign-0.1.0-win-x64.zip`;
-nobody has opened its launcher yet). Next is 2, the user's playthrough; until
-their findings come in, 3 starts with water and taelon. Both resources
-already exist as `ResourceTypes` (`rules/world.yaml`, `DrResourceLayer`) and
-in `PlayerResources`' values, but collecting either pays credits.
+**Where the last session stopped (2026-10-03, later):** water and taelon
+are in (item 3's first bullet), tested with `resources` steps in M05F (both
+resources hauled, generator power rising, Shift+L selling 1500 water for
+1000) and M01F (the enemy's pad filling and launching for 3000).
+`wintest.ps1` matched the table above after it. Not yet done: the M01F and
+M05F win recipes rerun on the new economy, and the package rebuilt. Open
+questions are in [CAMPAIGN.md](CAMPAIGN.md#what-differs-from-the-original):
+whether the original gave a placed pad or generator its freighter (kept, so
+mission 1 has income), and the springs' regrowth rate (per second is a
+guess). T2, the resource training, fails if a test spawns buildings out of
+its order, so test the economy in M05F. Next is still 2, the user's
+playthrough; until then, 3 goes on with the units' tactics and orders.
 
 **Parked, a separate piece of work:** the expansion campaigns (`sh*`,
 `fgx*`). They convert but lack most units, and would need tech tables from
