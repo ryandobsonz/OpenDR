@@ -327,6 +327,8 @@ namespace DarkReign.Launcher
 					(message, action, onAction) = ("Install again to play from the original menus.", "INSTALL FROM GAME…", Install);
 				else if (message == null && !GameInstall.HasShellVideo)
 					(message, action, onAction) = ("Install again for the menus' animations and the movies.", "INSTALL FROM GAME…", Install);
+				else if (message == null && !GameInstall.HasInterfaceArt)
+					(message, action, onAction) = ("Install again for the original in-game interface.", "INSTALL FROM GAME…", Install);
 			}
 
 			StatusText.Text = message ?? "";

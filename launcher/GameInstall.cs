@@ -64,6 +64,9 @@ namespace DarkReign.Launcher
 		// which imports before the Smacker player did not.
 		public static bool HasShellArt => File.Exists(Path.Combine(ContentDir, "shell", "shell.rld"));
 		public static bool HasShellVideo => File.Exists(Path.Combine(ContentDir, "shell", "CUBE_IN.SMK"));
+
+		// The in-game interface's art, which imports before the original interface did not copy.
+		public static bool HasInterfaceArt => File.Exists(Path.Combine(ContentDir, "igi", "TOPBTNS.BMP"));
 		public static int CampaignMissions => Directory.Exists(CampaignDir) ? Directory.EnumerateDirectories(CampaignDir).Count() : 0;
 
 		// Why the game cannot start yet, or null when it can.

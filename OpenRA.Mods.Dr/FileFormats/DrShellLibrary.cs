@@ -35,13 +35,20 @@ namespace OpenRA.Mods.Dr.FileFormats
 		}
 	}
 
+	/// <summary>Named 8-bit images: the shell's library, or the in-game interface's files.</summary>
+	public interface IDrImageSource
+	{
+		bool Contains(string name);
+		DrShellImage GetImage(string name);
+	}
+
 	/// <summary>
 	/// The original game's menu art, dark/shell/shell.rld with its index shell.rli: screens, overlays and
 	/// bitmap fonts. The index ("ILR.") lists named entries; each is LZ packed (a flag byte per eight items,
 	/// set for a literal byte, clear for a 16-bit reference: 12 bits of distance back, 4 of length - 3).
 	/// Unpacked, an entry is a "TLF." container of chunks: "3BGR" a 256-colour palette and "LXIP" the pixels.
 	/// </summary>
-	public sealed class DrShellLibrary
+	public sealed class DrShellLibrary : IDrImageSource
 	{
 		readonly struct Entry(int offset, int packedSize, int size)
 		{

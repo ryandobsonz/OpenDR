@@ -225,6 +225,68 @@ videos between screens, and its buttons, text, menus, ring and credits),
 `Widgets/Logic/DrShellLogic.cs` (the screens), `DrCampaign.cs` (progress),
 `mods/dr/chrome/shell.yaml` (the layout).
 
+## The in-game interface
+
+A mission is played under the original game's own interface ("IGI" in
+`dkreign.exe`: `Igidisp.c`, `Igizone.c`, `Igievnt.c`), drawn from its art,
+`dark/graphics/INTFACE/IGI` (the import copies it to `content/igi`, with
+`dark/local/MLSTRING.CFG`, the game's own words for every label and tip).
+The original is 640×480 only: a bar across the top of the map view (0–447,
+32 high) and a panel down the right (448–639).
+
+| Part | Original place | What it does |
+|---|---|---|
+| Top bar | 0,0 | Sell/Cancel, Power, Repair (49×32 each, from 6); the credits (153–293, `FONT16`); Attack, Attack Without Moving, Stop (from 294). Ends from `TOPBITS.BMP` |
+| Tabs | 448,0 | BUILD, COMMS, MENU over ORDERS, PATHS, SPECIAL, 64×32 cells of `MFDBTNS.BMP` |
+| Panel | 448,64 | `MFDBAC1.BMP`, 192×278, under the tab's controls |
+| Build menu | 448,64 | 3×5 slots of 64×50 (`BUISOBOX.BMP`); its bar at 448,314 with the scroll arrows, Upgrade and Decoy |
+| Minimap | 448,342 | `MINIMAP.BMP`, the map inside at 455,351 (126×122); `Static00`–`07` when there is no picture |
+| Team lights | 588,342 | `TEAMPIC.BMP`, a light for each of eight teams |
+| Resource bars | 588,376 | `RESOBARS.BMP`: power left, water right; the second frame, the lightning red, when power is short |
+
+**On a wider screen** the whole is scaled by the screen's height over 480
+(at 1080p, 2.25); the panel keeps to the right edge at full height and the
+map view takes the rest. The top bar keeps its pieces in the original order:
+the left buttons stay left, the right ones by the panel, the credits in the
+middle of the map view, and between them the bar's plate (the column beside
+each join) stretches. Its art and text are enlarged as the menus' are. The
+original drew all of it over black, which shows through the art's gaps.
+
+**Where the positions come from:** `dkreign.exe`'s zone table. Every
+clickable area is set up by one function, `zone(id, type, left, top, right,
+bottom, flags, handler)` at 0x466610, called with constants from
+0x4bde70–0x4c0200, directly or through the standard button (0x4bda60:
+label, size, x, y, the tabs it shows in), whose sizes are set at 0x432110:
+small 71, medium 103, large 153, all 22 high, four states each in
+`SBTNS.BMP`. The bitmaps are a table at 0x5d076c (name, width, height,
+index), loaded into objects at 0x73f4b0 + 16 × (index − 1); the draws are
+calls to 0x49cba0 (x, y, bitmap, source x, y, width, height). The flags are
+the tabs a control belongs to: 2 build, 4 and 8 orders (basic, advanced), 16
+and 32 paths, 64 comms, 128 menu, 256 special.
+
+| Tab | Controls | Working |
+|---|---|---|
+| BUILD | The build menu: a rig's buildings, else every production building's units; red without the prerequisites, blue when the selected building cannot make it; left click orders one more or resumes, right click pauses then cancels, shift and right click cancels all; a number for those queued, PAUSED, a veil for the time left. Mouse wheel and arrows scroll | All but Decoy (no decoys in OpenDR yet). Upgrade queues the selected building's own upgrade at the headquarters (`upgrade.hq*`, `barracks*`, `assemblyplant*`, `phasing*`), its tip "Upgrade 2050c" |
+| MENU | Sliders for effects, music, game speed and scroll speed (`MEICON.BMP`, `MESLIDE.BMP`); Load/Save Game, Restate Objective, Start Again (Relinquish Control in multiplayer), Abort, Exit To System, the last three behind the original "Are You Sure?" | Load/Save Game and Restate Objective open OpenRA's in-game menu for now; game speed is fixed in OpenRA once a game starts |
+| ORDERS | Basic: Scout, Harass, Search & Destroy; Guard, Pursue, Default. Advanced adds Pursuit Range, Damage Tolerance and Independence (LOW/MED/HIGH, `ORLMH.BMP`) and Set Default | Guard |
+| PATHS | Basic: Add Waypoints, Clear All, Delete, Go. Advanced adds the path direction (one way, patrol, loop: `TRAILMDE.BMP`), the current and saved paths, De-Select, Save Path | None yet |
+| SPECIAL | Morph, Unmorph, Phase, Unphase, Self Destruct, Formation Move, Sell Water, Packup/UnPack, Set Exit Point | Set Exit Point (the building's rally point) |
+| COMMS | The players with their alliances, giving units or credits, messages to all, none, allies, neutral or enemies | None yet |
+
+Controls not working yet are drawn as the original drew a disabled button:
+red. Escape cancels a pending order, else opens the MENU tab. Tips appear in
+the original's strip (`PT.BMP`) after 800 ms, as `TACTICS.CFG`'s
+`InfoDelay`. The game's end still opens OpenRA's in-game menu, whose Leave
+returns to the menus.
+
+Code: `FileFormats/DrIgiLibrary.cs` (the bitmaps, PCX fonts and strings),
+`Widgets/DrIgiWidget.cs` (the frame's scaling, and its buttons, bars,
+sliders, boxes and labels), `Widgets/DrIgiBuildMenuWidget.cs`,
+`Widgets/Logic/Ingame/DrIgiLogic.cs`, `Traits/DrAttackInPlace.cs` (Attack
+Without Moving), `Orders/DrTargetOrderGenerator.cs`,
+`mods/dr/chrome/ingame-player.yaml` (the layout, in the original's
+coordinates).
+
 ## Playing on a large screen
 
 OpenRA draws at the screen's own resolution and aspect ratio, ultrawide
@@ -245,6 +307,7 @@ sharper and larger, not more detailed.
 | Triggers | `Traits/World/DrScenarioScript.cs`, `Scripting/DrConditionTree.cs` | The FSM and end-condition trees, special forces, patrols, messages and their voices, the win or loss with the briefing's historical outcome |
 | Enemy AI | `Traits/BotModules/DrAipBotModule.cs` | Each AI team builds through its AIP's accounts and sends troops by its priorities |
 | Menus | `Widgets/Logic/DrShellLogic.cs` | The original menus and mission ring, from the game's shell art; see [The original menus](#the-original-menus) |
+| Interface | `Widgets/Logic/Ingame/DrIgiLogic.cs` | The original in-game interface over a mission; see [The in-game interface](#the-in-game-interface) |
 
 The behaviour follows the game's own AIP manual (the *AIP and Scenario End
 Conditions Guide*), shipped with the game. Its one undocumented criterion,
@@ -271,13 +334,16 @@ changes the rate.
   with the plans of what that facility makes in the original tables, and
   they are stolen once it is back beside its own headquarters, which is what
   mission 6's goals check. The stolen designs do not yet become buildable.
-- **Not yet in OpenDR:** phasing, the water contaminator, and water and
-  taelon as separate resources (collected resources count as credits;
-  `CritCollectWater` and `CritCollectMineral` use credits earned). No
-  original campaign mission needs them to be won.
+- **Not yet in OpenDR:** phasing, the water contaminator, water and taelon
+  as separate resources (collected resources count as credits;
+  `CritCollectWater` and `CritCollectMineral` use credits earned), decoys,
+  morphing, self destruct, formation moves, forced water sales and packing
+  up Freedom Guard buildings. No original campaign mission needs them to be
+  won, but the interface has buttons for them (see above) and they are owed.
 - **Units' tactical settings** (`SetTactAI`: pursuit, damage tolerance,
-  independence) are not read: every campaign use sets pursuit medium or
-  high, which OpenRA's default stance already is.
+  independence) are not read, and neither are the player's orders (Scout,
+  Harass, Search & Destroy) or the original's paths: every campaign use sets
+  pursuit medium or high, which OpenRA's default stance already is.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
 - **The debrief's water and taelon** are the credits each brought in: OpenDR

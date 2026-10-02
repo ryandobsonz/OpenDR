@@ -63,8 +63,13 @@ background. Their output goes to `tools/campaign/out/`.
 `Traits/World/DebugScreenshots.cs`. Commands: `shot`, `cash TEAM N`,
 `killunits TEAM`, `killall TEAM`, `kill NAME`, `killtype TEAM ACTOR`,
 `spawn TEAM ACTOR X,Y [NAME]`, `teleport NAME X,Y`, `steal INFILTRATOR TARGET`,
-`select NAME`, `explore TEAM`, `camera X,Y`. Names are map actor names (`u<id>`,
-the original unit id) or those given to `spawn`. `order` exists, but its
+`select NAME`, `explore TEAM`, `camera X,Y`, `press WIDGET` (an in-game
+interface button by its id in `ingame-player.yaml`, e.g. `TAB_MENU`),
+`clickui X,Y` and `rclickui X,Y` (a click through the real input path, in
+the UI's pixels: the window's size over the interface scale, so 1280×720
+for the tests' 1600×900 at 125%; the debug log says what was under it).
+Names are map actor names (`u<id>`, the original unit id) or those given to
+`spawn`. `order` exists, but its
 orders never reached units; use `teleport` and `steal` instead. `leave`
 returns to the menus, as the in-game Leave does. `save NAME` saves the game
 (NAME without spaces); a loaded game opens paused under the in-game menu,
@@ -174,38 +179,72 @@ killing teams the player must protect, as alliances change at cycle 0.
   switch on the screen number at 0x587274, the turns at 0x586000, the key at
   0x57f421, the sounds at 0x586740 and 0x579600. Guessed from the videos, half
   the turns were wrong and the intro played at the wrong time.
+- **The in-game interface's layout is in `dkreign.exe`'s zone calls**, not
+  guessed: every control is a call to 0x466610 (or the button helper
+  0x4bda60) with constants, and every draw a call to 0x49cba0. A short
+  capstone script that tracks pushes and `mov reg, imm` before each call
+  lists them all; [CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface) has the
+  addresses. The manual's screenshots (`DrData/manuals/Dark Reign/Dark Reign
+  Manual.pdf`, pip `pymupdf` to extract) confirm the arrangement.
+- **Python on Windows writes CRLF** in text mode: open files with
+  `newline=''` when editing sources from a script (most are LF; some, like
+  `launcher/MainWindow.xaml.cs`, are CRLF; keep each as it is).
+- **Test clicks must run unsynced**: `Game.RunAfterTick` runs inside the
+  world's synced tick, where changing the order generator throws; wrap UI
+  actions in `Sync.RunUnsynced`.
 - **Look at a Smacker video before guessing its use**:
   `dotnet bin\OpenRA.Utility.dll dr --dump-smacker FILE OUT [COLUMNS] [SCALE] [EVERY]`
   (from `engine`, with `MOD_SEARCH_PATHS` and `ENGINE_DIR` set as
   `build-import.ps1` does) writes a sheet of its frames and its sound as a
   WAV.
 
-## Open work, roughly by value
+## Open work, in the user's order
 
-- **A human playthrough.** Nothing has been played by hand; the user's play
-  is the real test. Expect AI tuning (`DrAipBotModule`) to follow.
-- **Stolen designs buildable.** Plans are recorded (`DrPlanStealing.cs`) but
-  grant nothing: OpenRA prerequisites have no "or", so it needs a generated
-  copy of each stealable actor with its own prerequisite.
-- **The expansion campaigns** (`sh*`, `fgx*`) convert but lack most units.
-  They would need tech tables from `deftxtEx` and the Shadowhand and Xenite
-  units added to OpenDR.
-- **The rest of the menus.** The original menus, their videos and sounds,
-  the archive and the credits are in
-  ([CAMPAIGN.md](CAMPAIGN.md#the-original-menus)), with the debrief's
-  statistics, Load Game, Custom Mission and the results. Still to come: in a
-  mission, saving and loading are OpenRA's menu and panels, where the
-  original opened its `loadsave` screen with Save Game (button 0xe3 at
-  353,413 and a name field, in `dkreign.exe` at 0x57cd60); Multi Player and
-  Instant Action are OpenRA's panels over the shell's art. The expansion's
-  movies (`rsintro`, `rSOUTROS`, `rSOUTROX`) and credits (`AddCredt.txt`)
-  wait for its campaigns. `dkreign-exe.py` answers
-  how the original did each. The goal is a remaster: the original menus with
-  the game on the new engine.
-- **Distribution polish**: the package is a zip. An installer (Start menu,
-  uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
-  warns on first run). The GOG install lookup has never met a real GOG
-  install.
+The goal is a professional **remaster, not a remake**: the entire original
+interface rebuilt from the game's own art, with the real graphical gains in
+the game itself (OpenDR on the new engine). UI work comes first.
+
+1. **The rest of the in-game interface** ([CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface)
+   says what works). Next, roughly in order:
+   - The original's end of a mission: "Mission Successful"/"Mission Failed"
+     (`MLS_EVNT_MSUCCESS`, `MFAILURE`) straight to the debrief, instead of
+     OpenRA's in-game menu.
+   - Load/Save Game: the original's popup over the map (zones 3–12: a list at
+     330,98–436,228, a name field at 330,74, Load/Save/Delete at 330,259/284/309,
+     its box from `TEXTBRDR.BMP`), instead of OpenRA's menu. Restate Objective
+     as the original's text window (zones 3/4, 49,96–398,415).
+   - COMMS: the player rows (`COPYRNM1/2.BMP` at 465,95, 95×18 each; the side
+     at 560; alliance icons `COALIANC.BMP` at 571), giving credits (the field
+     at 481,296), messages (the chat line at 15,400, 418×33).
+   - Cursors from `graphics/INTFACE/MOUSE.CRS` (already installed), the
+     tooltips' exact place (`PT.BMP` is drawn at 639−171 by 0x428a40), the
+     team lights' colours, the minimap's scroll arrows (`MM*.BMP`).
+   - Multi Player and Instant Action from `graphics/INTFACE/MULTMENU` (the
+     manual's screenshots show them), replacing OpenRA's panels.
+2. **The gameplay behind the interface's buttons**, owed even though no
+   campaign mission needs them: the units' tactics (pursuit, damage
+   tolerance, independence; `SetTactAI` in the scenarios), the orders
+   (Scout, Harass, Search & Destroy, Pursue, Default, Set Default), paths
+   and waypoints (one way, patrol, loop, saved paths), phasing, water and
+   taelon as separate resources, the water contaminator, decoys, morphing,
+   self destruct, formation moves, forced water sales (`MLS_DISP_WATERSALE`,
+   and a double click on the credits) and packing up buildings. Each lands
+   with its button: enable it in `DrIgiLogic`.
+3. **A human playthrough.** Nothing has been played by hand; the user's play
+   is the real test. Expect AI tuning (`DrAipBotModule`) to follow.
+4. **Stolen designs buildable.** Plans are recorded (`DrPlanStealing.cs`) but
+   grant nothing: OpenRA prerequisites have no "or", so it needs a generated
+   copy of each stealable actor with its own prerequisite.
+5. **Distribution polish**: the package is a zip, last built before the
+   original menus and interface (rebuild it). An installer (Start menu,
+   uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
+   warns on first run). The GOG install lookup has never met a real GOG
+   install.
+
+**Parked, a separate piece of work:** the expansion campaigns (`sh*`,
+`fgx*`). They convert but lack most units, and would need tech tables from
+`deftxtEx`, the Shadowhand and Xenite units, and the expansion's movies
+(`rsintro`, `rSOUTROS`, `rSOUTROX`) and credits (`AddCredt.txt`).
 
 ## Committing
 

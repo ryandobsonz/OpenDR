@@ -1,3 +1,7 @@
+# The original game's in-game interface (DrIgiLogic), drawn from its own art (dark/graphics/INTFACE/IGI)
+# at its places in the 640x480 original, read from dkreign.exe's zone table (Igizone.c): the top bar over
+# the map view (0-447, 32 high) and the panel down the right (448-639). DrIgi scales it by the screen's
+# height and keeps the panel to the right edge; see DrIgiWidget.
 Container@PLAYER_WIDGETS:
 	Logic: LoadIngameChatLogic
 	Children:
@@ -15,7 +19,7 @@ Container@PLAYER_WIDGETS:
 		Container@SUPPORT_POWERS:
 			Logic: SupportPowerBinLogic
 			X: 10
-			Y: 10
+			Y: WINDOW_HEIGHT / 15 + 10
 			Children:
 				SupportPowers@SUPPORT_PALETTE:
 					IconSize: 62, 46
@@ -38,257 +42,12 @@ Container@PLAYER_WIDGETS:
 							ImageName: background-supportoverlay
 		SupportPowerTimer@SUPPORT_POWER_TIMER:
 			X: 80
-			Y: 10
+			Y: WINDOW_HEIGHT / 15 + 10
 			Order: Descending
-		Image@COMMAND_BAR_BACKGROUND:
-			X: 5
-			Y: WINDOW_HEIGHT - HEIGHT - 5
-			Width: 434
-			Height: 44
-			ImageCollection: commandbar
-			ImageName: background
-			ClickThrough: False
-		Container@COMMAND_BAR:
-			Logic: CommandBarLogic
-			X: 14
-			Y: WINDOW_HEIGHT - HEIGHT - 14
-			Width: 275
-			Height: 26
-			Children:
-				LogicKeyListener@MODIFIER_OVERRIDES:
-				Button@ATTACK_MOVE:
-					Logic: AddFactionSuffixLogic
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: AttackMove
-					DisableKeySound: true
-					TooltipText: button-command-bar-attack-move.tooltip
-					TooltipDesc: button-command-bar-attack-move.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					TooltipTemplate: BUTTON_WITH_DESC_HIGHLIGHT_TOOLTIP
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: attack-move
-				Button@FORCE_MOVE:
-					Logic: AddFactionSuffixLogic
-					X: 34
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					DisableKeySound: true
-					TooltipText: button-command-bar-force-move.tooltip
-					TooltipDesc: button-command-bar-force-move.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					TooltipTemplate: BUTTON_WITH_DESC_HIGHLIGHT_TOOLTIP
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: force-move
-				Button@FORCE_ATTACK:
-					Logic: AddFactionSuffixLogic
-					X: 68
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					DisableKeySound: true
-					TooltipText: button-command-bar-force-attack.tooltip
-					TooltipDesc: button-command-bar-force-attack.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					TooltipTemplate: BUTTON_WITH_DESC_HIGHLIGHT_TOOLTIP
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: force-attack
-				Button@GUARD:
-					Logic: AddFactionSuffixLogic
-					X: 102
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: Guard
-					DisableKeySound: true
-					TooltipText: button-command-bar-guard.tooltip
-					TooltipDesc: button-command-bar-guard.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: guard
-				Button@DEPLOY:
-					Logic: AddFactionSuffixLogic
-					X: 136
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: Deploy
-					DisableKeyRepeat: true
-					DisableKeySound: true
-					TooltipText: button-command-bar-deploy.tooltip
-					TooltipDesc: button-command-bar-deploy.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: deploy
-				Button@SCATTER:
-					Logic: AddFactionSuffixLogic
-					X: 170
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: Scatter
-					DisableKeyRepeat: true
-					DisableKeySound: true
-					TooltipText: button-command-bar-scatter.tooltip
-					TooltipDesc: button-command-bar-scatter.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: scatter
-				Button@STOP:
-					Logic: AddFactionSuffixLogic
-					X: 204
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: Stop
-					DisableKeyRepeat: true
-					DisableKeySound: true
-					TooltipText: button-command-bar-stop.tooltip
-					TooltipDesc: button-command-bar-stop.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: stop
-				Button@QUEUE_ORDERS:
-					Logic: AddFactionSuffixLogic
-					X: 238
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					DisableKeySound: true
-					TooltipText: button-command-bar-queue-orders.tooltip
-					TooltipDesc: button-command-bar-queue-orders.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					TooltipTemplate: BUTTON_WITH_DESC_HIGHLIGHT_TOOLTIP
-					Children:
-						Image@ICON:
-							X: 5
-							Y: 1
-							ImageCollection: command-icons
-							ImageName: queue-orders
-		Container@STANCE_BAR:
-			Logic: StanceSelectorLogic
-			X: 294
-			Y: WINDOW_HEIGHT - HEIGHT - 14
-			Width: 138
-			Height: 26
-			Children:
-				Button@STANCE_ATTACKANYTHING:
-					Logic: AddFactionSuffixLogic
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: StanceAttackAnything
-					DisableKeyRepeat: true
-					DisableKeySound: true
-					TooltipText: button-stance-bar-attackanything.tooltip
-					TooltipDesc: button-stance-bar-attackanything.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 9
-							Y: 5
-							ImageCollection: stance-icons
-							ImageName: attack-anything
-				Button@STANCE_DEFEND:
-					Logic: AddFactionSuffixLogic
-					X: 34
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: StanceDefend
-					DisableKeyRepeat: true
-					DisableKeySound: true
-					TooltipText: button-stance-bar-defend.tooltip
-					TooltipDesc: button-stance-bar-defend.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 9
-							Y: 5
-							ImageCollection: stance-icons
-							ImageName: defend
-				Button@STANCE_RETURNFIRE:
-					Logic: AddFactionSuffixLogic
-					X: 68
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: StanceReturnFire
-					DisableKeyRepeat: true
-					DisableKeySound: true
-					TooltipText: button-stance-bar-returnfire.tooltip
-					TooltipDesc: button-stance-bar-returnfire.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 9
-							Y: 5
-							ImageCollection: stance-icons
-							ImageName: return-fire
-				Button@STANCE_HOLDFIRE:
-					Logic: AddFactionSuffixLogic
-					X: 102
-					Width: 34
-					Height: 26
-					VisualHeight: 0
-					Background: command-button
-					Key: StanceHoldFire
-					DisableKeyRepeat: true
-					DisableKeySound: true
-					TooltipText: button-stance-bar-holdfire.tooltip
-					TooltipDesc: button-stance-bar-holdfire.tooltipdesc
-					TooltipContainer: TOOLTIP_CONTAINER
-					Children:
-						Image@ICON:
-							X: 9
-							Y: 5
-							ImageCollection: stance-icons
-							ImageName: hold-fire
 		Container@MUTE_INDICATOR:
 			Logic: MuteIndicatorLogic
-			X: WINDOW_WIDTH - WIDTH - 260
-			Y: 10
+			X: WINDOW_WIDTH * 2 / 3 - WIDTH
+			Y: WINDOW_HEIGHT / 15 + 10
 			Width: 200
 			Height: 25
 			Children:
@@ -305,394 +64,411 @@ Container@PLAYER_WIDGETS:
 					Align: Right
 					Text: label-mute-indicator
 					Contrast: true
-		Image@SIDEBAR_BACKGROUND_TOP:
-			Logic: AddFactionSuffixLogic
-			X: WINDOW_WIDTH - 250
-			Y: 10
-			Width: 238
-			Height: 262
-			ImageCollection: sidebar
-			ImageName: background-top
-			ClickThrough: false
+		Container@HPF_ROOT:
+			Logic: LoadIngameHierarchicalPathFinderOverlayLogic
+			X: WINDOW_WIDTH * 2 / 3 - WIDTH
+			Y: WINDOW_HEIGHT / 15 + 40
+			Width: 175
+		DrIgi@IGI:
+			Logic: DrIgiLogic
+			Width: WINDOW_WIDTH
+			Height: WINDOW_HEIGHT
 			Children:
-				Container@TOP_BUTTONS:
+				LogicKeyListener@IGI_KEYS:
+				# OpenRA's in-game menu: the game's end opens it, and so do Load/Save Game and Restate Objective.
+				Container@MENU_BUTTONS:
 					Logic: MenuButtonsChromeLogic
-					X: 9
-					Y: 7
 					Children:
-						Button@BEACON_BUTTON:
-							Logic: BeaconOrderButtonLogic, AddFactionSuffixLogic
-							Width: 28
-							Height: 28
-							Background: sidebar-button
-							Key: PlaceBeacon
-							TooltipText: button-top-buttons-beacon-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							VisualHeight: 0
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: order-icons
-						Button@SELL_BUTTON:
-							Logic: SellOrderButtonLogic, AddFactionSuffixLogic
-							X: 32
-							Width: 28
-							Height: 28
-							Background: sidebar-button
-							Key: Sell
-							TooltipText: button-top-buttons-sell-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							VisualHeight: 0
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: order-icons
-						Button@POWER_BUTTON:
-							Logic: PowerdownOrderButtonLogic, AddFactionSuffixLogic
-							X: 64
-							Width: 28
-							Height: 28
-							Background: sidebar-button
-							Key: PowerDown
-							TooltipText: button-top-buttons-power-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							VisualHeight: 0
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: order-icons
-						Button@REPAIR_BUTTON:
-							Logic: RepairOrderButtonLogic, AddFactionSuffixLogic
-							X: 96
-							Width: 28
-							Height: 28
-							Background: sidebar-button
-							Key: Repair
-							TooltipText: button-top-buttons-repair-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							VisualHeight: 0
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: order-icons
 						MenuButton@OPTIONS_BUTTON:
-							Logic: AddFactionSuffixLogic
-							X: 192
-							Width: 28
-							Height: 28
-							Background: sidebar-button
-							Key: escape
-							TooltipText: button-top-buttons-options-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
+							Width: 0
+							Height: 0
+							Visible: false
 							DisableWorldSounds: true
-							VisualHeight: 0
+				# The top bar: Sell/Cancel, Power, Repair; the credits; Attack, Attack Without Moving, Stop.
+				DrIgiTopBar@TOP_BAR:
+					Tooltip: MLS_DISP_CREDIT
+				DrIgiButton@SELL:
+					Area: 6, 0, 49, 32
+					Image: TOPBTNS.BMP
+					Source: 0, 0, 49, 32
+					StateStride: 294, 0
+					Tooltip: MLS_DISP_SELL
+				DrIgiButton@POWER:
+					Area: 55, 0, 49, 32
+					Image: TOPBTNS.BMP
+					Source: 49, 0, 49, 32
+					StateStride: 294, 0
+					Tooltip: MLS_DISP_POWER
+				DrIgiButton@REPAIR:
+					Area: 104, 0, 49, 32
+					Image: TOPBTNS.BMP
+					Source: 98, 0, 49, 32
+					StateStride: 294, 0
+					Tooltip: MLS_DISP_REPAIR
+				DrIgiButton@ATTACK:
+					Area: 294, 0, 49, 32
+					Anchor: Right
+					Image: TOPBTNS.BMP
+					Source: 147, 0, 49, 32
+					StateStride: 294, 0
+					Tooltip: MLS_DISP_MOVE
+				DrIgiButton@ATTACK_IN_PLACE:
+					Area: 343, 0, 49, 32
+					Anchor: Right
+					Image: TOPBTNS.BMP
+					Source: 196, 0, 49, 32
+					StateStride: 294, 0
+					Tooltip: MLS_DISP_FIRE
+				DrIgiButton@STOP:
+					Area: 392, 0, 49, 32
+					Anchor: Right
+					Image: TOPBTNS.BMP
+					Source: 245, 0, 49, 32
+					StateStride: 294, 0
+					Tooltip: MLS_DISP_STOP
+				# The tabs, two rows of three.
+				DrIgiButton@TAB_BUILD:
+					Area: 448, 0, 64, 32
+					Image: MFDBTNS.BMP
+					Source: 0, 0, 64, 32
+					StateStride: 192, 0
+				DrIgiButton@TAB_COMMS:
+					Area: 512, 0, 64, 32
+					Image: MFDBTNS.BMP
+					Source: 64, 0, 64, 32
+					StateStride: 192, 0
+				DrIgiButton@TAB_MENU:
+					Area: 576, 0, 64, 32
+					Image: MFDBTNS.BMP
+					Source: 128, 0, 64, 32
+					StateStride: 192, 0
+				DrIgiButton@TAB_ORDERS:
+					Area: 448, 32, 64, 32
+					Image: MFDBTNS.BMP
+					Source: 0, 32, 64, 32
+					StateStride: 192, 0
+				DrIgiButton@TAB_PATHS:
+					Area: 512, 32, 64, 32
+					Image: MFDBTNS.BMP
+					Source: 64, 32, 64, 32
+					StateStride: 192, 0
+				DrIgiButton@TAB_SPECIAL:
+					Area: 576, 32, 64, 32
+					Image: MFDBTNS.BMP
+					Source: 128, 32, 64, 32
+					StateStride: 192, 0
+				DrIgiImage@PANEL_BACK:
+					Area: 448, 64, 192, 278
+					Image: MFDBAC1.BMP
+					ClickThrough: false
+				Container@PANEL_BUILD:
+					Children:
+						DrIgiImage@BUILD_BAR:
+							Area: 448, 314, 192, 28
+							Image: BUBLDBIT.BMP
+						DrIgiBuildMenu@BUILD_MENU:
+							Area: 448, 64, 192, 250
+						DrIgiButton@SCROLL_UP:
+							Area: 452, 319, 22, 22
+							Image: BUSCRLUP.BMP
+							Source: 0, 0, 22, 22
+							StateStride: 22, 0
+						DrIgiButton@SCROLL_DOWN:
+							Area: 474, 319, 22, 22
+							Image: BUSCRLDN.BMP
+							Source: 0, 0, 22, 22
+							StateStride: 22, 0
+						DrIgiButton@UPGRADE:
+							Area: 496, 318, 0, 0
+							Size: Small
+							Label: IGI_BUUPGR
+						DrIgiButton@DECOY:
+							Area: 568, 318, 0, 0
+							Size: Small
+							Label: IGI_BUDECO
+				Container@PANEL_COMMS:
+					Children:
+						DrIgiImage@COMMS_SIDE:
+							Area: 448, 74, 23, 217
+							Image: COSIDBIT.BMP
+						DrIgiImage@COMMS_GIVE:
+							Area: 464, 221, 90, 95
+							Image: COGIVBOX.BMP
+						DrIgiButton@GIVE_UNITS:
+							Area: 480, 242, 0, 0
+							Size: Small
+							Label: IGI_COUNIT
+						DrIgiButton@GIVE_CREDITS:
+							Area: 480, 264, 0, 0
+							Size: Small
+							Label: IGI_COCASH
+						DrIgiButton@MESSAGE_ALL:
+							Area: 566, 222, 0, 0
+							Size: Small
+							Label: IGI_COALLP
+						DrIgiButton@MESSAGE_NONE:
+							Area: 566, 244, 0, 0
+							Size: Small
+							Label: IGI_CONONE
+						DrIgiButton@MESSAGE_ALLIES:
+							Area: 566, 266, 0, 0
+							Size: Small
+							Label: IGI_COALLI
+						DrIgiButton@MESSAGE_NEUTRAL:
+							Area: 566, 288, 0, 0
+							Size: Small
+							Label: IGI_CONEUT
+						DrIgiButton@MESSAGE_ENEMIES:
+							Area: 566, 310, 0, 0
+							Size: Small
+							Label: IGI_COENEM
+				Container@PANEL_MENU:
+					Children:
+						DrIgiImage@MENU_ICONS:
+							Area: 474, 105, 50, 90
+							Image: MEICON.BMP
+						DrIgiSlider@EFFECTS_VOLUME:
+							Area: 528, 105, 103, 15
+						DrIgiSlider@MUSIC_VOLUME:
+							Area: 528, 129, 103, 15
+						DrIgiSlider@GAME_SPEED:
+							Area: 528, 151, 103, 15
+						DrIgiSlider@SCROLL_SPEED:
+							Area: 528, 177, 103, 15
+						DrIgiButton@LOAD_SAVE:
+							Area: 479, 205, 0, 0
+							Size: Large
+							Label: IGI_MEPOPU
+						DrIgiButton@OBJECTIVES:
+							Area: 479, 231, 0, 0
+							Size: Large
+							Label: IGI_MEOBJE
+						DrIgiButton@RESTART:
+							Area: 479, 257, 0, 0
+							Size: Large
+							Label: IGI_MESTAR
+						DrIgiButton@RELINQUISH:
+							Area: 479, 257, 0, 0
+							Size: Large
+							Label: IGI_MERELI
+						DrIgiButton@ABORT:
+							Area: 479, 283, 0, 0
+							Size: Large
+							Label: IGI_MESURR
+						DrIgiButton@EXIT:
+							Area: 479, 309, 0, 0
+							Size: Large
+							Label: IGI_MEEXIT
+				Container@PANEL_ORDERS:
+					Children:
+						DrIgiImage@ORDERS_TOGGLE:
+							Area: 448, 64, 192, 32
+							Image: BASADV.BMP
+							Source: 0, 0, 192, 32
+							FrameStride: 192, 0
+						DrIgiButton@ORDERS_BASIC:
+							Area: 448, 64, 96, 32
+							Label: MLS_DISP_BASIC
+							HighlightFont: FONT12T.PCX
+						DrIgiButton@ORDERS_ADVANCED:
+							Area: 544, 64, 96, 32
+							Label: MLS_DISP_ADVANCED
+							HighlightFont: FONT12T.PCX
+						DrIgiLabel@ORDERS_TITLE:
+							Area: 448, 99, 192, 16
+							Text: MLS_DISP_ORDERS
+							Align: Center
+						DrIgiButton@SCOUT:
+							Area: 478, 118, 0, 0
+							Size: Small
+							Label: IGI_ORORD1
+						DrIgiButton@HARASS:
+							Area: 559, 118, 0, 0
+							Size: Small
+							Label: IGI_ORORD2
+						DrIgiButton@SEARCH_DESTROY:
+							Area: 502, 143, 0, 0
+							Size: Medium
+							Label: IGI_ORORD3
+						DrIgiLabel@BEHAVIOURS_TITLE:
+							Area: 448, 171, 192, 16
+							Text: MLS_DISP_BEHAVIOURS
+							Align: Center
+						DrIgiButton@GUARD:
+							Area: 478, 190, 0, 0
+							Size: Small
+							Label: IGI_ORPRE1
+						DrIgiButton@PURSUE:
+							Area: 559, 190, 0, 0
+							Size: Small
+							Label: IGI_ORPRE2
+						DrIgiButton@DEFAULT:
+							Area: 502, 215, 0, 0
+							Size: Medium
+							Label: IGI_ORPRE3
+						Container@ORDERS_ADVANCED_PANEL:
 							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: order-icons
-									ImageName: options
-				Image@RADAR:
-					Logic: AddFactionSuffixLogic, IngameRadarDisplayLogic
-					X: 8
-					Y: 40
-					ImageCollection: sidebar
-					ImageName: radar
+								DrIgiLabel@PURSUIT_TITLE:
+									Area: 456, 240, 90, 22
+									Text: MLS_DISP_PURSUIT
+								DrIgiImage@PURSUIT:
+									Area: 548, 240, 90, 22
+									Image: ORLMH.BMP
+									Source: 0, 0, 90, 22
+								DrIgiLabel@DAMAGE_TITLE:
+									Area: 456, 262, 90, 14
+									Text: MLS_DISP_DAMAGE
+								DrIgiLabel@TOLERANCE_TITLE:
+									Area: 456, 276, 90, 14
+									Text: MLS_DISP_TOLERANCE
+								DrIgiImage@TOLERANCE:
+									Area: 548, 266, 90, 22
+									Image: ORLMH.BMP
+									Source: 0, 0, 90, 22
+								DrIgiLabel@INDEPENDENCE_TITLE:
+									Area: 456, 292, 90, 22
+									Text: MLS_DISP_INDEP
+								DrIgiImage@INDEPENDENCE:
+									Area: 548, 292, 90, 22
+									Image: ORLMH.BMP
+									Source: 0, 0, 90, 22
+								DrIgiButton@SET_DEFAULT:
+									Area: 502, 317, 0, 0
+									Size: Medium
+									Label: IGI_ORSETD
+				Container@PANEL_PATHS:
+					Children:
+						DrIgiImage@PATHS_TOGGLE:
+							Area: 448, 64, 192, 32
+							Image: BASADV.BMP
+							Source: 0, 0, 192, 32
+							FrameStride: 192, 0
+						DrIgiButton@PATHS_BASIC:
+							Area: 448, 64, 96, 32
+							Label: MLS_DISP_BASIC
+							HighlightFont: FONT12T.PCX
+						DrIgiButton@PATHS_ADVANCED:
+							Area: 544, 64, 96, 32
+							Label: MLS_DISP_ADVANCED
+							HighlightFont: FONT12T.PCX
+						DrIgiButton@ADD_WAYPOINTS:
+							Area: 502, 100, 0, 0
+							Size: Medium
+							Label: IGI_TRMOVE
+						DrIgiButton@CLEAR_ALL:
+							Area: 478, 125, 0, 0
+							Size: Small
+							Label: IGI_TRDELA
+						DrIgiButton@DELETE_WAYPOINT:
+							Area: 559, 125, 0, 0
+							Size: Small
+							Label: IGI_TRDELO
+						DrIgiButton@GO:
+							Area: 502, 150, 0, 0
+							Size: Medium
+							Label: IGI_TREXEC
+						Container@PATHS_ADVANCED_PANEL:
+							Children:
+								DrIgiLabel@PATH_DIRECTION_TITLE:
+									Area: 448, 186, 192, 16
+									Text: MLS_DISP_PATHDIR
+									Align: Center
+								DrIgiImage@PATH_DIRECTION:
+									Area: 508, 205, 71, 22
+									Image: TRAILMDE.BMP
+									Source: 0, 0, 71, 22
+								DrIgiLabel@CURRENT_PATH_TITLE:
+									Area: 468, 240, 80, 16
+									Text: MLS_DISP_CURRPATH
+								DrIgiLabel@SAVED_PATHS_TITLE:
+									Area: 555, 240, 80, 16
+									Text: MLS_DISP_SAVEDPATHS
+								DrIgiButton@DESELECT:
+									Area: 468, 280, 0, 0
+									Size: Small
+									Label: IGI_TRDESE
+								DrIgiButton@SAVE_PATH:
+									Area: 468, 305, 0, 0
+									Size: Small
+									Label: IGI_TRGLOB
+				Container@PANEL_SPECIAL:
+					Children:
+						DrIgiButton@MORPH:
+							Area: 482, 100, 0, 0
+							Size: Small
+							Label: IGI_SPMORP
+						DrIgiButton@UNMORPH:
+							Area: 559, 100, 0, 0
+							Size: Small
+							Label: IGI_SPREVE
+						DrIgiButton@PHASE:
+							Area: 482, 125, 0, 0
+							Size: Small
+							Label: IGI_SPPHAS
+						DrIgiButton@UNPHASE:
+							Area: 559, 125, 0, 0
+							Size: Small
+							Label: IGI_SPUNPH
+						DrIgiButton@SELF_DESTRUCT:
+							Area: 504, 150, 0, 0
+							Size: Medium
+							Label: IGI_SPSELF
+						DrIgiButton@FORMATION_MOVE:
+							Area: 504, 175, 0, 0
+							Size: Medium
+							Label: IGI_SPFORM
+						DrIgiButton@SELL_WATER:
+							Area: 504, 250, 0, 0
+							Size: Medium
+							Label: IGI_SPWATE
+						DrIgiButton@PACK:
+							Area: 504, 275, 0, 0
+							Size: Medium
+							Label: IGI_SPPACK
+						DrIgiButton@SET_EXIT_POINT:
+							Area: 504, 300, 0, 0
+							Size: Medium
+							Label: IGI_SPEXIT
+				# The minimap in its frame (its picture inside, 126x122), the team lights and the resource bars.
+				DrIgiImage@MINIMAP_FRAME:
+					Area: 448, 342, 140, 138
+					Image: MINIMAP.BMP
+					ClickThrough: false
+				DrIgiAreaContainer@RADAR:
+					Logic: IngameRadarDisplayLogic
+					Area: 455, 351, 126, 122
 					Children:
 						LogicTicker@RADAR_TICKER:
 						ColorBlock@RADAR_FADETOBLACK:
-							Width: 222
-							Height: 222
+							Width: PARENT_WIDTH
+							Height: PARENT_HEIGHT
 						Radar@RADAR_MINIMAP:
 							WorldInteractionController: INTERACTION_CONTROLLER
-							X: 1
-							Y: 1
-							Width: 220
-							Height: 220
+							Width: PARENT_WIDTH
+							Height: PARENT_HEIGHT
 							SoundUp: RadarUp
 							SoundDown: RadarDown
-							Children:
-						VideoPlayer@PLAYER:
-							X: 1
-							Y: 1
-							Width: 220
-							Height: 220
-							Skippable: false
-				ProgressBar@WATER_BAR:
-					Logic: DrResourcesDisplayLogic
-					X: 26
-					Y: 284
-					Width: 86
-					Height: 16
-					Bar: progressbar-water
-				ProgressBar@POWER_BAR:
-					X: 130
-					Y: 284
-					Width: 86
-					Height: 16
-					Bar: progressbar-power
-		Container@SIDEBAR_BACKGROUND: # Unit main panel?
-			X: WINDOW_WIDTH - 250
-			Y: 320
-			Width: 238
-			Children:
-				Container@PALETTE_BACKGROUND:
+				DrIgiStatic@RADAR_STATIC:
+					Area: 455, 351, 126, 122
+				DrIgiTeamLights@TEAM_LIGHTS:
+					Area: 588, 342, 52, 34
+				DrIgiResourceBars@RESOURCE_BARS:
+					Area: 588, 376, 52, 104
+				# The original's "Are You Sure?", over the middle of the map view.
+				Container@CONFIRM:
 					Children:
-						#Image@ROW_TEMPLATE:
-						#	Logic: AddFactionSuffixLogic
-						#	Width: 238
-						#	Height: 50
-						#	ClickThrough: false
-						#	ImageCollection: sidebar
-						#	ImageName: background-iconrow
-						#Image@BOTTOM_CAP:
-						#	Logic: AddFactionSuffixLogic
-						#	Width: 238
-						#	Height: 8
-						#	ClickThrough: false
-						#	ImageCollection: sidebar
-						#	ImageName: background-bottom
-				LogicTicker@PRODUCTION_TICKER:
-				Container@PALETTE_FOREGROUND: # Row of 3 frames
-					X: 0
-					Y: 19
-					Children:
-						Image@ROW_TEMPLATE:
-							Logic: AddFactionSuffixLogic
-							Width: 238
-							Height: 49
-							IgnoreMouseOver: true
-							ImageCollection: sidebar
-							ImageName: background-iconrow
-				Container@PALETTE_FOOTER: # Footer graphic
-					X: 0
-					Y: 0
-					Children:
-						Image@ROW_TEMPLATE:
-							X: 0
-							Y: 19
-							Logic: AddFactionSuffixLogic
-							Width: 238
-							Height: 6
-							IgnoreMouseOver: true
-							ClickThrough: true
-							ImageCollection: sidebar
-							ImageName: background-bottom
-				Container@PRODUCTION_TYPES: # Queue types, infantry, vehicle, etc.
-					X: 7
-					Y: 22
-					Width: 29
-					Height: 240
-					Children:
-						ProductionTypeButton@ECONOMY:
-							Logic: AddFactionSuffixLogic
-							Y: 0
-							Width: 28
-							Height: 28
-							VisualHeight: 0
-							Background: sidebar-button
-							TooltipText: button-production-types-economy-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							ProductionGroup: Economy
-							Key: ProductionTypeEconomy
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: production-icons
-						ProductionTypeButton@INFANTRY:
-							Logic: AddFactionSuffixLogic
-							Y: 31
-							Width: 28
-							Height: 28
-							VisualHeight: 0
-							Background: sidebar-button
-							TooltipText: button-production-types-infantry-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							ProductionGroup: Infantry
-							Key: ProductionTypeInfantry
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: production-icons
-						ProductionTypeButton@VEHICLE:
-							Logic: AddFactionSuffixLogic
-							Y: 62
-							Width: 28
-							Height: 28
-							VisualHeight: 0
-							Background: sidebar-button
-							TooltipText: button-production-types-vehicle-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							ProductionGroup: Vehicle
-							Key: ProductionTypeVehicle
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: production-icons
-						ProductionTypeButton@UPGRADE:
-							Logic: AddFactionSuffixLogic
-							Y: 93
-							Width: 28
-							Height: 28
-							VisualHeight: 0
-							Background: sidebar-button
-							TooltipText: button-production-types-upgrade-tooltip
-							TooltipContainer: TOOLTIP_CONTAINER
-							ProductionGroup: Upgrade
-							Key: ProductionTypeUpgrade
-							Children:
-								Image@ICON:
-									X: 6
-									Y: 6
-									ImageCollection: production-icons
-				Container@PRODUCTION_BACKGROUND:
-					X: 40
-					Y: 20
-					Children:
-						Background@ICON_TEMPLATE:
-							Width: 64
-							Height: 49
-							Background: sidebar-button
-							Visible: false
-				ProductionPalette@PRODUCTION_PALETTE: # the actual building icons to click on
-					X: 40
-					Y: 20
-					TooltipContainer: TOOLTIP_CONTAINER
-					ReadyText: productionpalette-sidebar-production-palette.ready
-					HoldText: productionpalette-sidebar-production-palette.hold
-					IconSize: 64, 49
-					IconMargin: 0, 0
-					IconSpriteOffset: 0, 0
-					HotkeyPrefix: Production
-					HotkeyCount: 24
-				ProductionTabsWithRowsAndFooter@PRODUCTION_TABS: # per-queue tabs
-					Logic: ProductionTabsWithRowsAndFooterLogic
-					PaletteWidget: PRODUCTION_PALETTE
-					TypesContainer: PRODUCTION_TYPES
-					RowWidget: PALETTE_FOREGROUND
-					FooterWidget: PALETTE_FOOTER
-					BackgroundContainer: PRODUCTION_BACKGROUND
-					PreviousProductionTabKey: PreviousProductionTab
-					NextProductionTabKey: NextProductionTab
-					X: 38
-					Y: 2
-					Width: 196
-					Height: 18
-		Image@SIDEBAR_MONEYBIN:
-			Logic: AddFactionSuffixLogic
-			X: WINDOW_WIDTH - 250
-			Y: 272
-			Width: 238
-			Height: 28
-			ImageCollection: sidebar
-			ImageName: background-moneybin
-			ClickThrough: false
-			Children:
-				Label@GAME_TIMER:
-					Logic: GameTimerLogic
-					X: 3
-					Y: 3
-					Width: PARENT_WIDTH
-					Height: 23
-					Align: Center
-					Font: TinyBold
-				LabelWithTooltip@CASH:
-					Logic: IngameCashCounterLogic
-					X: 35
-					Y: 2
-					Width: 50
-					Height: 23
-					Font: Bold
-					TooltipContainer: TOOLTIP_CONTAINER
-					TooltipTemplate: SIMPLE_TOOLTIP
-					Children:
-						Image@CASH_ICON:
-							X: -21
-							Y: 4
-							ImageCollection: cash-icons
-							ImageName: cash-normal
-				LabelWithTooltip@POWER:
-					Logic: IngamePowerCounterLogic
-					X: PARENT_WIDTH - WIDTH - 30
-					Y: 2
-					Width: 50
-					Height: 23
-					Align: Right
-					Font: Bold
-					TooltipContainer: TOOLTIP_CONTAINER
-					TooltipTemplate: SIMPLE_TOOLTIP
-					Children:
-						Image@POWER_ICON:
-							X: PARENT_WIDTH + 4
-							Y: 4
-							ImageCollection: power-icons
-							ImageName: power-normal
-		Container@SIDEBAR_BUILDING_SELECT: # Building selector
-			Logic: BuildingPickerLogic
-				ProductionParent: SIDEBAR_BACKGROUND
-			X: WINDOW_WIDTH - 250
-			Y: 322
-			Width: 238
-			Height: 256
-			Children:
-				Container@PALETTE_BACKGROUND:
-					Children:
-						Image@ROW_TEMPLATE: # Row of building icons
-							Logic: AddFactionSuffixLogic
-							Width: 238
-							Height: 49
-							ClickThrough: false
-							ImageCollection: sidebar
-							ImageName: background-iconrow
-						Image@BOTTOM_CAP: # Footer
-							Logic: AddFactionSuffixLogic
-							Width: 238
-							Height: 6
-							ClickThrough: false
-							ImageCollection: sidebar
-							ImageName: background-bottom
-				BuildSelectPalette@BUILD_SELECT_PALETTE: # The actual icons
-					X: 39
-					Y: 1
-					TooltipContainer: TOOLTIP_CONTAINER
-					IconSize: 54, 40
-					IconMargin: 10, 9
-					IconSpriteOffset: 6, 6
-					HotkeyPrefix: Production
-					HotkeyCount: 24
-				Container@PALETTE_FOREGROUND: # Black border
-					X: 39
-					Y: 1
-					Children:
-						Image@ROW_TEMPLATE:
-							Width: 238
-							Height: 49
-							IgnoreMouseOver: true
-							ImageCollection: sidebar-bits
-							ImageName: production-iconoverlay
-							Visible: false
-		Container@SIDEBAR_BUILDING_CANCEL:
-			X: WINDOW_WIDTH - 250
-			Y: 322
-			Width: 238
-			Height: 256
-			Visible: false
-			Children:
-				Button@CANCEL_BUILD:
-					Width: 228
-					Height: 26
-					X: 5
-					Y: 0
-					Text: build-cancel-button-label
-		Container@HPF_ROOT:
-			Logic: LoadIngameHierarchicalPathFinderOverlayLogic
-			X: WINDOW_WIDTH - WIDTH - 260
-			Y: 40
-			Width: 175
+						DrIgiBox@CONFIRM_BOX:
+							Area: 134, 130, 180, 100
+							Anchor: Center
+							Text: IGI_EVNT_AREUSURE
+							TextTop: 24
+						DrIgiButton@CONFIRM_YES:
+							Area: 144, 200, 0, 0
+							Anchor: Center
+							Size: Small
+							Label: IGI_CFBUTY
+						DrIgiButton@CONFIRM_NO:
+							Area: 234, 200, 0, 0
+							Anchor: Center
+							Size: Small
+							Label: IGI_CFBUTN

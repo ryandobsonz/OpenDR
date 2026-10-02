@@ -85,11 +85,6 @@ World:
 	TimeLimitManager:
 	#GlobalLightingPaletteEffect:
 	#	Ambient: 1.05
-	ProductionQueueOrBuildingPickerFromSelection:
-		ProductionParent: SIDEBAR_BACKGROUND
-		ProductionTabsWidget: PRODUCTION_TABS
-		BuildSelectPalette: BUILD_SELECT_PALETTE
-		BuildingCancel: SIDEBAR_BUILDING_CANCEL
 	ResourceClaimLayer:
 	WarheadDebugOverlay:
 	CustomTerrainDebugOverlay:

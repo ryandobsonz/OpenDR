@@ -16,7 +16,9 @@ release. No game data comes with this.
    holding the game's `dark` folder; a GOG install is found for you). It
    copies the graphics, sounds and music and converts the campaign, in about
    a minute.
-3. **Play**. The campaigns are under **Missions**.
+3. **Play** opens the original menus: **Single Player → Start New Game**
+   leads to the mission ring, and each mission plays under the original
+   in-game interface.
 
 **Settings** in the launcher choose fullscreen, borderless or windowed, the
 monitor, the resolution, the interface size and the battlefield zoom.

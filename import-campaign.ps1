@@ -76,6 +76,15 @@ if ($shell) {
     $patched = Find-Path $GameDir "mods/patch_1_8_2/shell"
     if ($patched) { Get-ChildItem -LiteralPath $patched -Filter "*.txt" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\$($_.Name.ToUpperInvariant())") -Force } }
 }
+# The in-game interface's art and fonts (DrIgiWidget), and the game's own words for it.
+$igi = Find-Path $dark "graphics/INTFACE/IGI"
+if ($igi) {
+    New-Item -ItemType Directory -Force (Join-Path $content "igi") | Out-Null
+    Get-ChildItem -LiteralPath $igi -File | Where-Object { $_.Extension -in ".bmp", ".pcx" } |
+        ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "igi\$($_.Name.ToUpperInvariant())") -Force }
+    $strings = Find-Path $dark "local/MLSTRING.CFG"
+    if ($strings) { Copy-Item -LiteralPath $strings (Join-Path $content "igi\MLSTRING.CFG") -Force }
+}
 $movies = Find-Path $dark "movies"
 if ($movies) {
     New-Item -ItemType Directory -Force (Join-Path $content "movies") | Out-Null

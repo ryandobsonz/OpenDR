@@ -66,6 +66,7 @@
 	Passenger:
 		CargoType: Infantry
 	HiddenUnderFog:
+	DrAttackInPlace:
 	AttackFrontal:
 		FacingTolerance: 0
 	Crushable:
@@ -209,6 +210,7 @@
 	MustBeDestroyed:
 	Armament:
 		Weapon: LaserRifle
+	DrAttackInPlace:
 	AttackFrontal:
 		FacingTolerance: 0
 	QuantizeFacingsFromSequence:
@@ -380,6 +382,7 @@
 	DeathSounds@NORMAL:
 		DeathTypes: DefaultDeath, BulletDeath, SmallExplosionDeath, ExplosionDeath
 	#MustBeDestroyed:
+	DrAttackInPlace:
 	AttackFrontal:
 		FacingTolerance: 0
 	QuantizeFacingsFromSequence:

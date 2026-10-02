@@ -18,20 +18,20 @@ using OpenRA.Primitives;
 namespace OpenRA.Mods.Dr.Graphics
 {
 	/// <summary>
-	/// The original shell's art as sprites. Each image is enlarged by a whole factor with nearest
+	/// The original art as sprites: the shell's, or the in-game interface's. Each image is enlarged by a whole factor with nearest
 	/// neighbour, then drawn at the screen's scale with linear filtering: sharp pixels without the
 	/// uneven columns that a plain nearest neighbour stretch to a fractional scale leaves.
 	/// </summary>
 	public sealed class DrShellArt : IDisposable
 	{
-		readonly DrShellLibrary library;
+		readonly IDrImageSource library;
 		readonly Dictionary<string, (Sheet Sheet, Sprite[] Frames)> images = new(StringComparer.OrdinalIgnoreCase);
 		readonly Dictionary<string, DrShellFont> fonts = new(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>The whole factor the art is enlarged by before filtering, at most 3: a screen then fits a 2048 texture.</summary>
 		public readonly int Upscale;
 
-		public DrShellArt(DrShellLibrary library, int upscale)
+		public DrShellArt(IDrImageSource library, int upscale)
 		{
 			this.library = library;
 			Upscale = Math.Clamp(upscale, 1, 3);
@@ -67,6 +67,21 @@ namespace OpenRA.Mods.Dr.Graphics
 
 		public Sprite Get(string name) => GetFrames(name)[0];
 
+		readonly Dictionary<(string, Rectangle), Sprite> regions = [];
+
+		/// <summary>A rectangle of an image, in its own pixels: the interface cuts frames of several sizes from one strip.</summary>
+		public Sprite GetRegion(string name, Rectangle r)
+		{
+			if (regions.TryGetValue((name, r), out var sprite))
+				return sprite;
+
+			var image = Get(name);
+			var k = Upscale;
+			sprite = new Sprite(image.Sheet, new Rectangle(image.Bounds.X + r.X * k, image.Bounds.Y + r.Y * k, r.Width * k, r.Height * k), TextureChannel.RGBA, 1f / k);
+			regions[(name, r)] = sprite;
+			return sprite;
+		}
+
 		public DrShellFont GetFont(string name)
 		{
 			if (!fonts.TryGetValue(name, out var font))
@@ -86,6 +101,9 @@ namespace OpenRA.Mods.Dr.Graphics
 
 				images[key].Sheet.Dispose();
 				images.Remove(key);
+				foreach (var region in new List<(string, Rectangle)>(regions.Keys))
+					if (region.Item1 == name)
+						regions.Remove(region);
 			}
 		}
 
@@ -149,6 +167,7 @@ namespace OpenRA.Mods.Dr.Graphics
 
 			images.Clear();
 			fonts.Clear();
+			regions.Clear();
 		}
 	}
 

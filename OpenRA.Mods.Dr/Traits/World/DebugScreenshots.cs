@@ -26,7 +26,7 @@ namespace OpenRA.Mods.Dr.Traits
 	[TraitLocation(SystemActors.World)]
 	[Desc("Testing aid for converted campaign missions, idle unless the OPENDR_TEST environment variable is set:",
 		"semicolon-separated 'tick:command args' steps. Commands: shot; leave; save NAME; resume; cash TEAM AMOUNT; killunits TEAM;",
-		"killall TEAM; kill NAME; killtype TEAM ACTOR; steal INFILTRATOR TARGET; select NAME; teleport NAME X,Y; spawn TEAM ACTOR X,Y [NAME]; order NAME ORDER TARGETNAME; explore TEAM; camera X,Y.",
+		"killall TEAM; kill NAME; killtype TEAM ACTOR; steal INFILTRATOR TARGET; select NAME; press WIDGET; clickui X,Y; rclickui X,Y; teleport NAME X,Y; spawn TEAM ACTOR X,Y [NAME]; order NAME ORDER TARGETNAME; explore TEAM; camera X,Y.",
 		"Names are the map's actor names (u<id> for original units) or those given to spawn. OPENDR_SCREENSHOT_TICKS=t1,t2 adds shots.")]
 	public class DebugScreenshotsInfo : TraitInfo<DebugScreenshots> { }
 
@@ -190,6 +190,28 @@ namespace OpenRA.Mods.Dr.Traits
 
 				case "select":
 					w.Selection.Combine(w, new[] { Named(w, c[1]) }, false, false);
+					break;
+
+				case "clickui":
+				case "rclickui":
+				{
+					// A click at a point of the screen, in the interface's pixels (the window's over its UI scale), through its input path.
+					var xy = c[1].Split(',');
+					var at = new int2(int.Parse(xy[0], CultureInfo.InvariantCulture), int.Parse(xy[1], CultureInfo.InvariantCulture));
+					var button = c[0] == "rclickui" ? MouseButton.Right : MouseButton.Left;
+					Game.RunAfterTick(() => Sync.RunUnsynced(w, () =>
+					{
+						Ui.HandleInput(new MouseInput(MouseInputEvent.Move, MouseButton.None, at, int2.Zero, Modifiers.None, 0));
+						var down = Ui.HandleInput(new MouseInput(MouseInputEvent.Down, button, at, int2.Zero, Modifiers.None, 1));
+						Ui.HandleInput(new MouseInput(MouseInputEvent.Up, button, at, int2.Zero, Modifiers.None, 1));
+						Log.Write("debug", $"{c[0]} {at}: over {Ui.MouseOverWidget?.Id ?? "nothing"}, handled {down}");
+					}));
+					break;
+				}
+
+				case "press":
+					// A button of the in-game interface by its widget id, as a click on it does.
+					Game.RunAfterTick(() => Sync.RunUnsynced(w, () => Ui.Root.GetOrNull<Widgets.DrIgiButtonWidget>(c[1])?.OnClick()));
 					break;
 
 				case "killtype":
