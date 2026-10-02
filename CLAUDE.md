@@ -222,8 +222,6 @@ comes first; a human playthrough then decides what matters next.
      pointer, not yet found; ours sits under the control), and the minimap's
      scroll arrows (`MM*.BMP`), which have nothing to do while OpenRA's
      minimap shows the whole map.
-   - Then `wintest.ps1` again (not run since the interface landed) and a new
-     package, so the user plays a current build.
 2. **A human playthrough** of M01–M04 on both sides. Nothing has been played
    by hand; the user's play is the real test. Expect AI tuning
    (`DrAipBotModule`) and a bug list to follow, and let them reorder 3.
@@ -257,6 +255,16 @@ comes first; a human playthrough then decides what matters next.
 5. **Distribution polish**: an installer (Start menu, uninstall) and a
    code-signing certificate (unsigned, Windows SmartScreen warns on first
    run). The GOG install lookup has never met a real GOG install.
+
+**Where the last session stopped (2026-10-03):** item 1 is done but for its
+two small leftovers: the mission end, Load/Save, Restate Objective, the
+original's cursors and the team lights are in, and the MENU tab's Advanced
+page is one Settings button. `wintest.ps1` matched the table above after it,
+and the package was rebuilt from it (`build/DarkReign-0.1.0-win-x64.zip`;
+nobody has opened its launcher yet). Next is 2, the user's playthrough; until
+their findings come in, 3 starts with water and taelon. Both resources
+already exist as `ResourceTypes` (`rules/world.yaml`, `DrResourceLayer`) and
+in `PlayerResources`' values, but collecting either pays credits.
 
 **Parked, a separate piece of work:** the expansion campaigns (`sh*`,
 `fgx*`). They convert but lack most units, and would need tech tables from
