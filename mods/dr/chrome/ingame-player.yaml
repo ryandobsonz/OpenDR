@@ -225,7 +225,7 @@ Container@PLAYER_WIDGETS:
 				Container@PANEL_MENU:
 					Children:
 						# Basic is the original's menu; Advanced, in the original's own Basic/Advanced toggle (as ORDERS and
-						# PATHS have), holds what the remaster adds: OpenRA's settings, and the ones worth having at hand.
+						# PATHS have), holds what the remaster adds: one button for its settings.
 						DrIgiImage@MENU_TOGGLE:
 							Area: 448, 64, 192, 32
 							Image: BASADV.BMP
@@ -283,68 +283,11 @@ Container@PLAYER_WIDGETS:
 									Area: 448, 99, 192, 16
 									Text: MLS_DISP_OPTIONS
 									Align: Center
-								DrIgiButton@SETTINGS_DISPLAY:
-									Area: 478, 118, 0, 0
-									Size: Small
-									Label: button-dr-igi-display
-									Tooltip: button-dr-igi-display-tooltip
-								DrIgiButton@SETTINGS_AUDIO:
-									Area: 559, 118, 0, 0
-									Size: Small
-									Label: button-dr-igi-audio
-									Tooltip: button-dr-igi-audio-tooltip
-								DrIgiButton@SETTINGS_INPUT:
-									Area: 478, 143, 0, 0
-									Size: Small
-									Label: button-dr-igi-input
-									Tooltip: button-dr-igi-input-tooltip
-								DrIgiButton@SETTINGS_HOTKEYS:
-									Area: 559, 143, 0, 0
-									Size: Small
-									Label: button-dr-igi-hotkeys
-									Tooltip: button-dr-igi-hotkeys-tooltip
-								DrIgiButton@SETTINGS_GAMEPLAY:
-									Area: 478, 168, 0, 0
-									Size: Small
-									Label: button-dr-igi-gameplay
-									Tooltip: button-dr-igi-gameplay-tooltip
-								DrIgiButton@MUSIC:
-									Area: 559, 168, 0, 0
-									Size: Small
-									Label: button-dr-igi-music
-									Tooltip: button-dr-igi-music-tooltip
-								DrIgiLabel@ZOOM_TITLE:
-									Area: 456, 197, 100, 22
-									Text: ZoomStaticTitle
-								DrIgiButton@ZOOM:
-									Area: 559, 197, 0, 0
-									Size: Small
-									Tooltip: button-dr-igi-zoom-tooltip
-									RightClick: true
-								DrIgiLabel@HEALTH_BARS_TITLE:
-									Area: 456, 222, 100, 22
-									Text: label-dr-igi-health-bars
-								DrIgiButton@HEALTH_BARS:
-									Area: 559, 222, 0, 0
-									Size: Small
-									Tooltip: button-dr-igi-health-bars-tooltip
-									RightClick: true
-								DrIgiLabel@EDGE_SCROLL_TITLE:
-									Area: 456, 247, 100, 22
-									Text: label-dr-igi-edge-scroll
-								DrIgiButton@EDGE_SCROLL:
-									Area: 559, 247, 0, 0
-									Size: Small
-									Tooltip: button-dr-igi-edge-scroll-tooltip
-									RightClick: true
-								DrIgiLabel@MOUSE_SCROLL_TITLE:
-									Area: 456, 272, 100, 22
-									Text: label-dr-igi-mouse-scroll
-								DrIgiButton@MOUSE_SCROLL:
-									Area: 559, 272, 0, 0
-									Size: Small
-									Tooltip: button-dr-igi-mouse-scroll-tooltip
-									RightClick: true
+								DrIgiButton@SETTINGS:
+									Area: 479, 118, 0, 0
+									Size: Large
+									Label: button-dr-igi-settings
+									Tooltip: button-dr-igi-settings-tooltip
 				Container@PANEL_ORDERS:
 					Children:
 						DrIgiImage@ORDERS_TOGGLE:

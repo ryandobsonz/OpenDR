@@ -276,16 +276,11 @@ and 32 paths, 64 comms, 128 menu, 256 special.
 **What the remaster adds to the original's menu** sits behind the MENU
 tab's Basic/Advanced toggle (`BASADV.BMP`, the toggle ORDERS and PATHS
 already have), so Basic is the original's menu untouched. Advanced, titled
-with the original's own "Options", has OpenRA's settings a tab each
-(Display, Audio, Input, Hotkeys, Gameplay) and its music player, which open
-over the battlefield as OpenRA's in-game menu opens them: the interface
-hidden, world sounds off, the game paused alone against the computer. Below
-them, settings worth having mid-mission change in place: battlefield zoom,
-health bars, edge scrolling and mouse panning (a click for the next choice,
-a right click for the last). Its words are the game's where it has them
-(`MLS_DISP_OPTIONS`, `ZoomStaticTitle`), else the mod's
-(`mods/dr/fluent/chrome.ftl`): a label is looked up in `MLSTRING.CFG`, then
-in Fluent.
+with the original's own "Options" (`MLS_DISP_OPTIONS`), has one button,
+Settings: OpenRA's settings window (Gameplay, Input, Display, Audio, Hotkeys,
+Advanced), opened over the battlefield as OpenRA's in-game menu opens it:
+the interface hidden, world sounds off, the game paused alone against the
+computer. Zoom, health bars, scrolling and the rest are on its tabs.
 
 **The keyboard is the original's** (`dark/local/HELP.TXT`, the list its F1
 showed), as OpenRA hotkeys that Settings → Hotkeys can change

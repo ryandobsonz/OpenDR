@@ -206,10 +206,11 @@ killing teams the player must protect, as alliances change at cycle 0.
 
 The goal is a professional **remaster, not a remake**: the entire original
 interface rebuilt from the game's own art, with the real graphical gains in
-the game itself (OpenDR on the new engine). UI work comes first.
+the game itself (OpenDR on the new engine). What the campaign player touches
+comes first; a human playthrough then decides what matters next.
 
-1. **The rest of the in-game interface** ([CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface)
-   says what works). Next, roughly in order:
+1. **The in-game interface on the campaign's path**
+   ([CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface) says what works):
    - The original's end of a mission: "Mission Successful"/"Mission Failed"
      (`MLS_EVNT_MSUCCESS`, `MFAILURE`) straight to the debrief, instead of
      OpenRA's in-game menu.
@@ -217,38 +218,44 @@ the game itself (OpenDR on the new engine). UI work comes first.
      330,98–436,228, a name field at 330,74, Load/Save/Delete at 330,259/284/309,
      its box from `TEXTBRDR.BMP`), instead of OpenRA's menu. Restate Objective
      as the original's text window (zones 3/4, 49,96–398,415).
-   - COMMS: the player rows (`COPYRNM1/2.BMP` at 465,95, 95×18 each; the side
-     at 560; alliance icons `COALIANC.BMP` at 571), giving credits (the field
-     at 481,296), messages (the chat line at 15,400, 418×33).
    - Cursors from `graphics/INTFACE/MOUSE.CRS` (already installed), the
      tooltips' exact place (`PT.BMP` is drawn at 639−171 by 0x428a40), the
      team lights' colours, the minimap's scroll arrows (`MM*.BMP`).
+   - Then `wintest.ps1` again (not run since the interface landed) and a new
+     package, so the user plays a current build.
+2. **A human playthrough** of M01–M04 on both sides. Nothing has been played
+   by hand; the user's play is the real test. Expect AI tuning
+   (`DrAipBotModule`) and a bug list to follow, and let them reorder 3.
+3. **The gameplay behind the interface's buttons**, owed even though no
+   campaign mission needs them, roughly by how much a player feels it. Each
+   lands with its button: enable it in `DrIgiLogic`.
+   - Water and taelon as separate resources, and forced water sales
+     (`MLS_DISP_WATERSALE`, a double click on the credits); the debrief and
+     `CritCollectWater`/`CritCollectMineral` then count them properly.
+   - The units' tactics (pursuit, damage tolerance, independence; `SetTactAI`
+     in the scenarios) and the orders (Scout, Harass, Search & Destroy,
+     Pursue, Default, Set Default).
+   - Paths and waypoints (one way, patrol, loop, saved paths): the PATHS tab.
+   - Self destruct, formation moves, packing up buildings.
+   - Phasing, decoys, morphing, the water contaminator.
+   - Stolen designs buildable. Plans are recorded (`DrPlanStealing.cs`) but
+     grant nothing: OpenRA prerequisites have no "or", so it needs a
+     generated copy of each stealable actor with its own prerequisite.
+4. **The interface off the campaign's path:**
+   - COMMS: the player rows (`COPYRNM1/2.BMP` at 465,95, 95×18 each; the side
+     at 560; alliance icons `COALIANC.BMP` at 571), giving credits (the field
+     at 481,296), messages (the chat line at 15,400, 418×33).
    - Multi Player and Instant Action from `graphics/INTFACE/MULTMENU` (the
      manual's screenshots show them), replacing OpenRA's panels.
-   - OpenRA's settings and music panels, which the MENU tab's Advanced page
-     and F1 open, still look like OpenRA's (OpenDR's dialog art, OpenRA's
-     fonts and layout). Drawing them with the original's art (`TEXTBRDR.BMP`
-     box, `SBTNS.BMP` buttons, the PCX fonts) would finish the remaster's
-     look; the controls behind them are done.
-2. **The gameplay behind the interface's buttons**, owed even though no
-   campaign mission needs them: the units' tactics (pursuit, damage
-   tolerance, independence; `SetTactAI` in the scenarios), the orders
-   (Scout, Harass, Search & Destroy, Pursue, Default, Set Default), paths
-   and waypoints (one way, patrol, loop, saved paths), phasing, water and
-   taelon as separate resources, the water contaminator, decoys, morphing,
-   self destruct, formation moves, forced water sales (`MLS_DISP_WATERSALE`,
-   and a double click on the credits) and packing up buildings. Each lands
-   with its button: enable it in `DrIgiLogic`.
-3. **A human playthrough.** Nothing has been played by hand; the user's play
-   is the real test. Expect AI tuning (`DrAipBotModule`) to follow.
-4. **Stolen designs buildable.** Plans are recorded (`DrPlanStealing.cs`) but
-   grant nothing: OpenRA prerequisites have no "or", so it needs a generated
-   copy of each stealable actor with its own prerequisite.
-5. **Distribution polish**: the package is a zip, last built before the
-   original menus and interface (rebuild it). An installer (Start menu,
-   uninstall) and a code-signing certificate (unsigned, Windows SmartScreen
-   warns on first run). The GOG install lookup has never met a real GOG
-   install.
+   - The settings window (the MENU tab's Advanced → Settings, and F1) and the
+     music panel still look like OpenRA's. The user chose one Settings button
+     over a page of in-place choices and a button per tab; restyling that
+     window with the original's art (`TEXTBRDR.BMP` box, `SBTNS.BMP` buttons,
+     the PCX fonts) would finish the look.
+   - The game speed slider: OpenRA fixes the speed once a game starts.
+5. **Distribution polish**: an installer (Start menu, uninstall) and a
+   code-signing certificate (unsigned, Windows SmartScreen warns on first
+   run). The GOG install lookup has never met a real GOG install.
 
 **Parked, a separate piece of work:** the expansion campaigns (`sh*`,
 `fgx*`). They convert but lack most units, and would need tech tables from

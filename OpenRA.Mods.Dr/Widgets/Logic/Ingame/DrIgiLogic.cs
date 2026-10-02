@@ -375,9 +375,8 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		}
 
 		/// <summary>
-		/// The MENU tab's Advanced page: what the remaster adds to the original's menu. OpenRA's settings, a
-		/// tab each, and its music player open over the battlefield as its own in-game menu does; zoom, health
-		/// bars and scrolling change in place (a click for the next choice, a right click for the last).
+		/// The MENU tab's Advanced page: what the remaster adds to the original's menu, its settings, which open
+		/// over the battlefield as OpenRA's in-game menu opens them.
 		/// </summary>
 		void BindMenuOptions()
 		{
@@ -386,52 +385,18 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			widget.Get("MENU_ADVANCED_PANEL").IsVisible = () => advancedMenu;
 			widget.Get<DrIgiImageWidget>("MENU_TOGGLE").GetFrame = () => advancedMenu ? 1 : 0;
 
-			foreach (var (name, panel) in new[]
-			{
-				("SETTINGS_DISPLAY", "DISPLAY_PANEL"), ("SETTINGS_AUDIO", "AUDIO_PANEL"), ("SETTINGS_INPUT", "INPUT_PANEL"),
-				("SETTINGS_HOTKEYS", "HOTKEYS_PANEL"), ("SETTINGS_GAMEPLAY", "GAMEPLAY_PANEL"),
-			})
-			{
-				Button(name).OnClick = () => OpenSettings(panel);
-			}
-
-			Button("MUSIC").OnClick = () => OpenWindow("MUSIC_PANEL");
-
-			var graphics = Game.Settings.Graphics;
-			var game = Game.Settings.Game;
-			BindChoice("ZOOM", () => graphics.ViewportDistance, v => graphics.ViewportDistance = v,
-				(WorldViewport.Close, "dr-igi-zoom.close"), (WorldViewport.Medium, "dr-igi-zoom.medium"), (WorldViewport.Far, "dr-igi-zoom.far"));
-			BindChoice("HEALTH_BARS", () => game.StatusBars, v => game.StatusBars = v,
-				(StatusBarsType.Standard, "dr-igi-health-bars.standard"), (StatusBarsType.DamageShow, "dr-igi-health-bars.damaged"),
-				(StatusBarsType.AlwaysShow, "dr-igi-health-bars.always"));
-			BindChoice("EDGE_SCROLL", () => game.ViewportEdgeScroll, v => game.ViewportEdgeScroll = v, (true, "dr-igi-on"), (false, "dr-igi-off"));
-			BindChoice("MOUSE_SCROLL", () => game.MouseScroll, v => game.MouseScroll = v,
-				(MouseScrollType.Standard, "dr-igi-mouse-scroll.standard"), (MouseScrollType.Inverted, "dr-igi-mouse-scroll.inverted"),
-				(MouseScrollType.Joystick, "dr-igi-mouse-scroll.joystick"), (MouseScrollType.Disabled, "dr-igi-mouse-scroll.disabled"));
+			Button("SETTINGS").OnClick = () => OpenSettings();
 		}
 
-		/// <summary>A button that steps through a setting's choices, each labelled by a Fluent message.</summary>
-		void BindChoice<T>(string name, Func<T> get, Action<T> set, params (T Value, string Label)[] choices)
+		/// <summary>OpenRA's settings, on one of its tabs if given; they open on the first, and their tab buttons carry the panels' names.</summary>
+		void OpenSettings(string panel = null)
 		{
-			var labels = choices.Select(c => FluentProvider.GetMessage(c.Label)).ToArray();
-			int Index() => Array.FindIndex(choices, c => EqualityComparer<T>.Default.Equals(c.Value, get()));
-			void Step(int by)
+			OpenWindow("SETTINGS_PANEL", window =>
 			{
-				// From a value not offered here (Native zoom, set elsewhere), to the first or the last.
-				var i = Index();
-				set(choices[i < 0 ? (by > 0 ? 0 : choices.Length - 1) : (i + by + choices.Length) % choices.Length].Value);
-				Game.Settings.Save();
-			}
-
-			var button = Button(name);
-			button.GetLabel = () => Index() is var i && i >= 0 ? labels[i] : get().ToString();
-			button.OnClick = () => Step(1);
-			button.OnRightClick = () => Step(-1);
+				if (panel != null)
+					window.Get("SETTINGS_TAB_CONTAINER").GetOrNull<ButtonWidget>(panel)?.OnClick();
+			});
 		}
-
-		/// <summary>OpenRA's settings on one of its tabs; they open on the first, and their tab buttons carry the panels' names.</summary>
-		void OpenSettings(string panel) => OpenWindow("SETTINGS_PANEL",
-			window => window.Get("SETTINGS_TAB_CONTAINER").GetOrNull<ButtonWidget>(panel)?.OnClick());
 
 		/// <summary>
 		/// One of OpenRA's windows over the battlefield, as its in-game menu opens them: the interface hidden,
