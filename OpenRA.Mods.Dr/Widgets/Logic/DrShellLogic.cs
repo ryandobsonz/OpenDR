@@ -86,11 +86,17 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 		static readonly string[][] TrainingMissions = [["t1", "t2"], ["t3", "t4"]];
 
-		static DrShellClip Clip(string name) => new($"content|shell/{name}.SMK");
+		/// <summary>A video of the shell's; the 1.8.2 patch's faster version where it has one and the launcher asks for it.</summary>
+		DrShellClip Clip(string name)
+		{
+			var fast = $"content|shell/fast/{name}.SMK";
+			return new(fastTransitions && modData.DefaultFileSystem.Exists(fast) ? fast : $"content|shell/{name}.SMK");
+		}
+
 		static DrShellClip Movie(string name) => new($"content|movies/{name}.SMK", DrShellVideoSound.Video, 2);
 
-		static readonly DrShellClip CubeIn = Clip("CUBE_IN");
-		static readonly DrShellClip CubeOut = Clip("CUBE_OUT");
+		DrShellClip CubeIn => Clip("CUBE_IN");
+		DrShellClip CubeOut => Clip("CUBE_OUT");
 
 		/// <summary>
 		/// The turn of the cube between two of its faces, as the original's table has it: the face's panel
@@ -98,7 +104,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		/// right (the archive), CUBE04 and CUBE_UP2 one above, CUBE05 and CUBE_DN2 one below; then CUBE01
 		/// brings the next panel out. Faces further on in the original's order are above.
 		/// </summary>
-		static DrShellClip[] Turn(Screen from, Screen to)
+		DrShellClip[] Turn(Screen from, Screen to)
 		{
 			string turn;
 			if (from == Screen.Options || to == Screen.Archive)
@@ -126,6 +132,7 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 		readonly ModData modData;
 		readonly World world;
+		readonly bool fastTransitions = DrShellSettings.FastTransitions;
 		readonly DrShellWidget shell;
 		readonly Dictionary<string, MapPreview> maps = new(StringComparer.OrdinalIgnoreCase);
 		readonly Dictionary<string, Dictionary<int, string>> briefings = new(StringComparer.OrdinalIgnoreCase);
@@ -295,8 +302,10 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 		{
 			var launched = DrCampaign.Launched;
 			var won = DrCampaign.LastResult == true;
+			statistics = DrCampaign.LastStatistics;
 			DrCampaign.Launched = null;
 			DrCampaign.LastResult = null;
+			DrCampaign.LastStatistics = null;
 			if (launched == null)
 				return;
 
@@ -758,12 +767,19 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 				archiveText.SetText(node?.Text ?? "");
 		}
 
-		// The debrief after a won mission: the historical outcome
+		// The debrief after a won mission: the historical outcome, and the mission's statistics
+
+		(int Side, int[] Figures)[] statistics;
 
 		void SetupDebrief(Widget debrief)
 		{
 			debrief.IsVisible = Visible(Screen.Debrief);
 			debrief.Get<DrShellLabelWidget>("TITLE").GetText = () => briefingMission != null ? Map(briefingMission)?.Title.ToUpperInvariant() : null;
+			debrief.Get<DrShellStatisticsWidget>("STATISTICS").GetRows = () => statistics;
+
+			// The player's side's emblem: the Freedom Guard's left of the title, any other's right of it.
+			debrief.Get<DrShellImageWidget>("FG_LOGO").GetFrame = () => statistics != null && statistics[0].Side == 0 ? 0 : -1;
+			debrief.Get<DrShellImageWidget>("IMP_LOGO").GetFrame = () => statistics != null && statistics[0].Side != 0 ? 0 : -1;
 			var text = debrief.Get<DrShellTextWidget>("TEXT");
 			SetupScroll(debrief, text);
 
@@ -783,6 +799,15 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 				TurnTo(Screen.Cube);
 			};
+
+			// As in the original: the mission again below, options on the left and the archive on the right.
+			var replay = debrief.Get<DrShellButtonWidget>("REPLAY");
+			replay.IsDisabled = () => briefingMission == null || Map(briefingMission) == null;
+			replay.OnClick = () => OpenBriefing(briefingMission);
+			debrief.Get<DrShellButtonWidget>("LEFT").OnClick = () => TurnTo(Screen.Options);
+			var right = debrief.Get<DrShellButtonWidget>("RIGHT");
+			right.IsDisabled = () => archive == null;
+			right.OnClick = () => TurnTo(Screen.Archive);
 		}
 
 		void SetupScroll(Widget parent, DrShellTextWidget text)

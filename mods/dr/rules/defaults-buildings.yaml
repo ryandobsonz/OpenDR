@@ -118,6 +118,7 @@
 		BlockedAudio: Upgrading
 
 ^ConstructedBuildingCommon:
+	DrCountsInStatistics:
 	MapEditorData:
 		Categories: Building
 	RepairableBuilding:

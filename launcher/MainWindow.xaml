@@ -100,7 +100,7 @@
                   Width="700" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32,26,32,24">
             <StackPanel>
               <TextBlock Text="SETTINGS" FontFamily="{StaticResource Display}" FontSize="22" Foreground="{StaticResource Amber}" />
-              <TextBlock Text="Saved to the game's own settings; the in-game Display menu changes the same values."
+              <TextBlock Text="Saved to the game's own settings; the in-game Display menu changes the display values too."
                          Foreground="{StaticResource Muted}" FontSize="12" Margin="0,4,0,18" />
 
               <Grid>
@@ -109,6 +109,7 @@
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
@@ -147,8 +148,12 @@
                 <CheckBox x:Name="VSyncBox" Grid.Row="5" Grid.Column="1" Style="{StaticResource Switch}"
                           Content="Match the monitor's refresh rate" Checked="OnVSyncChanged" Unchecked="OnVSyncChanged" />
 
-                <TextBlock Grid.Row="6" Style="{StaticResource Caption}" Text="GAME DATA" Margin="0,16,0,0" />
-                <Grid Grid.Row="6" Grid.Column="1" Margin="0,16,0,0">
+                <TextBlock Grid.Row="6" Style="{StaticResource Caption}" Text="MENUS" Margin="0,12,0,0" />
+                <CheckBox x:Name="FastTransitionsBox" Grid.Row="6" Grid.Column="1" Style="{StaticResource Switch}" Margin="0,12,0,0"
+                          Content="Faster cube turns (the 1.8.2 patch's)" Checked="OnFastTransitionsChanged" Unchecked="OnFastTransitionsChanged" />
+
+                <TextBlock Grid.Row="7" Style="{StaticResource Caption}" Text="GAME DATA" Margin="0,16,0,0" />
+                <Grid Grid.Row="7" Grid.Column="1" Margin="0,16,0,0">
                   <TextBlock x:Name="DataStatus" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center" />
                   <Button Style="{StaticResource CommandButton}" Content="INSTALL FROM GAME…" Height="30" FontSize="12" Padding="12,0"
                           HorizontalAlignment="Right" Click="OnInstall" />

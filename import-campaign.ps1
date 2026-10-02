@@ -59,12 +59,18 @@ if ($missing) { Write-Warning ("Not found in the game, so not installed: " + ($m
 
 # The menus' videos (Smacker): the cube's turns, the Encryption Key, the briefings' irises; and the
 # movies: the intro, the segue to the Togran's mission and the ending. The 1.8.2 patch's fix_cubes
-# mod has a CUBE02 whose sound does not cut out after two seconds.
+# mod has a CUBE02 whose sound does not cut out after two seconds; its fast_cubes mod has the turns
+# at 30 frames a second, which its launcher plays by default and the shell plays from shell/fast.
 $shell = Find-Path $dark "shell"
 if ($shell) {
     Get-ChildItem -LiteralPath $shell -Filter "*.smk" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\$($_.Name.ToUpperInvariant())") -Force }
     $fixed = Find-Path $GameDir "mods/fix_cubes/shell/CUBE02.SMK"
     if ($fixed) { Copy-Item -LiteralPath $fixed (Join-Path $content "shell\CUBE02.SMK") -Force }
+    $fast = Find-Path $GameDir "mods/fast_cubes/shell"
+    if ($fast) {
+        New-Item -ItemType Directory -Force (Join-Path $content "shell\fast") | Out-Null
+        Get-ChildItem -LiteralPath $fast -Filter "*.smk" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\fast\$($_.Name.ToUpperInvariant())") -Force }
+    }
     # The archive's text and the credits; the patch updates the credits.
     Get-ChildItem -LiteralPath $shell -Filter "*.txt" | ForEach-Object { Copy-Item -LiteralPath $_.FullName (Join-Path $content "shell\$($_.Name.ToUpperInvariant())") -Force }
     $patched = Find-Path $GameDir "mods/patch_1_8_2/shell"

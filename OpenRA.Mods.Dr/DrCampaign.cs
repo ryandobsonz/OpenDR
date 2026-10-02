@@ -32,6 +32,12 @@ namespace OpenRA.Mods.Dr
 		public static string Launched;
 		public static bool? LastResult;
 
+		/// <summary>
+		/// The debrief's rows, as the original shows them: the player's team and team 1, each its side (the
+		/// scenario's: 0 Freedom Guard, 1 Imperium, 2 civilian, 3 Togran; -1 for no such team) and figures.
+		/// </summary>
+		public static (int Side, int[] Figures)[] LastStatistics;
+
 		static string FilePath => Path.Combine(Platform.SupportDir, "dr-campaign.yaml");
 
 		public static string MissionName(int number, char side) =>

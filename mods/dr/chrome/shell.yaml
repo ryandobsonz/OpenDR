@@ -268,3 +268,20 @@ DrShell@DR_SHELL:
 				DrShellButton@CONTINUE:
 					Area: 290,0,62,36
 					Image: cube_up
+				DrShellButton@REPLAY:
+					Area: 290,445,62,35
+					Image: cube_dn
+				DrShellButton@LEFT:
+					Area: 0,210,44,56
+					Image: cube_lft
+				DrShellButton@RIGHT:
+					Area: 595,210,44,58
+					Image: cube_rgt
+				DrShellImage@FG_LOGO:
+					Area: 150,95,42,54
+					Image: d_logof
+				DrShellImage@IMP_LOGO:
+					Area: 455,95,42,54
+					Image: d_logoi
+				DrShellStatistics@STATISTICS:
+					Area: 52,315,528,91

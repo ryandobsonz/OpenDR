@@ -12,6 +12,7 @@ World:
 			hard: options-difficulty.hard
 		Default: normal
 	DebugScreenshots:
+	DrMissionStatistics:
 
 Player:
 	ModularBot@DrCampaign:

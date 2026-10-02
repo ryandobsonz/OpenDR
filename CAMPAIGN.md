@@ -50,6 +50,7 @@ the import has copied it. Its settings are the game's own, in OpenRA's
 | Resolution | The monitor's modes for fullscreen; common window sizes that fit it for windowed |
 | Interface size | 100–200%, limited to what leaves the game its minimum 1024×720 layout |
 | Battlefield zoom, VSync | As in the game |
+| Menus | Faster cube turns, the 1.8.2 patch's (on unless turned off, as in the patch's launcher); kept in `dr-shell.yaml`, as the game rewrites `settings.yaml` with its own fields alone |
 | Game data | Installs it, or again, from a chosen Dark Reign folder |
 
 It finds the engine in either layout: `engine/bin` beside it in the
@@ -100,7 +101,7 @@ OpenRA's menu, and the launcher offers to install again.
 | The cube: missions | The mission ring around the Encryption Key, read as a clock: mission N at N o'clock, the gate at the top is 12, the key itself 13. A disc lights its side's emblem once that side has won it; locked missions are dark. Click to select, again (or the arrow above) to open. Basic and Advanced Training on either side; the left arrow turns to Options, the right to the archive, the bottom arrow leaves |
 | Mission background | The briefing's setting (its `\0`); the Freedom Guard or Imperium emblem at the top picks the side |
 | Briefing | The orders (`\1`), Freedom Guard's or Imperium's screen; **Launch** starts the mission in the engine |
-| Debrief | After a win: the historical outcome (`\2`) and Togra's word (`\3`); on to the next mission |
+| Debrief | After a win: the historical outcome (`\2`) and Togra's word (`\3`), the player's emblem, and the mission's statistics (below); up to the next mission, down to play it again, left to Options, right to the archive |
 | Training | The two Basic or Advanced missions (`t1`–`t4`), each to its briefing |
 | Options | Mission progression; Load Game and Settings (OpenRA's panels); OpenRA Menu, OpenRA's own main menu; Quit to Main Menu or to Windows |
 | Archive | The cube's right face: `shell/ARCHIVE.TXT`, Togra's final message, the history of the conflict, biographies, unit specifications and a journal, as menus of pages; Up One Level climbs. As in the original, the journal has an entry for each mission won and one more |
@@ -153,8 +154,11 @@ as in the original: `CUBE00` (the rise alone; `CUBE_IN` is `CUBE00` then
 `CUBE01`) and `M_RING13` (the lit key brightening, which the original's count
 of missions never reaches). The 1.8.2 patch's `fix_cubes` mod has a `CUBE02`
 whose sound does not cut out after two seconds; the import takes it when it is
-there. Its `fast_cubes` mod (two seconds a turn, where the original's take
-seven and a half) is not used.
+there. Its `fast_cubes` mod has the turns, the cube's rise and fall and the
+irises at 30 frames a second where the original's run at 10: a turn and the
+panel coming out take two and a half seconds, where the original's take seven
+and a half. The patch's launcher plays them unless told not to, and so does
+this one (Settings → Menus); the import puts them in `shell/fast`.
 
 The sounds: `bridge3.wav` hums under the main menu and single player,
 `bridge.wav` on the bridge and the cube's faces (it stops as the cube sinks
@@ -175,6 +179,28 @@ codes, and three escape values hold the last three decoded. Audio is DPCM:
 each sample's change from the one before, Huffman coded per byte. The shell's
 videos are drawn as its still art is (enlarged by a whole factor, then
 filtered); the movies only filtered, or their dithering shows as blocks.
+
+### The debrief's statistics
+
+Under the outcome the debrief has the original's grid: water and taelon
+collected, then units and buildings created, lost and destroyed, a row for
+the player's team and one for team 1, each named by its side. In each
+column the larger figure is framed in red. The layout and the counting are
+the original's, read from `dkreign.exe`:
+
+- **Created**: every unit and building a team comes to have, those the
+  mission starts with included (the original resets its counts before it
+  places them). A building counts once, as its construction begins; a
+  construction rig that becomes it is not lost.
+- **Lost**: every one that dies, whoever killed it. **Destroyed**: those a
+  team kills of another team's (its own don't count).
+- **Collected**: what refineries take in, water and taelon apart, in
+  credits.
+
+`Traits/World/DrMissionStatistics.cs` keeps the figures, which every unit
+and building reports through `Traits/DrCountsInStatistics.cs`; the mission's
+end hands the two rows to the shell (`DrCampaign.LastStatistics`), and
+`Widgets/DrShellStatisticsWidget.cs` draws them.
 
 Code: `FileFormats/DrShellLibrary.cs` (the files), `Graphics/DrShellArt.cs`
 (textures and fonts), `FileFormats/SmackerVideo.cs` (the videos),
@@ -239,9 +265,8 @@ changes the rate.
   high, which OpenRA's default stance already is.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
-- **The debrief has no statistics**: the original's grid of units and
-  buildings created, lost and destroyed, and water and taelon collected, is
-  not there yet; the debrief shows the historical outcome alone.
+- **The debrief's water and taelon** are the credits each brought in: OpenDR
+  pays for resources in credits.
 
 ## Working on it
 

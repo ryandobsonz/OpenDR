@@ -45,6 +45,7 @@ namespace DarkReign.Launcher
 		readonly GameInstall install = GameInstall.Locate();
 		readonly List<Display> displays;
 		GraphicsSettings settings;
+		ShellSettings shellSettings = ShellSettings.Load();
 		bool updating;
 
 		public MainWindow()
@@ -203,6 +204,7 @@ namespace DarkReign.Launcher
 					button.IsChecked = (string)button.Tag == settings.ViewportDistance;
 
 				VSyncBox.IsChecked = settings.VSync;
+				FastTransitionsBox.IsChecked = shellSettings.FastTransitions;
 			}
 			finally
 			{
@@ -347,6 +349,7 @@ namespace DarkReign.Launcher
 			try
 			{
 				settings.Save();
+				shellSettings.Save();
 				return true;
 			}
 			catch (Exception e)
@@ -489,6 +492,7 @@ namespace DarkReign.Launcher
 			if (!settings.HasUIScale)
 				settings.UIScale = SuggestedScale(CurrentDisplay, CurrentDisplay.Native);
 
+			shellSettings = ShellSettings.Load();
 			ShowSettings();
 			ShowPage(SettingsPage);
 		}
@@ -507,6 +511,7 @@ namespace DarkReign.Launcher
 			var display = CurrentDisplay;
 			settings = new GraphicsSettings { VideoDisplay = display.Index };
 			settings.UIScale = SuggestedScale(display, display.Native);
+			shellSettings = new ShellSettings();
 			ShowSettings();
 		}
 
@@ -545,6 +550,12 @@ namespace DarkReign.Launcher
 		{
 			if (!updating)
 				settings.VSync = VSyncBox.IsChecked == true;
+		}
+
+		void OnFastTransitionsChanged(object sender, RoutedEventArgs e)
+		{
+			if (!updating)
+				shellSettings.FastTransitions = FastTransitionsBox.IsChecked == true;
 		}
 
 		static void OpenLogs()

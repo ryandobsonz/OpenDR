@@ -1,5 +1,6 @@
 ^ExistsInWorld:
 	AppearsOnRadar:
+	DrCountsInStatistics:
 	CombatDebugOverlay:
 	GivesExperience:
 		PlayerExperienceModifier: 1

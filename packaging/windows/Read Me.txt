@@ -42,8 +42,10 @@ SETTINGS in the launcher chooses:
   Battlefield zoom  How much of the battlefield is in view. Close is about
                     the original game's 640 x 480 view
   VSync             Matches the screen's refresh rate
+  Menus             Faster cube turns, the 1.8.2 patch's (on by default);
+                    off plays the original's slower turns
 
-The game's own Settings > Display menu changes the same values.
+The game's own Settings > Display menu changes the display values too.
 
 
 WHERE THINGS ARE

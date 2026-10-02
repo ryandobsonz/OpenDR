@@ -104,6 +104,7 @@ namespace OpenRA.Mods.Dr.Traits.Production
 				new LocationInit(self.Location),
 				new OwnerInit(owner),
 				new PlaceBuildingInit(),
+				new CompletedConstructionInit(),
 			});
 
 			// Copy rally point
