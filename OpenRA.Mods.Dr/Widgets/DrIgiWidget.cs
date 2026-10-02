@@ -612,7 +612,11 @@ namespace OpenRA.Mods.Dr.Widgets
 	/// </summary>
 	public class DrIgiTeamLightsWidget : DrIgiAreaWidget
 	{
+		/// <summary>How bright a team's light is: 0 off, 1 lit, 2 and 3 brighter.</summary>
 		public Func<int, int> GetLight = _ => 0;
+
+		/// <summary>A team's colour, which a lit light takes as the original remaps its magenta.</summary>
+		public Func<int, Color?> GetColor = _ => null;
 
 		public override bool HandleMouseInput(MouseInput mi) => EventBounds.Contains(mi.Location);
 
@@ -621,12 +625,19 @@ namespace OpenRA.Mods.Dr.Widgets
 			if (Art == null)
 				return;
 
+			// As 0x42d300 draws them: each place in the 4x2 grid has its own frame, four for each brightness.
 			var origin = RenderBounds.Location;
 			for (var team = 0; team < 8; team++)
 			{
-				var frame = GetLight(team);
+				var light = Math.Clamp(GetLight(team), 0, 3);
+				var color = light > 0 ? GetColor(team) : null;
 				var position = origin + new float2(team % 4 * 13, team / 4 * 17) * Scale;
-				Igi.DrawSprite(Art.GetRegion("TEAMPIC.BMP", new Rectangle(frame * 13, team / 4 * 17, 13, 17)), position);
+				var sprite = Art.GetRegion("TEAMPIC.BMP", new Rectangle((light * 4 + team % 4) * 13, team / 4 * 17, 13, 17), color != null);
+				var size = sprite.Size.XY * Scale;
+				if (color is Color c)
+					DrShellArt.DrawQuad(sprite, position, size, new float3(c.R, c.G, c.B) / 255f);
+				else
+					Igi.DrawSprite(sprite, position);
 			}
 		}
 	}

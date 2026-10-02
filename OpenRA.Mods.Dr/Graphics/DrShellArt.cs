@@ -39,10 +39,13 @@ namespace OpenRA.Mods.Dr.Graphics
 
 		public bool Contains(string name) => library.Contains(name);
 
-		/// <summary>An image cut into equal frames, stacked vertically unless horizontal. Colour 0 is transparent unless opaque.</summary>
-		public Sprite[] GetFrames(string name, int count = 1, bool horizontal = false, bool opaque = false)
+		/// <summary>
+		/// An image cut into equal frames, stacked vertically unless horizontal. Colour 0 is transparent unless
+		/// opaque. Remappable turns the original's team colour (its magenta) grey, to be drawn tinted by a team's.
+		/// </summary>
+		public Sprite[] GetFrames(string name, int count = 1, bool horizontal = false, bool opaque = false, bool remappable = false)
 		{
-			var key = $"{name}:{count}:{horizontal}:{opaque}";
+			var key = $"{name}:{count}:{horizontal}:{opaque}:{remappable}";
 			if (images.TryGetValue(key, out var cached))
 				return cached.Frames;
 
@@ -50,7 +53,7 @@ namespace OpenRA.Mods.Dr.Graphics
 			var k = Upscale;
 			var sheet = NewSheet(image.Width * k, image.Height * k);
 			var data = sheet.GetData();
-			Blit(image, new Rectangle(0, 0, image.Width, image.Height), data, sheet.Size.Width, 0, 0, k, opaque);
+			Blit(image, new Rectangle(0, 0, image.Width, image.Height), data, sheet.Size.Width, 0, 0, k, opaque, remappable);
 			var frames = new Sprite[count];
 			var fw = horizontal ? image.Width / count : image.Width;
 			var fh = horizontal ? image.Height : image.Height / count;
@@ -67,18 +70,18 @@ namespace OpenRA.Mods.Dr.Graphics
 
 		public Sprite Get(string name) => GetFrames(name)[0];
 
-		readonly Dictionary<(string, Rectangle), Sprite> regions = [];
+		readonly Dictionary<(string, Rectangle, bool), Sprite> regions = [];
 
 		/// <summary>A rectangle of an image, in its own pixels: the interface cuts frames of several sizes from one strip.</summary>
-		public Sprite GetRegion(string name, Rectangle r)
+		public Sprite GetRegion(string name, Rectangle r, bool remappable = false)
 		{
-			if (regions.TryGetValue((name, r), out var sprite))
+			if (regions.TryGetValue((name, r, remappable), out var sprite))
 				return sprite;
 
-			var image = Get(name);
+			var image = GetFrames(name, remappable: remappable)[0];
 			var k = Upscale;
 			sprite = new Sprite(image.Sheet, new Rectangle(image.Bounds.X + r.X * k, image.Bounds.Y + r.Y * k, r.Width * k, r.Height * k), TextureChannel.RGBA, 1f / k);
-			regions[(name, r)] = sprite;
+			regions[(name, r, remappable)] = sprite;
 			return sprite;
 		}
 
@@ -101,7 +104,7 @@ namespace OpenRA.Mods.Dr.Graphics
 
 				images[key].Sheet.Dispose();
 				images.Remove(key);
-				foreach (var region in new List<(string, Rectangle)>(regions.Keys))
+				foreach (var region in new List<(string, Rectangle, bool)>(regions.Keys))
 					if (region.Item1 == name)
 						regions.Remove(region);
 			}
@@ -113,7 +116,7 @@ namespace OpenRA.Mods.Dr.Graphics
 			return new Sheet(SheetType.BGRA, new Size(Exts.NextPowerOf2(width), Exts.NextPowerOf2(height)));
 		}
 
-		internal static void Blit(DrShellImage image, Rectangle source, byte[] data, int stride, int x0, int y0, int k, bool opaque = false)
+		internal static void Blit(DrShellImage image, Rectangle source, byte[] data, int stride, int x0, int y0, int k, bool opaque = false, bool remappable = false)
 		{
 			for (var y = 0; y < source.Height; y++)
 			{
@@ -122,6 +125,13 @@ namespace OpenRA.Mods.Dr.Graphics
 					var c = image.Palette[image.Pixels[(source.Y + y) * image.Width + source.X + x]];
 					if (c.A == 0 && !opaque)
 						continue;
+
+					// The team colour: magenta, its red and blue well over its green.
+					if (remappable && c.R > c.G * 3 / 2 && c.B > c.G * 3 / 2)
+					{
+						var v = Math.Max(c.R, c.B);
+						c = Color.FromArgb(255, v, v, v);
+					}
 
 					for (var dy = 0; dy < k; dy++)
 					{
@@ -141,13 +151,19 @@ namespace OpenRA.Mods.Dr.Graphics
 		/// <summary>Draws a sprite into a screen rectangle, faded by alpha.</summary>
 		public static void DrawQuad(Sprite sprite, float2 topLeft, float2 size, float alpha = 1f)
 		{
+			DrawQuad(sprite, topLeft, size, new float3(alpha, alpha, alpha), alpha);
+		}
+
+		/// <summary>Draws a sprite into a screen rectangle, its colours multiplied by the tint.</summary>
+		public static void DrawQuad(Sprite sprite, float2 topLeft, float2 size, float3 tint, float alpha = 1f)
+		{
 			var a = new float3(topLeft, 0);
 			var b = new float3(topLeft.X + size.X, topLeft.Y, 0);
 			var c = new float3(topLeft + size, 0);
 			var d = new float3(topLeft.X, topLeft.Y + size.Y, 0);
 
 			// The renderer blends premultiplied colours, so the colour fades with the alpha.
-			Game.Renderer.RgbaSpriteRenderer.DrawSprite(sprite, a, b, c, d, new float3(alpha, alpha, alpha), alpha);
+			Game.Renderer.RgbaSpriteRenderer.DrawSprite(sprite, a, b, c, d, new float3(tint.X * alpha, tint.Y * alpha, tint.Z * alpha), alpha);
 		}
 
 		internal static void Commit(Sheet sheet)

@@ -241,7 +241,7 @@ The original is 640×480 only: a bar across the top of the map view (0–447,
 | Panel | 448,64 | `MFDBAC1.BMP`, 192×278, under the tab's controls |
 | Build menu | 448,64 | 3×5 slots of 64×50 (`BUISOBOX.BMP`); its bar at 448,314 with the scroll arrows, Upgrade and Decoy |
 | Minimap | 448,342 | `MINIMAP.BMP`, the map inside at 455,351 (126×122); `Static00`–`07` when there is no picture |
-| Team lights | 588,342 | `TEAMPIC.BMP`, a light for each of eight teams |
+| Team lights | 588,342 | `TEAMPIC.BMP`, a light for each of the eight teams in its colour (0x42d300: the magenta remapped): the player's brightest, mutual allies lit, the rest dark. The original also lights a team by a per-team flag not yet decoded |
 | Resource bars | 588,376 | `RESOBARS.BMP`: power left, water right; the second frame, the lightning red, when power is short |
 
 **On a wider screen** the whole is scaled by the screen's height over 480
@@ -306,6 +306,12 @@ move, F formation, T turn, R repair, W rearm, D decoy, N next unit, End,
 Shift+L water sale, Shift+D self destruct) wait for it. OpenRA's hotkeys
 with nothing behind them under this interface (attack move, stances,
 beacons, the production palette and tabs) are off the list.
+
+**The cursors are the original's** (`MOUSE.CRS`): after its 323 frames the
+file lists its 58 cursors, each a hotspot and its frames in the order they
+play, repeats included. `DrCrsLoader` puts the frames out in that order and
+`cursor.yaml` gives each OpenRA cursor one of them, its comments naming
+which.
 
 Controls not working yet are drawn as the original drew a disabled button:
 red. Tips appear in

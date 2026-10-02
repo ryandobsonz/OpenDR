@@ -9,7 +9,6 @@
  */
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using OpenRA.Graphics;
@@ -17,149 +16,66 @@ using OpenRA.Primitives;
 
 namespace OpenRA.Mods.Dr.SpriteLoaders
 {
+	/// <summary>
+	/// The original's cursors (graphics/INTFACE/MOUSE.CRS, read by Cursor.c in dkreign.exe): "CRSR", version
+	/// 0x200, the number of 32x32 frames and the frames, then the cursors: their number, and for each its
+	/// hotspot, its number of frames and the frames in the order they play, repeats included. The frames come
+	/// out cursor after cursor in that order, so cursor.yaml's sequences are the file's own cursors.
+	/// </summary>
 	public class DrCrsLoader : ISpriteLoader
 	{
-		CrsHeader header;
+		const int Width = 32;
 
-		class CrsHeader
+		sealed class DrCrsFrame : ISpriteFrame
 		{
-			public string Magic1;
-			public int Version;
-			public int Nanims;
-		}
+			public SpriteFrameType Type => SpriteFrameType.Indexed8;
+			public Size Size => new(Width, Width);
+			public Size FrameSize => Size;
+			public float2 Offset => float2.Zero;
+			public byte[] Data { get; }
+			public bool DisableExportPadding => false;
 
-		class DrCrsFrame : ISpriteFrame
-		{
-			public SpriteFrameType Type { get; }
-			public Size Size { get; }
-			public Size FrameSize { get; }
-			public float2 Offset { get; }
-			public byte[] Data { get; set; }
-			public bool DisableExportPadding { get { return false; } }
-
-			public DrCrsFrame(Stream s)
+			public DrCrsFrame(byte[] data)
 			{
-				const int Width = 32;
-				const int NumPixels = Width * Width;
-				Type = SpriteFrameType.Indexed8;
-				Data = new byte[NumPixels];
-
-				var pixindex = new Func<int, int, int>((x, y) => y * Width + x);
-
-				for (var y = 0; y < Width; ++y)
-				{
-					for (var x = 0; x < Width; ++x)
-					{
-						var newIndex = pixindex(x, y);
-						Data[newIndex] = s.ReadUInt8();
-					}
-				}
-
-				Offset = new float2(0, 0);
-				FrameSize = new Size(Width, Width);
-				Size = FrameSize;
+				Data = data;
 			}
-		}
-
-		bool IsDrCrs(Stream s)
-		{
-			var start = s.Position;
-			var h = new CrsHeader()
-			{
-				Magic1 = s.ReadASCII(4),
-				Version = s.ReadInt32(),
-				Nanims = s.ReadInt32()
-			};
-
-			if (h.Magic1 != "CRSR")
-			{
-				s.Position = start;
-				return false;
-			}
-
-			if (h.Version != 0x200)
-			{
-				s.Position = start;
-				return false;
-			}
-
-			header = h;
-
-			return true;
-		}
-
-		DrCrsFrame[] ParseFrames(Stream s)
-		{
-			var start = s.Position;
-
-			var frames = new List<DrCrsFrame>();
-			for (var i = 0; i < header.Nanims; ++i)
-			{
-				var frame = new DrCrsFrame(s);
-				frames.Add(frame);
-			}
-
-			frames.Reverse(19, 9);
-			frames.Reverse(28, 4);
-			frames.Reverse(32, 8);
-			frames.Reverse(40, 10);
-			frames.Reverse(50, 7);
-			frames.Reverse(62, 6);
-			frames.Reverse(68, 8);
-			frames.Reverse(76, 8);
-			frames.Reverse(90, 6);
-			frames.Reverse(96, 8);
-			frames.Reverse(104, 8);
-			frames.Reverse(112, 4);
-			frames.Reverse(116, 4);
-			frames.Reverse(120, 4);
-			frames.Reverse(124, 4);
-			frames.Reverse(128, 7);
-			frames.Reverse(135, 7);
-			frames.Reverse(142, 7);
-			frames.Reverse(149, 7);
-			frames.Reverse(156, 7);
-			frames.Reverse(163, 7);
-			frames.Reverse(170, 7);
-			frames.Reverse(177, 7);
-			frames.Reverse(185, 9);
-			frames.Reverse(194, 7);
-			frames.Reverse(202, 8);
-			frames.Reverse(210, 5);
-			frames.Reverse(215, 5);
-			frames.Reverse(229, 11);
-			frames.Reverse(240, 11);
-			frames.Reverse(251, 8);
-			frames.Reverse(263, 8);
-			frames.Reverse(279, 9);
-
-			var isDemo = frames.Count < 296;
-			if (!isDemo)
-			{
-				var cursor1 = frames[304];
-				var cursor2 = frames[321];
-				var cursor3 = frames[322];
-				frames.RemoveAt(304);
-				frames.RemoveRange(320, 2);
-				frames.InsertRange(288, new[] { cursor1, cursor2, cursor3 });
-
-				frames.Reverse(291, 8);
-			}
-
-			s.Position = start;
-			return frames.ToArray();
 		}
 
 		public bool TryParseSprite(Stream s, string filename, out ISpriteFrame[] frames, out TypeDictionary metadata)
 		{
 			metadata = null;
-			if (!IsDrCrs(s))
+			frames = null;
+			var start = s.Position;
+			if (s.Length - start < 12 || s.ReadASCII(4) != "CRSR" || s.ReadInt32() != 0x200)
 			{
-				frames = null;
+				s.Position = start;
 				return false;
 			}
 
-			frames = ParseFrames(s);
+			var count = s.ReadInt32();
+			var images = new DrCrsFrame[count];
+			for (var i = 0; i < count; i++)
+				images[i] = new DrCrsFrame(s.ReadBytes(Width * Width));
+
+			// The demo's file has no cursor table: its frames as they are.
+			if (s.Position + 4 > s.Length)
+			{
+				frames = images;
+				return true;
+			}
+
+			var played = new List<ISpriteFrame>();
+			var cursors = s.ReadInt32();
+			for (var c = 0; c < cursors; c++)
+			{
+				s.ReadInt32();
+				s.ReadInt32();
+				var length = s.ReadInt32();
+				for (var f = 0; f < length; f++)
+					played.Add(images[s.ReadInt32()]);
+			}
+
+			frames = played.ToArray();
 			return true;
 		}
 	}

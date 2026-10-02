@@ -19,6 +19,7 @@ using OpenRA.Mods.Common.Traits;
 using OpenRA.Mods.Common.Widgets;
 using OpenRA.Mods.Dr.Orders;
 using OpenRA.Mods.Dr.Traits;
+using OpenRA.Mods.Dr.UtilityCommands;
 using OpenRA.Orders;
 using OpenRA.Traits;
 using OpenRA.Widgets;
@@ -720,9 +721,23 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			bars.GetWater = () => water == null ? 0 : water.WaterPercentage / 100f;
 			bars.GetTooltip = () => power == null ? null : $"{power.PowerDrained}/{power.PowerProvided}";
 
-			var players = world.Players.Where(p => !p.NonCombatant && p.Playable || p.IsBot).Take(8).ToArray();
-			widget.Get<DrIgiTeamLightsWidget>("TEAM_LIGHTS").GetLight = team =>
-				team < players.Length && players[team].WinState == WinState.Undefined ? (players[team] == player ? 12 : 8) : 0;
+			// A light for each of the original's eight teams, in its colour: the player's own brightest, mutual
+			// allies lit, the rest dark (0x42d300). A converted mission's players are its teams; elsewhere the
+			// players in order.
+			var teams = Enumerable.Range(0, 8).Select(t => world.Players.FirstOrDefault(p => p.InternalName == ImportDrCampaignCommand.TeamName(t))).ToArray();
+			if (teams.All(p => p == null))
+				teams = world.Players.Where(p => !p.NonCombatant && p.Playable || p.IsBot).Take(8).Concat(new Player[8]).Take(8).ToArray();
+
+			var lights = widget.Get<DrIgiTeamLightsWidget>("TEAM_LIGHTS");
+			lights.GetColor = team => teams[team]?.Color;
+			lights.GetLight = team =>
+			{
+				var p = teams[team];
+				if (p == null || p.WinState == WinState.Lost)
+					return 0;
+
+				return p == player ? 3 : p.IsAlliedWith(player) && player.IsAlliedWith(p) ? 1 : 0;
+			};
 		}
 	}
 }

@@ -1,224 +1,266 @@
+# The original's cursors, as MOUSE.CRS defines them (DrCrsLoader): each sequence is one of its 58 cursors,
+# its frames in the order they play and its hotspot (X, Y from the frame's middle). The comments name them.
 Cursors:
 	mouse.crs: cursor
-		default:
-			#Start: 322 # Not in demo
-			Start: 290
-			Length: 1
-			X: -15
-			Y: -15
-		scroll-t:
-			Start: 177
+		default: # 0: the arrow
+			Start: 0
+			X: -14
+			Y: -14
+		scroll-t: # 43: scroll up
+			Start: 393
 			Length: 7
-		scroll-tr:
-			Start: 142
+			Y: -16
+		scroll-tr: # 46: scroll up right
+			Start: 414
 			Length: 7
-		scroll-r:
-			Start: 156
+			X: 15
+			Y: -16
+		scroll-r: # 42: scroll right
+			Start: 386
 			Length: 7
-		scroll-br:
-			Start: 128
+			X: 15
+		scroll-br: # 48: scroll down right
+			Start: 428
 			Length: 7
-		scroll-b:
-			Start: 170
+			X: 15
+			Y: 15
+		scroll-b: # 44: scroll down
+			Start: 400
 			Length: 7
-		scroll-bl:
-			Start: 135
+			Y: 15
+		scroll-bl: # 47: scroll down left
+			Start: 421
 			Length: 7
-		scroll-l:
-			Start: 163
+			X: -16
+			Y: 15
+		scroll-l: # 41: scroll left
+			Start: 379
 			Length: 7
-		scroll-tl:
-			Start: 149
+			X: -16
+		scroll-tl: # 45: scroll up left
+			Start: 407
 			Length: 7
-		scroll-t-blocked:
-			Start: 124
+			X: -16
+			Y: -16
+		scroll-t-blocked: # 51: blocked up
+			Start: 443
 			Length: 4
-		scroll-tr-blocked:
-			Start: 112
+			Y: -16
+		scroll-tr-blocked: # 51: blocked up
+			Start: 443
 			Length: 4
-		scroll-r-blocked:
-			Start: 112
+			Y: -16
+		scroll-r-blocked: # 50: blocked right
+			Start: 439
 			Length: 4
-		scroll-br-blocked:
-			Start: 120
+			X: 15
+		scroll-br-blocked: # 52: blocked down
+			Start: 447
 			Length: 4
-		scroll-b-blocked:
-			Start: 120
+			Y: 15
+		scroll-b-blocked: # 52: blocked down
+			Start: 447
 			Length: 4
-		scroll-bl-blocked:
-			Start: 116
+			Y: 15
+		scroll-bl-blocked: # 49: blocked left
+			Start: 435
 			Length: 4
-		scroll-l-blocked:
-			Start: 116
+			X: -16
+		scroll-l-blocked: # 49: blocked left
+			Start: 435
 			Length: 4
-		scroll-tl-blocked:
-			Start: 124
+			X: -16
+		scroll-tl-blocked: # 51: blocked up
+			Start: 443
 			Length: 4
-		select:
-			Start: 279
+			Y: -16
+		select: # 24: select
+			Start: 257
 			Length: 9
-		default-minimap:
-			#Start: 322 # Not in demo
-			Start: 290
-			Length: 1
-		generic-blocked:
-			Start: 259
+		default-minimap: # 0: the arrow
+			Start: 0
+			X: -14
+			Y: -14
+		generic-blocked: # 2: no
+			Start: 9
 			Length: 4
-		generic-blocked-minimap:
-			Start: 259
-			Length: 1
-		move:
-			Start: 263
-			Length: 8 # should be 8 but getting error initializing hardware cursor Error was: Failed to create hardware cursor `move` - Failed to create cursor: CreateIconIndirect(): The parameter is incorrect.
-		move-minimap:
-			Start: 263
-			Length: 8
-		move-rough:
-			Start: 263
-			Length: 8
-		move-blocked:
-			Start: 259
+		generic-blocked-minimap: # 2: no
+			Start: 9
 			Length: 4
-		move-blocked-minimap:
-			Start: 259
+		move: # 1: move
+			Start: 1
+			Length: 8
+		move-minimap: # 1: move
+			Start: 1
+			Length: 8
+		move-rough: # 1: move
+			Start: 1
+			Length: 8
+		move-blocked: # 2: no
+			Start: 9
 			Length: 4
-		attack:
-			Start: 271
-			Length: 8
-		attack-minimap:
-			Start: 271
-			Length: 8
-		attackoutsiderange:
-			Start: 271
-			Length: 8
-		attackoutsiderange-minimap:
-			Start: 271
-			Length: 8
-		attackmove:
-			Start: 271
-			Length: 8
-		attackmove-minimap:
-			Start: 271
-			Length: 8
-		attackmove-blocked:
-			Start: 259
+		move-blocked-minimap: # 2: no
+			Start: 9
 			Length: 4
-		attackmove-blocked-minimap:
-			Start: 259
+		attack: # 4: attack
+			Start: 23
+			Length: 8
+		attack-minimap: # 4: attack
+			Start: 23
+			Length: 8
+		attackoutsiderange: # 4: attack
+			Start: 23
+			Length: 8
+		attackoutsiderange-minimap: # 4: attack
+			Start: 23
+			Length: 8
+		attackmove: # 4: attack
+			Start: 23
+			Length: 8
+		attackmove-minimap: # 4: attack
+			Start: 23
+			Length: 8
+		attackmove-blocked: # 2: no
+			Start: 9
 			Length: 4
-		assaultmove:
-			Start: 271
-			Length: 8
-		assaultmove-minimap:
-			Start: 271
-			Length: 8
-		assaultmove-blocked:
-			Start: 259
+		attackmove-blocked-minimap: # 2: no
+			Start: 9
 			Length: 4
-		assaultmove-blocked-minimap:
-			Start: 259
+		assaultmove: # 4: attack
+			Start: 23
+			Length: 8
+		assaultmove-minimap: # 4: attack
+			Start: 23
+			Length: 8
+		assaultmove-blocked: # 2: no
+			Start: 9
 			Length: 4
-		harvest:
-			Start: 68
+		assaultmove-blocked-minimap: # 2: no
+			Start: 9
+			Length: 4
+		harvest: # 22: harvest
+			Start: 231
 			Length: 8
-		harvest-minimap:
-			Start: 68
+		harvest-minimap: # 22: harvest
+			Start: 231
 			Length: 8
-		enter:
-			Start: 240
+		enter: # 7: enter
+			Start: 43
+			Length: 15
+		enter-minimap: # 7: enter
+			Start: 43
+			Length: 15
+		enter-blocked: # 2: no
+			Start: 9
+			Length: 4
+		enter-blocked-minimap: # 2: no
+			Start: 9
+			Length: 4
+		c4: # 11: plant
+			Start: 101
 			Length: 11
-		enter-minimap:
-			Start: 240
+		c4-minimap: # 11: plant
+			Start: 101
 			Length: 11
-		enter-blocked:
-			Start: 259
-			Length: 4
-		enter-blocked-minimap:
-			Start: 259
-			Length: 4
-		c4:
-			Start: 40
-			Length: 10
-		c4-minimap:
-			Start: 40
-			Length: 10
-		guard:
-			Start: 251
+		guard: # 6: guard
+			Start: 35
 			Length: 8
-		guard-minimap:
-			Start: 251
+		guard-minimap: # 6: guard
+			Start: 35
 			Length: 8
-		capture:
-			Start: 62
-			Length: 6
-		capture-minimap:
-			Start: 62
-			Length: 6
-		heal:
-			Start: 210
+		capture: # 23: capture
+			Start: 239
+			Length: 18
+		capture-minimap: # 23: capture
+			Start: 239
+			Length: 18
+		heal: # 18: heal
+			Start: 195
 			Length: 5
-		heal-minimap:
-			Start: 210
+			X: 4
+			Y: 5
+		heal-minimap: # 18: heal
+			Start: 195
 			Length: 5
-		ability:
-			Start: 263
+			X: 4
+			Y: 5
+		ability: # 1: move
+			Start: 1
 			Length: 8
-		ability-minimap:
-			Start: 263
+		ability-minimap: # 1: move
+			Start: 1
 			Length: 8
-		joystick-all:
+		joystick-all: # 0: the arrow
 			Start: 0
-		joystick-t-blocked:
+			X: -14
+			Y: -14
+		joystick-t-blocked: # 0: the arrow
 			Start: 0
-		joystick-tr-blocked:
+			X: -14
+			Y: -14
+		joystick-tr-blocked: # 0: the arrow
 			Start: 0
-		joystick-r-blocked:
+			X: -14
+			Y: -14
+		joystick-r-blocked: # 0: the arrow
 			Start: 0
-		joystick-br-blocked:
+			X: -14
+			Y: -14
+		joystick-br-blocked: # 0: the arrow
 			Start: 0
-		joystick-b-blocked:
+			X: -14
+			Y: -14
+		joystick-b-blocked: # 0: the arrow
 			Start: 0
-		joystick-bl-blocked:
+			X: -14
+			Y: -14
+		joystick-bl-blocked: # 0: the arrow
 			Start: 0
-		joystick-l-blocked:
+			X: -14
+			Y: -14
+		joystick-l-blocked: # 0: the arrow
 			Start: 0
-		joystick-tl-blocked:
+			X: -14
+			Y: -14
+		joystick-tl-blocked: # 0: the arrow
 			Start: 0
-		deploy: # Cursors that need minimap variants
-			Start: 229
-			Length: 11
-		deploy-blocked:
-			Start: 259
+			X: -14
+			Y: -14
+		deploy: # 8: deploy
+			Start: 58
+			Length: 13
+		deploy-blocked: # 2: no
+			Start: 9
 			Length: 4
-		goldwrench:
-			Start: 220
+		goldwrench: # 27: repair building
+			Start: 286
+			Length: 14
+		goldwrench-blocked: # 2: no
+			Start: 9
+			Length: 4
+		nuke: # 35: target
+			Start: 354
 			Length: 9
-		goldwrench-blocked:
-			Start: 259
+		sell: # 25: sell
+			Start: 266
+			Length: 12
+		sell-blocked: # 2: no
+			Start: 9
 			Length: 4
-		nuke:
-			Start: 185
-			Length: 9
-		sell:
-			Start: 96
-			Length: 8
-		sell-blocked:
-			Start: 259
-			Length: 4
-		repair:
-			Start: 215
+		repair: # 17: repair
+			Start: 190
 			Length: 5
-		repair-blocked:
-			Start: 259
+			X: 4
+			Y: 5
+		repair-blocked: # 2: no
+			Start: 9
 			Length: 4
-		sell2:
-			Start: 96
+		sell2: # 25: sell
+			Start: 266
+			Length: 12
+		powerdown: # 26: power down
+			Start: 278
 			Length: 8
-		powerdown:
-			#Start: 291 # Not in demo
-			#Length: 8
-			Start: 76
-			Length: 8
-		powerdown-blocked:
-			Start: 259
+		powerdown-blocked: # 2: no
+			Start: 9
 			Length: 4

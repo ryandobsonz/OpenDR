@@ -217,9 +217,11 @@ comes first; a human playthrough then decides what matters next.
 
 1. **The in-game interface on the campaign's path**
    ([CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface) says what works):
-   - Cursors from `graphics/INTFACE/MOUSE.CRS` (already installed), the
-     tooltips' exact place (`PT.BMP` is drawn at 639−171 by 0x428a40), the
-     team lights' colours, the minimap's scroll arrows (`MM*.BMP`).
+   - Left over, small: the tooltip strip's place (`PT.BMP` is drawn
+     right-aligned at x 468 by 0x428a40, its y from a caller reached through a
+     pointer, not yet found; ours sits under the control), and the minimap's
+     scroll arrows (`MM*.BMP`), which have nothing to do while OpenRA's
+     minimap shows the whole map.
    - Then `wintest.ps1` again (not run since the interface landed) and a new
      package, so the user plays a current build.
 2. **A human playthrough** of M01–M04 on both sides. Nothing has been played
