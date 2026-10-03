@@ -85,6 +85,12 @@ namespace OpenRA.Mods.Dr.FileFormats
 		public readonly Dictionary<int, DrSpecialForces> SpecialForces = new();
 		public readonly Dictionary<int, DrPatrol> Patrols = new();
 
+		/// <summary>SetTactAI by unit id: tenacity (pursuit), self preservation (2 - damage tolerance), autonomy (independence).</summary>
+		public readonly Dictionary<int, (int Tenacity, int SelfPreservation, int Autonomy)> Tactics = new();
+
+		/// <summary>SetSOrderAutoMove by unit id: 0 Scout, 1 Harass, 2 Search &amp; Destroy (as dkreign.exe's IGI_ORORD1-3).</summary>
+		public readonly Dictionary<int, int> AutoMoves = new();
+
 		public DrScenario(Stream s)
 		{
 			var currentTeam = 0;
@@ -156,6 +162,14 @@ namespace OpenRA.Mods.Dr.FileFormats
 						patrol.Points.Add((node.IntArg(2), node.IntArg(3)));
 						break;
 					}
+
+					case "settactai":
+						Tactics[node.IntArg(0)] = (node.IntArg(1), node.IntArg(2), node.IntArg(3));
+						break;
+
+					case "setsorderautomove":
+						AutoMoves[node.IntArg(0)] = node.IntArg(1);
+						break;
 
 					case "setsordertrail":
 						if (Patrols.TryGetValue(node.IntArg(0), out var trail))

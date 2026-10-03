@@ -21,6 +21,7 @@ Player:
 		CashTickUpNotification: CashTickUp
 		CashTickDownNotification: CashTickDown
 	DrPlayerResources:
+	DrTacticsDefaults:
 	ClassicProductionQueue@DummyQueue:
 		Type: Dummy
 		Group: Dummy

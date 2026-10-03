@@ -8,6 +8,8 @@
 ^CivilianBuilding:
 	Inherits@1: ^ExistsInWorld
 	Inherits@3: ^SpriteActor
+	DrCallsForHelp:
+		Radius: 6
 	MapEditorData:
 		Categories: CivBuilding
 	RepairableBuilding:
@@ -62,6 +64,8 @@
 ^SelfConstructingBuilding:
 	Inherits@1: ^ExistsInWorld
 	Inherits@3: ^SpriteActor
+	DrCallsForHelp:
+		Radius: 6
 	ActorPreviewPlaceBuildingPreview:
 	Buildable:
 		BuildDurationModifier: 2486 # DR build rate

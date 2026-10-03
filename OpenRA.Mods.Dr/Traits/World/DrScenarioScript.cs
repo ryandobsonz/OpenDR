@@ -206,6 +206,15 @@ namespace OpenRA.Mods.Dr.Traits
 				if (kv.Value.Points.Count > 0 && actorsById.TryGetValue(kv.Key, out var a) && a.Info.HasTraitInfo<IMoveInfo>())
 					patrols[a] = (kv.Value, 0, 1);
 
+			// The units' behaviour (SetTactAI) and standing orders (SetSOrderAutoMove).
+			foreach (var kv in scenario.Tactics)
+				if (actorsById.TryGetValue(kv.Key, out var a))
+					a.TraitOrDefault<DrTactics>()?.SetTactAI(kv.Value.Tenacity, kv.Value.SelfPreservation, kv.Value.Autonomy);
+
+			foreach (var kv in scenario.AutoMoves)
+				if (kv.Value is >= 0 and <= 2 && actorsById.TryGetValue(kv.Key, out var a))
+					a.TraitOrDefault<DrTactics>()?.SetOrder(DrUnitOrder.Scout + kv.Value);
+
 			if (map.Package.Contains("plans.txt"))
 			{
 				using (var s = map.Open("plans.txt"))
@@ -447,6 +456,7 @@ namespace OpenRA.Mods.Dr.Traits
 
 				var (patrol, next, step) = patrols[a];
 				var (x, y) = patrol.Points[next];
+				a.TraitOrDefault<DrTactics>()?.Ordered();
 				a.QueueActivity(new AttackMoveActivity(a, () => a.Trait<IMove>().MoveTo(DrScenario.TileToCell(x, y), 2)));
 
 				var count = patrol.Points.Count;
@@ -695,6 +705,8 @@ namespace OpenRA.Mods.Dr.Traits
 				var cell = new CPos(world.SharedRandom.Next(tl.X, br.X + 1), world.SharedRandom.Next(tl.Y, br.Y + 1));
 				patrols.Remove(a);
 				a.CancelActivity();
+				a.TraitOrDefault<DrTactics>()?.SetOrder(DrUnitOrder.None);
+				a.TraitOrDefault<DrTactics>()?.Ordered();
 				a.QueueActivity(new AttackMoveActivity(a, () => move.MoveTo(cell, 2)));
 			}
 		}

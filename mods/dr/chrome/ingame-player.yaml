@@ -75,6 +75,10 @@ Container@PLAYER_WIDGETS:
 			Height: WINDOW_HEIGHT
 			Children:
 				LogicKeyListener@IGI_KEYS:
+				# The path being laid on the PATHS tab, over the map and under the interface.
+				DrIgiPathOverlay@PATH_OVERLAY:
+					Width: WINDOW_WIDTH
+					Height: WINDOW_HEIGHT
 				# The top bar: Sell/Cancel, Power, Repair; the credits; Attack, Attack Without Moving, Stop.
 				DrIgiTopBar@TOP_BAR:
 					Tooltip: MLS_DISP_CREDIT
@@ -302,14 +306,17 @@ Container@PLAYER_WIDGETS:
 							Area: 478, 118, 0, 0
 							Size: Small
 							Label: IGI_ORORD1
+							Tooltip: OrderScoutTip
 						DrIgiButton@HARASS:
 							Area: 559, 118, 0, 0
 							Size: Small
 							Label: IGI_ORORD2
+							Tooltip: OrderHarassTip
 						DrIgiButton@SEARCH_DESTROY:
 							Area: 502, 143, 0, 0
 							Size: Medium
 							Label: IGI_ORORD3
+							Tooltip: OrderSearchTip
 						DrIgiLabel@BEHAVIOURS_TITLE:
 							Area: 448, 171, 192, 16
 							Text: MLS_DISP_BEHAVIOURS
@@ -318,44 +325,45 @@ Container@PLAYER_WIDGETS:
 							Area: 478, 190, 0, 0
 							Size: Small
 							Label: IGI_ORPRE1
+							Tooltip: OrderBehavGuardTip
 						DrIgiButton@PURSUE:
 							Area: 559, 190, 0, 0
 							Size: Small
 							Label: IGI_ORPRE2
+							Tooltip: OrderBehavPursueTip
 						DrIgiButton@DEFAULT:
 							Area: 502, 215, 0, 0
 							Size: Medium
 							Label: IGI_ORPRE3
+							Tooltip: OrderBehavDefaultTip
 						Container@ORDERS_ADVANCED_PANEL:
 							Children:
 								DrIgiLabel@PURSUIT_TITLE:
 									Area: 456, 240, 90, 22
 									Text: MLS_DISP_PURSUIT
-								DrIgiImage@PURSUIT:
+								DrIgiLevel@PURSUIT:
 									Area: 548, 240, 90, 22
-									Image: ORLMH.BMP
-									Source: 0, 0, 90, 22
+									Tooltips: OrderPRLowTip, OrderPRMedTip, OrderPRHighTip
 								DrIgiLabel@DAMAGE_TITLE:
 									Area: 456, 262, 90, 14
 									Text: MLS_DISP_DAMAGE
 								DrIgiLabel@TOLERANCE_TITLE:
 									Area: 456, 276, 90, 14
 									Text: MLS_DISP_TOLERANCE
-								DrIgiImage@TOLERANCE:
+								DrIgiLevel@TOLERANCE:
 									Area: 548, 266, 90, 22
-									Image: ORLMH.BMP
-									Source: 0, 0, 90, 22
+									Tooltips: OrderDTLowTip, OrderDTMedTip, OrderDTHighTip
 								DrIgiLabel@INDEPENDENCE_TITLE:
 									Area: 456, 292, 90, 22
 									Text: MLS_DISP_INDEP
-								DrIgiImage@INDEPENDENCE:
+								DrIgiLevel@INDEPENDENCE:
 									Area: 548, 292, 90, 22
-									Image: ORLMH.BMP
-									Source: 0, 0, 90, 22
+									Tooltips: OrderINDLowTip, OrderINDMedTip, OrderINDHighTip
 								DrIgiButton@SET_DEFAULT:
 									Area: 502, 317, 0, 0
 									Size: Medium
 									Label: IGI_ORSETD
+									Tooltip: OrderSetDefaultTip
 				Container@PANEL_PATHS:
 					Children:
 						DrIgiImage@PATHS_TOGGLE:
@@ -375,34 +383,44 @@ Container@PLAYER_WIDGETS:
 							Area: 502, 100, 0, 0
 							Size: Medium
 							Label: IGI_TRMOVE
+							Tooltip: PathWpAddTip
 						DrIgiButton@CLEAR_ALL:
 							Area: 478, 125, 0, 0
 							Size: Small
 							Label: IGI_TRDELA
+							Tooltip: PathWpClearTip
 						DrIgiButton@DELETE_WAYPOINT:
 							Area: 559, 125, 0, 0
 							Size: Small
 							Label: IGI_TRDELO
+							Tooltip: PathWpDeleteTip
 						DrIgiButton@GO:
 							Area: 502, 150, 0, 0
 							Size: Medium
 							Label: IGI_TREXEC
+							Tooltip: PathWpAssignTip
 						Container@PATHS_ADVANCED_PANEL:
 							Children:
 								DrIgiLabel@PATH_DIRECTION_TITLE:
 									Area: 448, 186, 192, 16
 									Text: MLS_DISP_PATHDIR
 									Align: Center
-								DrIgiImage@PATH_DIRECTION:
+								DrIgiLevel@PATH_DIRECTION:
 									Area: 508, 205, 71, 22
 									Image: TRAILMDE.BMP
-									Source: 0, 0, 71, 22
+									Tooltips: PathDirOnceTip, PathDirPingPongTip, PathDirLoopedTip
 								DrIgiLabel@CURRENT_PATH_TITLE:
 									Area: 468, 240, 80, 16
 									Text: MLS_DISP_CURRPATH
 								DrIgiLabel@SAVED_PATHS_TITLE:
 									Area: 555, 240, 80, 16
 									Text: MLS_DISP_SAVEDPATHS
+								# The path's name, which the player can change (zone 0x41, 0x4bdc50), and the saved paths (zone 0x42).
+								DrIgiTextField@CURRENT_PATH:
+									Area: 468, 258, 80, 17
+									MaxLength: 16
+								DrIgiList@SAVED_PATHS:
+									Area: 555, 257, 80, 78
 								DrIgiButton@DESELECT:
 									Area: 468, 280, 0, 0
 									Size: Small

@@ -6,6 +6,7 @@
 		PlayerExperienceModifier: 1
 	ScriptTriggers:
 	RenderDebugState:
+	DrCallsForHelp:
 
 ^SpriteActor:
 	BodyOrientation:
@@ -559,12 +560,20 @@
 		ValidTargets: Infantry, Vehicle, Water, Underwater, Structure, Defense
 		InvalidTargets: NoAutoTarget
 
+# Every unit: what it picks as a target on its own follows its tactics (DrTactics): its independence, and whether
+# it is carrying out an order. Turrets keep ^AutoTargetGround's stances.
 ^AutoTargetGroundAssaultMove:
-	Inherits: ^AutoTargetGround
+	AutoTarget:
+	DrTactics:
+	DrPathFollower:
 	AutoTargetPriority@DEFAULT:
-		RequiresCondition: !stance-attackanything && !assault-move
+		RequiresCondition: tactics-units && !assault-move
+		ValidTargets: Infantry, Vehicle, Water, Underwater
+		InvalidTargets: NoAutoTarget, WaterStructure
 	AutoTargetPriority@ATTACKANYTHING:
-		RequiresCondition: stance-attackanything || assault-move
+		RequiresCondition: tactics-all || assault-move
+		ValidTargets: Infantry, Vehicle, Water, Underwater, Structure, Defense
+		InvalidTargets: NoAutoTarget
 	AttackMove:
 		AssaultMoveCondition: assault-move
 

@@ -268,10 +268,26 @@ and 32 paths, 64 comms, 128 menu, 256 special.
 |---|---|---|
 | BUILD | The build menu: a rig's buildings, else every production building's units; red without the prerequisites, blue when the selected building cannot make it; left click orders one more or resumes, right click pauses then cancels, shift and right click cancels all; a number for those queued, PAUSED, a veil for the time left. Mouse wheel and arrows scroll | All but Decoy (no decoys in OpenDR yet). Upgrade queues the selected building's own upgrade at the headquarters (`upgrade.hq*`, `barracks*`, `assemblyplant*`, `phasing*`), its tip "Upgrade 2050c" |
 | MENU | Sliders for effects, music, game speed and scroll speed (`MEICON.BMP`, `MESLIDE.BMP`); Load/Save Game, Restate Objective, Start Again (Relinquish Control in multiplayer), Abort, Exit To System, the last three behind the original "Are You Sure?" | All but game speed, which OpenRA fixes once a game starts, and Relinquish Control |
-| ORDERS | Basic: Scout, Harass, Search & Destroy; Guard, Pursue, Default. Advanced adds Pursuit Range, Damage Tolerance and Independence (LOW/MED/HIGH, `ORLMH.BMP`) and Set Default | Guard |
-| PATHS | Basic: Add Waypoints, Clear All, Delete, Go. Advanced adds the path direction (one way, patrol, loop: `TRAILMDE.BMP`), the current and saved paths, De-Select, Save Path | None yet |
+| ORDERS | Basic: Scout, Harass, Search & Destroy; Guard, Pursue, Default. Advanced adds Pursuit Range, Damage Tolerance and Independence (LOW/MED/HIGH, `ORLMH.BMP`) and Set Default | All: see [The units' tactics](#the-units-tactics) |
+| PATHS | Basic: Add Waypoints, Clear All, Delete, Go. Advanced adds the path direction (one way, patrol, loop: `TRAILMDE.BMP`), the current and saved paths, De-Select, Save Path | All, as below |
 | SPECIAL | Morph, Unmorph, Phase, Unphase, Self Destruct, Formation Move, Sell Water, Packup/UnPack, Set Exit Point | Set Exit Point (the building's rally point), Sell Water |
 | COMMS | The players with their alliances, giving units or credits, messages to all, none, allies, neutral or enemies | None yet |
+
+**Paths** (`DrWaypointOrderGenerator`, `DrPathFollower`): Add Waypoints
+(the original's mouse mode 6) makes each left click on the map a waypoint of
+the path being laid, numbered and joined by a line over the map while the
+tab is open; a right click or Escape ends it. Delete removes the last
+waypoint; Clear All empties the path being laid, else deletes the chosen
+saved path, else stops the selected units' paths (0x4b7410). Go sends the
+selection along it; a path not saved is then done with. Holding Tab lays
+waypoints and letting go is Go, as the manual has it. Basic paths are one way
+(the manual, p. 50); the advanced page's direction, from `TRAILMDE.BMP`,
+sends units back and forth or round. Save Path keeps the path laid so far
+as "Trail N" (`MLS_EVNT_NEWTRAIL`), or starts a new one to lay; the saved
+paths are listed beside the current one, whose name can be typed over
+(Enter keeps it). A click on a saved path makes it current, a double click
+sends the selection along it, De-Select leaves it. Saved paths last for the
+game, on this player's screen only: a unit given one follows its own copy.
 
 **What the remaster adds to the original's menu** sits behind the MENU
 tab's Basic/Advanced toggle (`BASADV.BMP`, the toggle ORDERS and PATHS
@@ -297,6 +313,7 @@ its button wherever that button's tab is, if the button is enabled.
 | Home | Set Exit Point | Shift+Q | Abort, after "Are You Sure?" |
 | Keypad *, +, − | Stop music, next track, previous | F1 | Settings → Hotkeys, the list of keys |
 | Ctrl+n, n | Make, select tactical group n | Pause | Pause |
+| Tab (held) | Lay waypoints; let go: follow them | | |
 
 OpenRA's own keys stay where they do not clash: Sell (Z), Guard (D), the
 screenshot (Ctrl+P), mute (M), select by type (W), the status bars (comma).
@@ -372,11 +389,55 @@ sharper and larger, not more detailed.
 | Menus | `Widgets/Logic/DrShellLogic.cs` | The original menus and mission ring, from the game's shell art; see [The original menus](#the-original-menus) |
 | Interface | `Widgets/Logic/Ingame/DrIgiLogic.cs` | The original in-game interface over a mission; see [The in-game interface](#the-in-game-interface) |
 | Economy | `Traits/DrFreighter.cs`, `Traits/Buildings/DrRefinery.cs`, `Traits/World/DrResourceLayer.cs` | Water and taelon, as below |
+| Tactics | `Traits/DrTactics.cs` | Every unit's pursuit, damage tolerance, independence and standing orders, as below |
 
 The behaviour follows the game's own AIP manual (the *AIP and Scenario End
 Conditions Guide*), shipped with the game. Its one undocumented criterion,
 `CritONCE`, fires the first time its inner criterion is met and never again:
 the missions loop through states that a latch would re-trigger forever.
+
+### The units' tactics
+
+Every unit carries the original's three behaviour settings and its standing
+orders (`DrTactics`, in `^AutoTargetGroundAssaultMove`, so every unit and none
+of the turrets), set from the ORDERS tab, a scenario's `SetTactAI` and
+`SetSOrderAutoMove`, or the player's defaults. The game manual (pages 52–55)
+says what each does; the AIP manual's "Tactical AI" adds the response to fire.
+
+| Setting | Low | Medium | High |
+|---|---|---|---|
+| Pursuit range | Fires at what comes into range, never moves after it (OpenRA's Defend stance) | Follows an enemy up to 6 cells from its post (the manual's "short distance"; a guess), then goes back | Follows it to the end (Attack Anything), and stays where the fight ends |
+| Damage tolerance | Goes for repair (a field hospital for infantry, a repair bay for vehicles) at half health, the yellow bar | At a quarter, the red bar | Fights to the death |
+| Independence | Picks no target while carrying out an order; standing, picks only units, never a building | Picks units while carrying out an order (turrets fire on the move); standing, buildings too | Picks units and buildings always |
+
+- **The values are dkreign.exe's.** `GENERAL.TXT`'s `SetTactAI(0 2 1)` is
+  every player's default: pursuit low, tolerance high, independence medium
+  (0x457161 stores its middle value as self preservation, 2 − tolerance). A
+  scenario's `SetTactAI(id tenacity selfpreservation autonomy)` (0x4a927b)
+  gives self preservation directly. The tolerance row's cells store 2 − the
+  cell (0x4b7160), the others the cell. The presets are 0x4b6f20 and on:
+  **Guard** pursuit low, tolerance high, independence high; **Pursue** high,
+  high, medium; **Default** the player's defaults, which **Set Default**
+  ("Use as default") replaces with what the rows show.
+- **Standing orders** (`SetSOrderAutoMove` 0, 1, 2 as the buttons' order):
+  **Scout** walks to the nearest of a few reachable unexplored cells, again
+  and again, holding its fire. **Harass** goes for the nearest enemy, fights
+  for 3 seconds from its first shot, falls back 8 cells, waits 2 seconds and
+  goes again. **Search & Destroy** hunts the nearest enemy anywhere (OpenRA's
+  `Hunt`). Pressed again, a lit order is cancelled; any other command ends it.
+- **The response to fire** (`DrCallsForHelp`): a hit unit's allies within 3
+  tiles (6 around a hit building: `SetUnitResponseRadius`,
+  `SetBuildingResponseRadius`) that stand idle with medium or high
+  independence go for the shooter, or run from it if they cannot hurt it.
+  Units carrying out orders ignore it, as the manual's flowchart has them.
+- **A unit's post** is where it last stood with nothing to do. After fighting
+  on its own, or being repaired, a unit with less than high pursuit walks back
+  to it once idle for 40 ticks. A player's or script's command moves the post.
+- Aircraft take the targeting rules only: they keep OpenRA's own idle
+  behaviour. The anti-aircraft vehicles (Flak Jack, MAD) use the air
+  targeting template and have no tactics.
+- The AI's units follow the same rules: its attack groups attack-move, which
+  engages along the way at any setting but low independence.
 
 ### Water and taelon
 
@@ -433,10 +494,13 @@ changes the rate.
   morphing, self destruct, formation moves and packing
   up Freedom Guard buildings. No original campaign mission needs them to be
   won, but the interface has buttons for them (see above) and they are owed.
-- **Units' tactical settings** (`SetTactAI`: pursuit, damage tolerance,
-  independence) are not read, and neither are the player's orders (Scout,
-  Harass, Search & Destroy) or the original's paths: every campaign use sets
-  pursuit medium or high, which OpenRA's default stance already is.
+- **Units' tactics are approximations** of behaviour the manuals describe in
+  words: the medium pursuit distance, the harass timings and the order in
+  which Scout picks unexplored ground are guesses
+  ([The units' tactics](#the-units-tactics)).
+- **Waypoints can't be dragged** once placed, as the manual's could, and a
+  saved path is not shared with the units following it: changing it
+  afterwards does not change their route until Go is pressed again.
 - **The expansion's campaigns** (Rise of the Shadowhand, the Xenite missions)
   convert but lack most of their units and buildings.
 - **A freighter that has nowhere to take its resource turns to the other**

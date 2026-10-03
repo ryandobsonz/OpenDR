@@ -97,8 +97,17 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 
 			// Escape cancels a pending order (a building to place, a target to pick), else opens the menu; the
 			// rest are the original's keyboard commands (BindHotkeys).
+			var addWaypointsKey = modData.Hotkeys["IgiAddWaypoints"];
 			widget.Get<LogicKeyListenerWidget>("IGI_KEYS").AddHandler(e =>
 			{
+				// The waypoint key let go: the selection follows what was laid while it was held.
+				if (e.Event == KeyInputEvent.Up && e.Key == addWaypointsKey.GetValue().Key && world.OrderGenerator is DrWaypointOrderGenerator && missionEnd == null)
+				{
+					FollowPath();
+					world.CancelInputMode();
+					return true;
+				}
+
 				if (e.Event != KeyInputEvent.Down)
 					return false;
 
@@ -205,18 +214,31 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			Press("IgiAttack", "ATTACK");
 			Press("IgiAttackInPlace", "ATTACK_IN_PLACE");
 			Press("Stop", "STOP");
-			Press("Guard", "GUARD");
 			Press("Sell", "SELL");
 			Press("Repair", "REPAIR");
 			Press("PowerDown", "POWER");
 			Press("IgiSetExitPoint", "SET_EXIT_POINT");
 			Press("IgiSellWater", "SELL_WATER");
+			Bind("IgiAddWaypoints", () =>
+			{
+				if (Selected.Any(CanFollowPath) && world.OrderGenerator is not DrWaypointOrderGenerator)
+					AddWaypoints();
+			});
 
 			// As OpenRA's command bar orders them.
 			Bind("Scatter", () => IssueOrders(Selected.Where(a => a.Info.HasTraitInfo<IMoveInfo>()).Select(a => new Order("Scatter", a, false))));
 			Bind("Deploy", () => IssueOrders(Selected
 				.SelectMany(a => a.TraitsImplementing<IIssueDeployOrder>().Where(d => d.CanIssueDeployOrder(a, false)).Select(d => d.IssueDeployOrder(a, false)))
 				.Where(o => o != null)));
+
+			// OpenRA's guard (follow and protect a unit): the original's Guard button is a behaviour preset.
+			static bool CanGuard(Actor a) => a.Info.HasTraitInfo<GuardInfo>() && a.Info.HasTraitInfo<AutoTargetInfo>();
+			Bind("Guard", () =>
+			{
+				var guards = Selected.Where(CanGuard).ToArray();
+				if (guards.Length > 0)
+					world.OrderGenerator = new GuardOrderGenerator(world, guards, "Guard", "guard");
+			});
 		}
 
 		void IssueOrders(IEnumerable<Order> orders)
@@ -684,15 +706,64 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			widget.Get("ORDERS_ADVANCED_PANEL").IsVisible = () => advancedOrders;
 			widget.Get<DrIgiImageWidget>("ORDERS_TOGGLE").GetFrame = () => advancedOrders ? 1 : 0;
 
-			static bool CanGuard(Actor a) => a.Info.HasTraitInfo<GuardInfo>() && a.Info.HasTraitInfo<AutoTargetInfo>();
-			var guard = Button("GUARD");
-			guard.IsDisabled = () => !Selected.Any(CanGuard);
-			guard.IsHighlighted = () => world.OrderGenerator is GuardOrderGenerator;
-			guard.OnClick = () => world.OrderGenerator = new GuardOrderGenerator(world, Selected.Where(CanGuard).ToArray(), "Guard", "guard");
+			// The selected units' tactics (DrTactics): their orders, the behaviour presets and the three settings.
+			DrTactics[] Tactics() => Selected.Select(a => a.TraitOrDefault<DrTactics>()).Where(t => t != null).ToArray();
+			void Send(DrTactics.Field field, int value = 0)
+			{
+				var actors = Selected.Where(a => a.Info.HasTraitInfo<DrTacticsInfo>()).ToArray();
+				if (actors.Length == 0)
+					return;
 
-			// Scout, Harass, Search & Destroy, Pursue, the behaviours and the defaults come with the units' tactics.
-			foreach (var name in new[] { "SCOUT", "HARASS", "SEARCH_DESTROY", "PURSUE", "DEFAULT", "SET_DEFAULT" })
-				Button(name).IsDisabled = () => true;
+				world.IssueOrder(new Order(DrTactics.OrderName, null, false, groupedActors: actors) { ExtraData = DrTactics.Pack(field, value) });
+				if (field == DrTactics.Field.Order && value != (int)DrUnitOrder.None)
+					actors.Select(a => new Order("Move", a, false)).ToArray().PlayVoiceForOrders();
+			}
+
+			// The setting the selection shares, else none lit (the original's 3).
+			static int Common(DrTactics[] all, Func<DrTactics, int> get) => all.Length > 0 && all.All(t => get(t) == get(all[0])) ? get(all[0]) : -1;
+
+			foreach (var (name, order) in new[] { ("SCOUT", DrUnitOrder.Scout), ("HARASS", DrUnitOrder.Harass), ("SEARCH_DESTROY", DrUnitOrder.SearchAndDestroy) })
+			{
+				var button = Button(name);
+				button.IsDisabled = () => Tactics().Length == 0;
+				button.IsHighlighted = () => Common(Tactics(), t => (int)t.Order) == (int)order;
+
+				// Pressed again it is cancelled, as the original's toggles were.
+				button.OnClick = () => Send(DrTactics.Field.Order, (int)(button.IsHighlighted() ? DrUnitOrder.None : order));
+			}
+
+			foreach (var (name, preset) in new[] { ("GUARD", DrTactics.Field.Guard), ("PURSUE", DrTactics.Field.Pursue), ("DEFAULT", DrTactics.Field.Default) })
+			{
+				var button = Button(name);
+				button.IsDisabled = () => Tactics().Length == 0;
+				button.OnClick = () => Send(preset);
+			}
+
+			foreach (var (name, field, get) in new (string, DrTactics.Field, Func<DrTactics, int>)[]
+			{
+				("PURSUIT", DrTactics.Field.Pursuit, t => t.Pursuit),
+				("TOLERANCE", DrTactics.Field.Tolerance, t => t.Tolerance),
+				("INDEPENDENCE", DrTactics.Field.Independence, t => t.Independence),
+			})
+			{
+				var level = widget.Get<DrIgiLevelWidget>(name);
+				level.IsDisabled = () => Tactics().Length == 0;
+				level.GetValue = () => Common(Tactics(), get);
+				level.OnSelect = v => Send(field, v);
+			}
+
+			// Use As Default: what the rows show, for the units built from now on.
+			var setDefault = Button("SET_DEFAULT");
+			setDefault.IsDisabled = () => Tactics().Length == 0 || world.LocalPlayer == null;
+			setDefault.OnClick = () =>
+			{
+				var all = Tactics();
+				int Value(Func<DrTactics, int> get) => Common(all, get) is var v && v >= 0 ? v : get(all[0]);
+				world.IssueOrder(new Order(DrTacticsDefaults.OrderName, world.LocalPlayer.PlayerActor, false)
+				{
+					ExtraData = DrTacticsDefaults.Pack(Value(t => t.Pursuit), Value(t => t.Tolerance), Value(t => t.Independence))
+				});
+			};
 		}
 
 		void BindPaths()
@@ -701,8 +772,130 @@ namespace OpenRA.Mods.Dr.Widgets.Logic
 			widget.Get("PATHS_ADVANCED_PANEL").IsVisible = () => advancedPaths;
 			widget.Get<DrIgiImageWidget>("PATHS_TOGGLE").GetFrame = () => advancedPaths ? 1 : 0;
 
-			foreach (var name in new[] { "ADD_WAYPOINTS", "CLEAR_ALL", "DELETE_WAYPOINT", "GO", "DESELECT", "SAVE_PATH" })
-				Button(name).IsDisabled = () => true;
+			var noTrail = igi.Library?.GetString("MLS_EVNT_NOTRAIL") ?? "";
+			var newTrail = igi.Library?.GetString("MLS_EVNT_NEWTRAIL") ?? "Trail %d";
+			var name = widget.Get<DrIgiTextFieldWidget>("CURRENT_PATH");
+			name.Text = noTrail;
+			void Choose(IgiPath chosen)
+			{
+				path = chosen;
+				name.Text = chosen.Name ?? noTrail;
+				name.YieldKeyboardFocus();
+			}
+
+			var add = Button("ADD_WAYPOINTS");
+			add.IsHighlighted = () => world.OrderGenerator is DrWaypointOrderGenerator;
+			add.OnClick = AddWaypoints;
+
+			// The path being laid, else the chosen saved path, else the selected units' paths (0x4b7410).
+			var clear = Button("CLEAR_ALL");
+			clear.IsDisabled = () => path.Points.Count == 0 && path.Name == null && !Selected.Any(CanFollowPath);
+			clear.OnClick = () =>
+			{
+				if (path.Points.Count > 0)
+					path.Points.Clear();
+				else if (path.Name != null)
+				{
+					savedPaths.Remove(path);
+					Choose(new IgiPath());
+				}
+				else
+					IssueOrders(Selected.Where(CanFollowPath).Select(a => new Order("Stop", a, false)));
+			};
+
+			var delete = Button("DELETE_WAYPOINT");
+			delete.IsDisabled = () => path.Points.Count == 0;
+			delete.OnClick = () => path.Points.RemoveAt(path.Points.Count - 1);
+
+			var go = Button("GO");
+			go.IsDisabled = () => path.Points.Count == 0 || !Selected.Any(CanFollowPath);
+			go.OnClick = FollowPath;
+
+			// Basic paths are one way (the manual, p. 50); the direction is the advanced page's.
+			var direction = widget.Get<DrIgiLevelWidget>("PATH_DIRECTION");
+			direction.GetValue = () => (int)path.Mode;
+			direction.OnSelect = v => path.Mode = (DrPathMode)v;
+
+			name.IsDisabled = () => path.Name == null;
+			name.OnEnter = () =>
+			{
+				if (path.Name != null && name.Text.Trim().Length > 0)
+					path.Name = name.Text.Trim();
+
+				name.Text = path.Name ?? noTrail;
+				name.YieldKeyboardFocus();
+			};
+			name.OnEscape = () => name.Text = path.Name ?? noTrail;
+
+			var list = widget.Get<DrIgiListWidget>("SAVED_PATHS");
+			list.GetItems = () => savedPaths.Select(p => p.Name).ToList();
+			list.GetSelected = () => savedPaths.IndexOf(path);
+			list.OnSelect = i => Choose(savedPaths[i]);
+			list.OnActivate = i =>
+			{
+				Choose(savedPaths[i]);
+				FollowPath();
+			};
+
+			var deselect = Button("DESELECT");
+			deselect.IsDisabled = () => path.Name == null;
+			deselect.OnClick = () => Choose(new IgiPath());
+
+			// Save Path keeps the path laid so far under the next name, or starts a new one to lay (the manual, p. 52).
+			Button("SAVE_PATH").OnClick = () =>
+			{
+				var saved = path.Name == null && path.Points.Count > 0 ? path : new IgiPath { Mode = path.Mode };
+				saved.Name = newTrail.Replace("%d", (++trails).ToString(CultureInfo.InvariantCulture));
+				savedPaths.Add(saved);
+				Choose(saved);
+				if (saved.Points.Count == 0)
+					AddWaypoints();
+			};
+
+			var overlay = widget.Get<DrIgiPathOverlayWidget>("PATH_OVERLAY");
+			overlay.GetPoints = () => tab == "PATHS" || world.OrderGenerator is DrWaypointOrderGenerator ? path.Points : [];
+			overlay.IsLooped = () => advancedPaths && path.Mode == DrPathMode.Loop;
+		}
+
+		/// <summary>A path on the PATHS tab: the one being laid, or one saved under a name ("Trail 1").</summary>
+		sealed class IgiPath
+		{
+			public string Name;
+			public readonly List<CPos> Points = [];
+			public DrPathMode Mode;
+		}
+
+		IgiPath path = new();
+		readonly List<IgiPath> savedPaths = [];
+		int trails;
+
+		static bool CanFollowPath(Actor a) => a.Info.HasTraitInfo<DrPathFollowerInfo>();
+
+		void AddWaypoints()
+		{
+			tab = "PATHS";
+			world.OrderGenerator = new DrWaypointOrderGenerator(path.Points.Add, "move");
+		}
+
+		/// <summary>Go: the selection follows the path. One laid but not saved is done with once followed.</summary>
+		void FollowPath()
+		{
+			var actors = Selected.Where(CanFollowPath).ToArray();
+			if (actors.Length == 0 || path.Points.Count == 0)
+				return;
+
+			var mode = advancedPaths ? path.Mode : DrPathMode.OneWay;
+			world.IssueOrder(new Order(DrPathFollower.OrderName, null, false, groupedActors: actors)
+			{
+				TargetString = DrPathFollower.Encode(mode, path.Points.ToArray())
+			});
+			actors.Select(a => new Order("Move", a, false)).ToArray().PlayVoiceForOrders();
+
+			if (world.OrderGenerator is DrWaypointOrderGenerator)
+				world.CancelInputMode();
+
+			if (path.Name == null)
+				path.Points.Clear();
 		}
 
 		void BindSpecial()

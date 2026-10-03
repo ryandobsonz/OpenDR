@@ -10,7 +10,9 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Widgets;
@@ -685,6 +687,151 @@ namespace OpenRA.Mods.Dr.Widgets
 			var width = (int)Math.Round(103 * Math.Clamp(GetValue(), 0, 1));
 			if (width > 0)
 				Igi.DrawSprite(Art.GetRegion("MESLIDE.BMP", new Rectangle(frame * 103, 0, width, 15)), RenderBounds.Location, IsDisabled() ? 0.5f : 1f);
+		}
+	}
+
+	/// <summary>
+	/// Three cells to choose from, a third of each of the image's three frames (dim, normal, lit): the ORDERS tab's
+	/// LOW, MED and HIGH (ORLMH.BMP), the path direction (TRAILMDE.BMP). The setting is lit and the cell under the
+	/// mouse normal, lit while pressed, as 0x42d460 draws them.
+	/// </summary>
+	public class DrIgiLevelWidget : DrIgiAreaWidget
+	{
+		public readonly string Image = "ORLMH.BMP";
+
+		[Desc("A tip for each cell, from the game's strings.")]
+		public readonly string[] Tooltips = [];
+
+		[Desc("The lit cell, 0 to 2; -1 for none (nothing selected, or a selection that differs).")]
+		public Func<int> GetValue = () => -1;
+		public Action<int> OnSelect = _ => { };
+		public Func<bool> IsDisabled = () => false;
+
+		bool pressed;
+		string[] tips;
+
+		public override void Initialize(WidgetArgs args)
+		{
+			base.Initialize(args);
+			tips = Tooltips.Select(t => Igi.Library?.GetString(t)).ToArray();
+			GetTooltip = () =>
+			{
+				var cell = CellAt(Viewport.LastMousePos);
+				return cell < tips.Length && !IsDisabled() && !string.IsNullOrEmpty(tips[cell]) ? tips[cell] : null;
+			};
+		}
+
+		int CellAt(int2 location)
+		{
+			var b = RenderBounds;
+			return Math.Clamp((location.X - b.X) * 3 / Math.Max(1, b.Width), 0, 2);
+		}
+
+		public override bool HandleMouseInput(MouseInput mi)
+		{
+			if (mi.Button != MouseButton.Left)
+				return false;
+
+			if (mi.Event == MouseInputEvent.Down)
+			{
+				if (IsDisabled() || !TakeMouseFocus(mi))
+					return false;
+
+				pressed = true;
+				Game.Sound.PlayNotification(Game.ModData.DefaultRules, null, "Sounds", ChromeMetrics.Get<string>("ClickSound"), null);
+				return true;
+			}
+
+			if (mi.Event == MouseInputEvent.Up && HasMouseFocus)
+			{
+				pressed = false;
+				YieldMouseFocus(mi);
+				if (!IsDisabled() && EventBounds.Contains(mi.Location))
+					OnSelect(CellAt(mi.Location));
+
+				return true;
+			}
+
+			return false;
+		}
+
+		public override void Draw()
+		{
+			if (Art == null)
+				return;
+
+			var b = RenderBounds;
+			var size = Art.Get(Image).Size;
+			var frameWidth = (int)size.X / 3;
+			var height = (int)size.Y;
+			var value = IsDisabled() ? -1 : GetValue();
+			var hover = Ui.MouseOverWidget == this && !IsDisabled() ? CellAt(Viewport.LastMousePos) : -1;
+			for (var i = 0; i < 3; i++)
+			{
+				var frame = i == value ? 2 : i == hover ? pressed ? 2 : 1 : 0;
+				var left = frame * frameWidth + i * frameWidth / 3;
+				var source = new Rectangle(left, 0, frame * frameWidth + (i + 1) * frameWidth / 3 - left, height);
+				Igi.DrawSprite(Art.GetRegion(Image, source), new float2(b.X + b.Width * i / 3, b.Y));
+			}
+		}
+	}
+
+	/// <summary>The path being laid on the PATHS tab, over the map: a line through its waypoints, each numbered.</summary>
+	public class DrIgiPathOverlayWidget : Widget
+	{
+		readonly WorldRenderer worldRenderer;
+
+		[Desc("The line and markers: the orange of the path direction's art (TRAILMDE.BMP).")]
+		public readonly Color Color = Color.FromArgb(255, 248, 152, 32);
+
+		public Func<IReadOnlyList<CPos>> GetPoints = () => [];
+		public Func<bool> IsLooped = () => false;
+
+		DrIgiWidget igi;
+
+		[ObjectCreator.UseCtor]
+		public DrIgiPathOverlayWidget(WorldRenderer worldRenderer)
+		{
+			this.worldRenderer = worldRenderer;
+			IgnoreMouseOver = true;
+		}
+
+		public override bool HandleMouseInput(MouseInput mi) => false;
+
+		public override void Draw()
+		{
+			var points = GetPoints();
+			if (points.Count == 0)
+				return;
+
+			if (igi == null)
+				for (var w = Parent; w != null && igi == null; w = w.Parent)
+					igi = w as DrIgiWidget;
+
+			if (igi?.Art == null)
+				return;
+
+			var map = worldRenderer.World.Map;
+			var screen = points.Select(c => worldRenderer.Viewport.WorldToViewPx(worldRenderer.ScreenPxPosition(map.CenterOfCell(c)))).ToArray();
+			var scale = igi.Scale;
+			var lines = Game.Renderer.RgbaColorRenderer;
+			for (var i = 1; i < screen.Length; i++)
+				lines.DrawLine(new float3(screen[i - 1].X, screen[i - 1].Y, 0), new float3(screen[i].X, screen[i].Y, 0), scale, Color);
+
+			if (IsLooped() && screen.Length > 2)
+				lines.DrawLine(new float3(screen[^1].X, screen[^1].Y, 0), new float3(screen[0].X, screen[0].Y, 0), scale, Color);
+
+			// The numbers in OpenRA's bold font with a dark edge: the interface's fonts vanish against the ground.
+			var font = Game.Renderer.Fonts["Bold"];
+			var size = (int)(3 * scale);
+			for (var i = 0; i < screen.Length; i++)
+			{
+				var p = screen[i];
+				WidgetUtils.FillRectWithColor(new Rectangle(p.X - size, p.Y - size, 2 * size, 2 * size), Color);
+				var label = (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+				var measure = font.Measure(label);
+				font.DrawTextWithContrast(label, new float2(p.X - measure.X / 2, p.Y - size - measure.Y - 2), Color, Color.Black, 1);
+			}
 		}
 	}
 

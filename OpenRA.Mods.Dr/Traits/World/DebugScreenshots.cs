@@ -175,9 +175,12 @@ namespace OpenRA.Mods.Dr.Traits
 
 				case "order":
 				{
+					// Straight to the unit's order handlers: issued through the network, test orders never arrived.
 					var actor = Named(w, c[1]);
 					var target = Named(w, c[3]);
-					w.IssueOrder(new Order(c[2], actor, Target.FromActor(target), false));
+					var order = new Order(c[2], actor, Target.FromActor(target), false);
+					foreach (var r in actor.TraitsImplementing<IResolveOrder>())
+						r.ResolveOrder(actor, order);
 					break;
 				}
 
@@ -283,6 +286,45 @@ namespace OpenRA.Mods.Dr.Traits
 				case "camera":
 					worldRenderer?.Viewport.Center(w.Map.CenterOfCell(Cell(c[1])));
 					break;
+
+				case "tactics":
+				{
+					// A unit's behaviour or order, as the ORDERS tab sets it: tactics NAME pursuit|tolerance|independence|order|guard|pursue|default [VALUE].
+					var a = Named(w, c[1]);
+					var field = Enum.Parse<DrTactics.Field>(c[2], true);
+					var value = c.Length > 3 ? int.Parse(c[3], CultureInfo.InvariantCulture) : 0;
+					var order = new Order(DrTactics.OrderName, a, false) { ExtraData = DrTactics.Pack(field, value) };
+					foreach (var r in a.TraitsImplementing<IResolveOrder>())
+						r.ResolveOrder(a, order);
+					break;
+				}
+
+				case "hurt":
+				{
+					// Leaves a unit with PERCENT of its hitpoints.
+					var a = Named(w, c[1]);
+					var health = a.Trait<IHealth>();
+					var hp = health.MaxHP * int.Parse(c[2], CultureInfo.InvariantCulture) / 100;
+					if (health.HP > hp)
+						health.InflictDamage(a, w.WorldActor, new Damage(health.HP - hp), true);
+					break;
+				}
+
+				case "units":
+				{
+					// A team's units: where each is, its health, what it is doing, its tactics.
+					var p = Team(w, c[1]);
+					var names = w.WorldActor.Trait<SpawnMapActors>().Actors.Concat(spawned).ToDictionary(kv => kv.Value, kv => kv.Key);
+					foreach (var a in w.ActorsWithTrait<DrTactics>().Where(t => t.Actor.Owner == p && !t.Actor.IsDead).Select(t => t.Actor))
+					{
+						var t = a.Trait<DrTactics>();
+						var hp = a.TraitOrDefault<IHealth>();
+						Log.Write("debug", $"unit {names.GetValueOrDefault(a, "#" + a.ActorID)} {a.Info.Name} at {a.Location} hp {hp?.HP}/{hp?.MaxHP} "
+							+ $"{a.CurrentActivity?.GetType().Name ?? "idle"} tactics {t.Pursuit}/{t.Tolerance}/{t.Independence} {t.Order}");
+					}
+
+					break;
+				}
 			}
 		}
 	}

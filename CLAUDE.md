@@ -64,7 +64,11 @@ background. Their output goes to `tools/campaign/out/`.
 `killunits TEAM`, `killall TEAM`, `kill NAME`, `killtype TEAM ACTOR`,
 `spawn TEAM ACTOR X,Y [NAME]`, `teleport NAME X,Y`, `steal INFILTRATOR TARGET`,
 `select NAME`, `explore TEAM`, `resources TEAM` (logs its credits, power,
-every store and freighter, and what it collected), `camera X,Y`, `press WIDGET` (an in-game
+every store and freighter, and what it collected), `units TEAM` (logs each
+unit's place, health, activity and tactics), `tactics NAME FIELD [VALUE]` (as
+the ORDERS tab: `pursuit`, `tolerance`, `independence` 0–2, `order` 0–3 for
+none, Scout, Harass, Search & Destroy, or the presets `guard`, `pursue`,
+`default`), `hurt NAME PERCENT` (leaves it that much health), `camera X,Y`, `press WIDGET` (an in-game
 interface button by its id in `ingame-player.yaml`, e.g. `TAB_MENU`, or a
 button of an OpenRA window, e.g. the settings' `BACK_BUTTON`), `key KEY
 [MODIFIERS]` (a key through the real input path, by OpenRA's key names:
@@ -73,8 +77,8 @@ button of an OpenRA window, e.g. the settings' `BACK_BUTTON`), `key KEY
 the UI's pixels: the window's size over the interface scale, so 1280×720
 for the tests' 1600×900 at 125%; the debug log says what was under it).
 Names are map actor names (`u<id>`, the original unit id) or those given to
-`spawn`. `order` exists, but its
-orders never reached units; use `teleport` and `steal` instead. `leave`
+`spawn`. `order NAME ORDER TARGET` hands an order (`Attack`, `RepairNear`)
+straight to the unit's handlers. `leave`
 returns to the menus, as the in-game Leave does. `save NAME` saves the game
 (NAME without spaces); a loaded game goes straight on, and its replay up to
 the save runs no steps, so give later steps ticks past the save's. `type
@@ -203,6 +207,13 @@ killing teams the player must protect, as alliances change at cycle 0.
 - **Test clicks must run unsynced**: `Game.RunAfterTick` runs inside the
   world's synced tick, where changing the order generator throws; wrap UI
   actions in `Sync.RunUnsynced`.
+- **Don't edit `mods/` while a test runs**: the game reads the rules live, so
+  a trait added to the yaml before the DLL is rebuilt fails every later
+  mission ("Cannot locate type"). Build first, or wait.
+- **A mode that clicks the map should not be a `UnitOrderGenerator`**: its
+  clicks follow OpenRA's mouse style (Modern makes the left button cancel),
+  and `OrderGenerator`'s constructor clears the selection in Classic. The
+  waypoint mode implements `IOrderGenerator` itself.
 - **Look at a Smacker video before guessing its use**:
   `dotnet bin\OpenRA.Utility.dll dr --dump-smacker FILE OUT [COLUMNS] [SCALE] [EVERY]`
   (from `engine`, with `MOD_SEARCH_PATHS` and `ENGINE_DIR` set as
@@ -231,10 +242,10 @@ comes first; a human playthrough then decides what matters next.
    lands with its button: enable it in `DrIgiLogic`.
    - Water and taelon: done ([CAMPAIGN.md](CAMPAIGN.md#water-and-taelon)),
      but for the launch pad's launch animation.
-   - The units' tactics (pursuit, damage tolerance, independence; `SetTactAI`
-     in the scenarios) and the orders (Scout, Harass, Search & Destroy,
-     Pursue, Default, Set Default).
-   - Paths and waypoints (one way, patrol, loop, saved paths): the PATHS tab.
+   - The units' tactics and orders: done
+     ([CAMPAIGN.md](CAMPAIGN.md#the-units-tactics)).
+   - Paths and waypoints: done ([CAMPAIGN.md](CAMPAIGN.md#the-in-game-interface)),
+     but for dragging a placed waypoint.
    - Self destruct, formation moves, packing up buildings.
    - Phasing, decoys, morphing, the water contaminator.
    - Stolen designs buildable. Plans are recorded (`DrPlanStealing.cs`) but
@@ -256,18 +267,26 @@ comes first; a human playthrough then decides what matters next.
    code-signing certificate (unsigned, Windows SmartScreen warns on first
    run). The GOG install lookup has never met a real GOG install.
 
-**Where the last session stopped (2026-10-03, later):** water and taelon
-are in (item 3's first bullet), tested with `resources` steps in M05F (both
-resources hauled, generator power rising, Shift+L selling 1500 water for
-1000) and M01F (the enemy's pad filling and launching for 3000).
-`wintest.ps1` matched the table above after it. Not yet done: the M01F and
-M05F win recipes rerun on the new economy, and the package rebuilt. Open
-questions are in [CAMPAIGN.md](CAMPAIGN.md#what-differs-from-the-original):
-whether the original gave a placed pad or generator its freighter (kept, so
-mission 1 has income), and the springs' regrowth rate (per second is a
-guess). T2, the resource training, fails if a test spawns buildings out of
-its order, so test the economy in M05F. Next is still 2, the user's
-playthrough; until then, 3 goes on with the units' tactics and orders.
+**Where the last session stopped (2026-10-03, night):** the units' tactics
+and orders are in (`Traits/DrTactics.cs`: the ORDERS tab, `SetTactAI` and
+`SetSOrderAutoMove` from the scenarios), and so is the PATHS tab
+(`Orders/DrWaypointOrderGenerator.cs`, `Traits/DrPathFollower.cs`, the
+overlay `DrIgiPathOverlayWidget`). Both were tested in M01F with spawned
+raiders, through real clicks: each order, repair seeking, the response to
+fire, laying, saving, looping and following paths. The M01F and M05F win
+recipes still win on the water and taelon economy. Check the last
+`tools/campaign/out/wintest-tactics.txt` and `smoke-tactics.txt` against the
+table above if this note was written before they finished. Not yet done: the
+package rebuilt. Open questions are in
+[CAMPAIGN.md](CAMPAIGN.md#what-differs-from-the-original): whether a placed
+pad or generator brings a freighter, the springs' regrowth rate, and the
+tactics' guessed distances and timings. Watch the AI in the playthrough: its
+units now default to low pursuit, as the original's did, where OpenRA's bots
+chased anything. Test-spawned buildings and waypoints can land where units
+can't reach (M01F: a hospital at 10,52, waypoints in trees). T2 fails if a
+test spawns buildings out of its order, so test the economy in M05F. Next is
+still 2, the user's playthrough; until then, 3 goes on with self destruct,
+formation moves and packing up buildings.
 
 **Parked, a separate piece of work:** the expansion campaigns (`sh*`,
 `fgx*`). They convert but lack most units, and would need tech tables from
