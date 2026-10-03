@@ -274,10 +274,9 @@ and orders are in (`Traits/DrTactics.cs`: the ORDERS tab, `SetTactAI` and
 overlay `DrIgiPathOverlayWidget`). Both were tested in M01F with spawned
 raiders, through real clicks: each order, repair seeking, the response to
 fire, laying, saving, looping and following paths. The M01F and M05F win
-recipes still win on the water and taelon economy. Check the last
-`tools/campaign/out/wintest-tactics.txt` and `smoke-tactics.txt` against the
-table above if this note was written before they finished. Not yet done: the
-package rebuilt. Open questions are in
+recipes still win on the water and taelon economy, M06F's and M13T's on the
+tactics; `smoke.ps1` ran every mission clean and `wintest.ps1` matched the
+table above. Not yet done: the package rebuilt. Open questions are in
 [CAMPAIGN.md](CAMPAIGN.md#what-differs-from-the-original): whether a placed
 pad or generator brings a freighter, the springs' regrowth rate, and the
 tactics' guessed distances and timings. Watch the AI in the playthrough: its
